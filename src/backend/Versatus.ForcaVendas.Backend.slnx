@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../worker/Versatus.ForcaVendas.Worker/Versatus.ForcaVendas.Worker.csproj" />
+  <Project Path="Versatus.ForcaVendas.Api/Versatus.ForcaVendas.Api.csproj" />
+  <Project Path="Versatus.ForcaVendas.Application/Versatus.ForcaVendas.Application.csproj" />
+  <Project Path="Versatus.ForcaVendas.Domain/Versatus.ForcaVendas.Domain.csproj" />
+  <Project Path="Versatus.ForcaVendas.Infrastructure/Versatus.ForcaVendas.Infrastructure.csproj" />
+</Solution>

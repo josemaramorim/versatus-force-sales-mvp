@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Versatus.ForcaVendas.Worker-c68ad33d-fce7-4914-9372-744f6e933578</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\backend\Versatus.ForcaVendas.Application\Versatus.ForcaVendas.Application.csproj" />
+    <ProjectReference Include="..\..\backend\Versatus.ForcaVendas.Infrastructure\Versatus.ForcaVendas.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
