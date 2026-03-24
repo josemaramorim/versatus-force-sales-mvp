@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Options;
+using Versatus.ForcaVendas.Application.Licenca;
 using Versatus.ForcaVendas.Api.Auth;
 using Versatus.ForcaVendas.Api.Middleware;
+using Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
+builder.Services.AddScoped<ITenantSubscriptionRepository, NpgsqlTenantSubscriptionRepository>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 
@@ -126,6 +129,28 @@ app.MapGet("/tenant/ping", (ITenantContext tenantContext) =>
     });
 })
 .WithName("TenantPing")
+.WithOpenApi();
+
+app.MapGet("/licenca/{tenantId}/limite", async (
+    string tenantId,
+    ITenantSubscriptionRepository repository,
+    CancellationToken cancellationToken) =>
+{
+    var subscription = await repository.GetByTenantIdAsync(tenantId, cancellationToken);
+    if (subscription is null)
+    {
+        return Results.NotFound(new { message = "Tenant nao encontrado." });
+    }
+
+    return Results.Ok(new
+    {
+        tenantId = subscription.TenantId,
+        companyName = subscription.CompanyName,
+        maxConcurrentUsers = subscription.MaxConcurrentUsers,
+        isActive = subscription.IsActive
+    });
+})
+.WithName("GetTenantConcurrentUserLimit")
 .WithOpenApi();
 
 app.Run();
