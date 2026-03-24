@@ -34,7 +34,7 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
         }
 
         var token = authHeader["Bearer ".Length..].Trim();
-        if (!TryValidateAndReadTenant(token, authOptions.Value.Jwt, out var tenantId))
+        if (!TryValidateAndReadClaims(token, authOptions.Value.Jwt, out var tenantId, out var sessionId))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             await context.Response.WriteAsJsonAsync(new { message = "Invalid token." });
@@ -49,6 +49,7 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
         }
 
         tenantContext.TenantId = tenantId;
+            tenantContext.SessionId = sessionId;
         await next(context);
     }
 
@@ -62,9 +63,10 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
         return PublicPrefixes.Any(prefix => path.StartsWithSegments(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static bool TryValidateAndReadTenant(string token, JwtOptions jwtOptions, out string? tenantId)
+    private static bool TryValidateAndReadClaims(string token, JwtOptions jwtOptions, out string? tenantId, out string? sessionId)
     {
         tenantId = null;
+            sessionId = null;
         try
         {
             var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
@@ -82,6 +84,7 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
 
             var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
             tenantId = principal.FindFirst("tenant_id")?.Value;
+                        sessionId = principal.FindFirst("jti")?.Value;
             return true;
         }
         catch

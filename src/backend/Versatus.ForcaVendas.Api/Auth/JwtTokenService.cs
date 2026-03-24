@@ -21,11 +21,13 @@ public sealed class JwtTokenService(IOptions<AuthOptions> options) : IJwtTokenSe
         var accessTokenExpiresAt = now.AddMinutes(jwtOptions.AccessTokenMinutes);
         var refreshTokenExpiresAt = now.AddDays(jwtOptions.RefreshTokenDays);
 
+        var sessionId = Guid.NewGuid().ToString();
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.UserId),
             new(JwtRegisteredClaimNames.UniqueName, user.Username),
-            new("tenant_id", user.TenantId)
+            new("tenant_id", user.TenantId),
+            new(JwtRegisteredClaimNames.Jti, sessionId)
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey));
@@ -46,7 +48,8 @@ public sealed class JwtTokenService(IOptions<AuthOptions> options) : IJwtTokenSe
             accessToken,
             refreshToken,
             (long)(accessTokenExpiresAt - now).TotalSeconds,
-            refreshTokenExpiresAt.UtcDateTime);
+            refreshTokenExpiresAt.UtcDateTime,
+            sessionId);
     }
 
     private static string GenerateRefreshToken()
@@ -61,4 +64,5 @@ public sealed record TokenPair(
     string AccessToken,
     string RefreshToken,
     long AccessTokenExpiresInSeconds,
-    DateTime RefreshTokenExpiresAtUtc);
+    DateTime RefreshTokenExpiresAtUtc,
+    string SessionId);
