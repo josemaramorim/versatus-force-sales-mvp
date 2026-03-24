@@ -30,3 +30,18 @@ public sealed record LoginResponse(
     string RefreshToken,
     long ExpiresIn,
     string TokenType);
+
+public sealed record RefreshTokenRequest(string RefreshToken)
+{
+    public Dictionary<string, string[]> Validate()
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(RefreshToken))
+        {
+            errors["refreshToken"] = ["refreshToken is required."];
+        }
+
+        return errors;
+    }
+}

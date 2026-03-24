@@ -72,4 +72,45 @@ app.MapPost("/auth/login", (
 .WithName("Login")
 .WithOpenApi();
 
+app.MapPost("/auth/refresh", (
+    RefreshTokenRequest request,
+    IOptions<AuthOptions> options,
+    IJwtTokenService tokenService,
+    IRefreshTokenStore refreshTokenStore) =>
+{
+    var errors = request.Validate();
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    if (!refreshTokenStore.TryGetActive(request.RefreshToken, out var tokenInfo))
+    {
+        return Results.Unauthorized();
+    }
+
+    var user = options.Value.Users.FirstOrDefault(u =>
+        string.Equals(u.UserId, tokenInfo.UserId, StringComparison.Ordinal) &&
+        string.Equals(u.TenantId, tokenInfo.TenantId, StringComparison.OrdinalIgnoreCase));
+
+    if (user is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var tokenPair = tokenService.Generate(user);
+
+    // Rotate refresh token to reduce replay window.
+    refreshTokenStore.Revoke(request.RefreshToken);
+    refreshTokenStore.Save(tokenPair.RefreshToken, user.UserId, user.TenantId, tokenPair.RefreshTokenExpiresAtUtc);
+
+    return Results.Ok(new LoginResponse(
+        tokenPair.AccessToken,
+        tokenPair.RefreshToken,
+        tokenPair.AccessTokenExpiresInSeconds,
+        "Bearer"));
+})
+.WithName("RefreshToken")
+.WithOpenApi();
+
 app.Run();
