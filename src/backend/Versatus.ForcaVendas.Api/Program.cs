@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Versatus.ForcaVendas.Api.Auth;
+using Versatus.ForcaVendas.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
+builder.Services.AddScoped<TenantContext>();
+builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 
 var app = builder.Build();
 
@@ -21,6 +24,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<TenantContextMiddleware>();
 
 app.MapPost("/auth/login", (
     LoginRequest request,
@@ -111,6 +115,17 @@ app.MapPost("/auth/refresh", (
         "Bearer"));
 })
 .WithName("RefreshToken")
+.WithOpenApi();
+
+app.MapGet("/tenant/ping", (ITenantContext tenantContext) =>
+{
+    return Results.Ok(new
+    {
+        message = "Tenant context resolved.",
+        tenantId = tenantContext.TenantId
+    });
+})
+.WithName("TenantPing")
 .WithOpenApi();
 
 app.Run();
