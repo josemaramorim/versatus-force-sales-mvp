@@ -1,0 +1,36 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+logs/
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# .NET
+bin/
+obj/
+.vs/
+TestResults/
+
+# Env
+.env
+.env.*
+
+# Temporary
+*.tmp
+*.temp

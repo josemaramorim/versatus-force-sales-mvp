@@ -1,0 +1,47 @@
+name: Story
+ description: Historia de negocio para o MVP
+ title: "[MVP][Modulo] Historia: "
+ labels:
+   - type:story
+ body:
+   - type: textarea
+     id: contexto
+     attributes:
+       label: Contexto
+       description: Qual problema de negocio estamos resolvendo?
+     validations:
+       required: true
+   - type: textarea
+     id: objetivo
+     attributes:
+       label: Objetivo de negocio
+     validations:
+       required: true
+   - type: textarea
+     id: aceite
+     attributes:
+       label: Criterios de aceite
+       description: Escrever no formato Dado/Quando/Entao
+     validations:
+       required: true
+   - type: textarea
+     id: escopo
+     attributes:
+       label: Escopo (in)
+     validations:
+       required: true
+   - type: textarea
+     id: fora
+     attributes:
+       label: Fora de escopo (out)
+   - type: textarea
+     id: tarefas
+     attributes:
+       label: Tarefas tecnicas relacionadas
+       description: Liste as tasks filhas desta historia
+     validations:
+       required: true
+   - type: textarea
+     id: riscos
+     attributes:
+       label: Riscos e dependencias

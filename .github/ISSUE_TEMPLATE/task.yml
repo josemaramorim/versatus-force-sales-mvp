@@ -1,0 +1,40 @@
+name: Task
+ description: Tarefa tecnica vinculada a uma historia
+ title: "[Task][Modulo] "
+ labels:
+   - type:task
+ body:
+   - type: input
+     id: parent
+     attributes:
+       label: Issue da historia (parent)
+       placeholder: "#123"
+     validations:
+       required: true
+   - type: textarea
+     id: objetivo
+     attributes:
+       label: Objetivo tecnico
+     validations:
+       required: true
+   - type: textarea
+     id: implementacao
+     attributes:
+       label: Passos de implementacao
+     validations:
+       required: true
+   - type: textarea
+     id: validacao
+     attributes:
+       label: Testes de validacao
+     validations:
+       required: true
+   - type: checkboxes
+     id: pronto
+     attributes:
+       label: Definition of Done
+       options:
+         - label: Codigo implementado
+         - label: Testes executados
+         - label: Documentacao atualizada
+         - label: PR aberto com issue vinculada
