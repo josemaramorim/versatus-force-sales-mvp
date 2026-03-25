@@ -1,4 +1,11 @@
 using Microsoft.Extensions.Options;
+<<<<<<< HEAD
+=======
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
+using Prometheus;
+using Versatus.ForcaVendas.Api.Health;
+>>>>>>> origin/main
 using Versatus.ForcaVendas.Application.Licenca;
 using StackExchange.Redis;
 using Versatus.ForcaVendas.Application.Sessao;
@@ -22,6 +29,11 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(
 builder.Services.AddSingleton<ISessionStore, RedisSessionStore>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
+<<<<<<< HEAD
+=======
+builder.Services.AddHealthChecks()
+    .AddCheck<RedisHealthCheck>("redis");
+>>>>>>> origin/main
 
 var app = builder.Build();
 
@@ -35,6 +47,39 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseMiddleware<TenantContextMiddleware>();
 
+<<<<<<< HEAD
+=======
+// Prometheus metrics for HTTP + metrics endpoint
+app.UseHttpMetrics();
+
+// Liveness: basic ping of the process (no external deps)
+app.MapGet("/health/live", () => Results.Ok(new { status = "Alive" }))
+    .WithName("Liveness");
+
+// Readiness: execute registered health checks
+app.MapGet("/health/ready", async (HealthCheckService hc) =>
+{
+    var report = await hc.CheckHealthAsync();
+    var result = new
+    {
+        status = report.Status.ToString(),
+        checks = report.Entries.Select(e => new
+        {
+            name = e.Key,
+            status = e.Value.Status.ToString(),
+            description = e.Value.Description,
+            duration = e.Value.Duration.TotalMilliseconds
+        })
+    };
+
+    return Results.Json(result, statusCode: report.Status == HealthStatus.Healthy ? 200 : 503);
+})
+    .WithName("Readiness");
+
+// Expose Prometheus metrics at /metrics
+app.MapMetrics();
+
+>>>>>>> origin/main
 app.MapPost("/auth/login", async (
     LoginRequest request,
     IOptions<AuthOptions> options,
