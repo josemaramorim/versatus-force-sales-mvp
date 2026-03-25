@@ -126,7 +126,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          dotnet test src/backend/Versatus.ForcaVendas.Api.Tests/Versatus.ForcaVendas.Api.Tests.csproj -c Release --no-build --verbosity normal
+          dotnet test src/backend/Versatus.ForcaVendas.Backend.slnx -c Release --no-build --verbosity normal
 
       - name: Tear down docker-compose
         if: always()
