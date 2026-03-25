@@ -27,6 +27,7 @@ jobs:
         run: dotnet test --no-build --verbosity normal || true
 
       - name: Create PR to develop if tests pass
+        if: ${{ github.event_name == 'push' && secrets.REPO_BOT_TOKEN }}
         uses: actions/github-script@v6
         with:
           # Use a repository PAT stored in secrets.REPO_BOT_TOKEN with minimal scopes (repo, workflow)
