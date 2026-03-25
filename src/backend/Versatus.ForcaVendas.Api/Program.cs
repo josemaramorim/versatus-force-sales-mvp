@@ -218,4 +218,27 @@ app.MapGet("/admin/sessions", async (
 .WithName("GetActiveSessions")
 .WithOpenApi();
 
+app.MapPost("/auth/logout", async (
+    ITenantContext tenantContext,
+    IRefreshTokenStore refreshTokenStore,
+    ISessionStore sessionStore,
+    LogoutRequest? request,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.SessionId))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (request is not null && !string.IsNullOrWhiteSpace(request.RefreshToken))
+    {
+        refreshTokenStore.Revoke(request.RefreshToken);
+    }
+
+    await sessionStore.RemoveAsync(tenantContext.SessionId, tenantContext.TenantId!, cancellationToken);
+    return Results.Ok(new { message = "Logged out", sessionId = tenantContext.SessionId });
+})
+.WithName("Logout")
+.WithOpenApi();
+
 app.Run();
