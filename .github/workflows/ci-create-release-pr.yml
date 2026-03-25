@@ -12,7 +12,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create develop -> main PR if none exists
-        if: ${{ github.event_name == 'push' && secrets.REPO_BOT_TOKEN }}
+        if: github.event_name == 'push'
+        continue-on-error: true
         uses: actions/github-script@v6
         with:
           # Use a repository PAT stored in secrets.REPO_BOT_TOKEN with minimal scopes (repo, workflow)
