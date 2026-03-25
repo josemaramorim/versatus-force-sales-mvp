@@ -1,0 +1,28 @@
+name: CI - Create release PR (develop -> main)
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create develop -> main PR if none exists
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+            const head = 'develop'
+            // check for existing open PR from develop to main
+            const { data: existing } = await github.rest.pulls.list({ owner, repo, head: `${owner}:${head}`, base: 'main', state: 'open' })
+            if (existing.length === 0) {
+              await github.rest.pulls.create({ owner, repo, title: `Release: merge develop into main`, head, base: 'main', body: 'Automated release PR created from develop to main.' })
+            } else {
+              core.info('A release PR from develop to main already exists')
+            }
