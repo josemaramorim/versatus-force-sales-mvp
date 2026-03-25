@@ -263,6 +263,40 @@ app.MapGet("/admin/sessions", async (
 .WithName("GetActiveSessions")
 .WithOpenApi();
 
+app.MapPost("/admin/sessions/evict", async (
+    ITenantContext tenantContext,
+    ISessionStore sessionStore,
+    IRefreshTokenStore refreshTokenStore,
+    EvictRequest request,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(request?.SessionId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["sessionId"] = new[] { "sessionId is required" }
+        });
+    }
+
+    // Remove session from store
+    await sessionStore.RemoveAsync(request.SessionId, tenantContext.TenantId!, cancellationToken);
+
+    // Optionally revoke provided refresh token for the session
+    if (!string.IsNullOrWhiteSpace(request.RefreshToken))
+    {
+        refreshTokenStore.Revoke(request.RefreshToken);
+    }
+
+    return Results.Ok(new { message = "Session evicted", sessionId = request.SessionId });
+})
+    .WithName("EvictSession")
+    .WithOpenApi();
+
 app.MapPost("/auth/logout", async (
     ITenantContext tenantContext,
     IRefreshTokenStore refreshTokenStore,
