@@ -1,6 +1,10 @@
 using Microsoft.Extensions.Options;
+using Versatus.ForcaVendas.Application.Licenca;
+using StackExchange.Redis;
+using Versatus.ForcaVendas.Application.Sessao;
 using Versatus.ForcaVendas.Api.Auth;
 using Versatus.ForcaVendas.Api.Middleware;
+using Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +15,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
+builder.Services.AddScoped<ITenantSubscriptionRepository, NpgsqlTenantSubscriptionRepository>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(
+    _ => ConnectionMultiplexer.Connect(
+        builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
+builder.Services.AddSingleton<ISessionStore, RedisSessionStore>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 
@@ -26,11 +35,14 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseMiddleware<TenantContextMiddleware>();
 
-app.MapPost("/auth/login", (
+app.MapPost("/auth/login", async (
     LoginRequest request,
     IOptions<AuthOptions> options,
     IJwtTokenService tokenService,
-    IRefreshTokenStore refreshTokenStore) =>
+    IRefreshTokenStore refreshTokenStore,
+        ITenantSubscriptionRepository subscriptionRepository,
+    ISessionStore sessionStore,
+    CancellationToken cancellationToken) =>
 {
     var errors = request.Validate();
     if (errors.Count > 0)
@@ -64,8 +76,25 @@ app.MapPost("/auth/login", (
         return Results.Unauthorized();
     }
 
+    var subscription = await subscriptionRepository.GetByTenantIdAsync(user.TenantId, cancellationToken);
+    if (subscription is null || !subscription.IsActive)
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
+    var activeSessions = await sessionStore.CountActiveAsync(user.TenantId, cancellationToken);
+    if (activeSessions >= subscription.MaxConcurrentUsers)
+    {
+        return Results.Problem(
+            detail: "Limite de usuarios simultaneos atingido para este tenant.",
+            statusCode: StatusCodes.Status403Forbidden,
+            title: "Concurrent user limit reached");
+    }
+
     var tokenPair = tokenService.Generate(user);
     refreshTokenStore.Save(tokenPair.RefreshToken, user.UserId, user.TenantId, tokenPair.RefreshTokenExpiresAtUtc);
+
+    await sessionStore.AddAsync(tokenPair.SessionId, user.UserId, user.TenantId, cancellationToken);
 
     return Results.Ok(new LoginResponse(
         tokenPair.AccessToken,
@@ -126,6 +155,67 @@ app.MapGet("/tenant/ping", (ITenantContext tenantContext) =>
     });
 })
 .WithName("TenantPing")
+.WithOpenApi();
+
+app.MapGet("/licenca/{tenantId}/limite", async (
+    string tenantId,
+    ITenantSubscriptionRepository repository,
+    CancellationToken cancellationToken) =>
+{
+    var subscription = await repository.GetByTenantIdAsync(tenantId, cancellationToken);
+    if (subscription is null)
+    {
+        return Results.NotFound(new { message = "Tenant nao encontrado." });
+    }
+
+    return Results.Ok(new
+    {
+        tenantId = subscription.TenantId,
+        companyName = subscription.CompanyName,
+        maxConcurrentUsers = subscription.MaxConcurrentUsers,
+        isActive = subscription.IsActive
+    });
+})
+.WithName("GetTenantConcurrentUserLimit")
+.WithOpenApi();
+
+app.MapMethods("/auth/heartbeat", ["PATCH"], async (
+    ITenantContext tenantContext,
+    ISessionStore sessionStore,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.SessionId))
+    {
+        return Results.Unauthorized();
+    }
+
+    await sessionStore.HeartbeatAsync(tenantContext.SessionId, tenantContext.TenantId!, cancellationToken);
+    return Results.Ok(new { message = "Session renewed.", sessionId = tenantContext.SessionId });
+})
+.WithName("SessionHeartbeat")
+.WithOpenApi();
+
+app.MapGet("/admin/sessions", async (
+    ITenantContext tenantContext,
+    ISessionStore sessionStore,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant)
+    {
+        return Results.Unauthorized();
+    }
+
+    var sessions = await sessionStore.GetActiveSessionsAsync(tenantContext.TenantId!, cancellationToken);
+    return Results.Ok(sessions.Select(s => new
+    {
+        sessionId = s.SessionId,
+        userId = s.UserId,
+        tenantId = s.TenantId,
+        loginAt = s.LoginAt,
+        lastHeartbeatAt = s.LastHeartbeatAt
+    }));
+})
+.WithName("GetActiveSessions")
 .WithOpenApi();
 
 app.Run();
