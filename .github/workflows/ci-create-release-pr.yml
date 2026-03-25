@@ -14,7 +14,8 @@ jobs:
       - name: Create develop -> main PR if none exists
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Use a repository PAT stored in secrets.REPO_BOT_TOKEN with minimal scopes (repo, workflow)
+          github-token: ${{ secrets.REPO_BOT_TOKEN }}
           script: |
             const owner = context.repo.owner
             const repo = context.repo.repo
