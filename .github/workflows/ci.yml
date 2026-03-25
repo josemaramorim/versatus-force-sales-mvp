@@ -100,7 +100,24 @@ jobs:
 
       - name: Start docker-compose services
         run: |
-          docker compose up -d
+          # Retry docker compose up a few times to be resilient against transient registry errors
+          MAX_ATTEMPTS=3
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            echo "Attempt $i/$MAX_ATTEMPTS: starting docker-compose services..."
+            if docker compose up -d; then
+              echo "docker compose up succeeded"
+              break
+            else
+              echo "docker compose up failed"
+              if [ "$i" -lt "$MAX_ATTEMPTS" ]; then
+                sleep $((i * 10))
+                echo "retrying..."
+              else
+                echo "docker compose up failed after $MAX_ATTEMPTS attempts"
+                exit 1
+              fi
+            fi
+          done
 
       - name: Wait for services to become healthy
         shell: bash
