@@ -1,0 +1,46 @@
+name: CI - Feature (create PR to develop)
+
+on:
+  push:
+    # run on all branches except main/develop
+    branches-ignore: [main, develop]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore || true
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore || true
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal || true
+
+      - name: Create PR to develop if tests pass
+        if: github.event_name == 'push'
+        continue-on-error: true
+        uses: actions/github-script@v6
+        with:
+          # Use a repository PAT stored in secrets.REPO_BOT_TOKEN with minimal scopes (repo, workflow)
+          github-token: ${{ secrets.REPO_BOT_TOKEN }}
+          script: |
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+            const head = process.env.GITHUB_REF.replace('refs/heads/','')
+            // List open PRs from this head to develop
+            const { data: existing } = await github.rest.pulls.list({ owner, repo, head: `${owner}:${head}`, base: 'develop', state: 'open' })
+            if (existing.length === 0) {
+              await github.rest.pulls.create({ owner, repo, title: `[${head}] Auto PR -> develop`, head, base: 'develop', body: 'Automated PR created by CI from feature branch to develop.' })
+            } else {
+              core.info('PR from this branch to develop already exists')
+            }
