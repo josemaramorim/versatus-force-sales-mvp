@@ -1,11 +1,8 @@
 using Microsoft.Extensions.Options;
-<<<<<<< HEAD
-=======
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System.Text.Json;
 using Prometheus;
 using Versatus.ForcaVendas.Api.Health;
->>>>>>> origin/main
+using Versatus.ForcaVendas.Application.Catalogo;
 using Versatus.ForcaVendas.Application.Licenca;
 using StackExchange.Redis;
 using Versatus.ForcaVendas.Application.Sessao;
@@ -29,11 +26,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(
 builder.Services.AddSingleton<ISessionStore, RedisSessionStore>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
-<<<<<<< HEAD
-=======
+builder.Services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
+builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogRepository>();
 builder.Services.AddHealthChecks()
     .AddCheck<RedisHealthCheck>("redis");
->>>>>>> origin/main
 
 var app = builder.Build();
 
@@ -47,8 +43,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseMiddleware<TenantContextMiddleware>();
 
-<<<<<<< HEAD
-=======
 // Prometheus metrics for HTTP + metrics endpoint
 app.UseHttpMetrics();
 
@@ -78,15 +72,15 @@ app.MapGet("/health/ready", async (HealthCheckService hc) =>
 
 // Expose Prometheus metrics at /metrics
 app.MapMetrics();
-
->>>>>>> origin/main
 app.MapPost("/auth/login", async (
     LoginRequest request,
     IOptions<AuthOptions> options,
     IJwtTokenService tokenService,
     IRefreshTokenStore refreshTokenStore,
-        ITenantSubscriptionRepository subscriptionRepository,
+    ITenantSubscriptionRepository subscriptionRepository,
     ISessionStore sessionStore,
+    ISessionAuditEventRepository auditRepo,
+    HttpContext httpContext,
     CancellationToken cancellationToken) =>
 {
     var errors = request.Validate();
@@ -140,6 +134,18 @@ app.MapPost("/auth/login", async (
     refreshTokenStore.Save(tokenPair.RefreshToken, user.UserId, user.TenantId, tokenPair.RefreshTokenExpiresAtUtc);
 
     await sessionStore.AddAsync(tokenPair.SessionId, user.UserId, user.TenantId, cancellationToken);
+
+    // Audit login event
+    var auditEvent = new Versatus.ForcaVendas.Domain.Auditoria.SessionAuditEvent(
+        Id: Guid.NewGuid().ToString(),
+        UserId: user.UserId,
+        TenantId: user.TenantId,
+        EventType: Versatus.ForcaVendas.Domain.Auditoria.SessionAuditEventType.Login,
+        Timestamp: DateTimeOffset.UtcNow,
+        IpAddress: httpContext.Connection.RemoteIpAddress?.ToString(),
+        UserAgent: httpContext.Request.Headers["User-Agent"].ToString()
+    );
+    await auditRepo.AddAsync(auditEvent, cancellationToken);
 
     return Results.Ok(new LoginResponse(
         tokenPair.AccessToken,
@@ -224,6 +230,38 @@ app.MapGet("/licenca/{tenantId}/limite", async (
 .WithName("GetTenantConcurrentUserLimit")
 .WithOpenApi();
 
+app.MapGet("/catalogo/produtos", async (
+    ITenantContext tenantContext,
+    IProductCatalogRepository repository,
+    string? q,
+    int? limit,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var effectiveLimit = limit.GetValueOrDefault(20);
+    if (effectiveLimit <= 0 || effectiveLimit > 100)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["limit"] = ["limit must be between 1 and 100."]
+        });
+    }
+
+    var products = await repository.SearchProductsAsync(
+        tenantContext.TenantId,
+        q,
+        effectiveLimit,
+        cancellationToken);
+
+    return Results.Ok(products);
+})
+.WithName("SearchProducts")
+.WithOpenApi();
+
 app.MapMethods("/auth/heartbeat", ["PATCH"], async (
     ITenantContext tenantContext,
     ISessionStore sessionStore,
@@ -301,6 +339,8 @@ app.MapPost("/auth/logout", async (
     ITenantContext tenantContext,
     IRefreshTokenStore refreshTokenStore,
     ISessionStore sessionStore,
+    ISessionAuditEventRepository auditRepo,
+    HttpContext httpContext,
     LogoutRequest? request,
     CancellationToken cancellationToken) =>
 {
@@ -315,6 +355,17 @@ app.MapPost("/auth/logout", async (
     }
 
     await sessionStore.RemoveAsync(tenantContext.SessionId, tenantContext.TenantId!, cancellationToken);
+    // Audit logout event
+    var auditEvent = new Versatus.ForcaVendas.Domain.Auditoria.SessionAuditEvent(
+        Id: Guid.NewGuid().ToString(),
+        UserId: tenantContext.UserId ?? string.Empty,
+        TenantId: tenantContext.TenantId!,
+        EventType: Versatus.ForcaVendas.Domain.Auditoria.SessionAuditEventType.Logout,
+        Timestamp: DateTimeOffset.UtcNow,
+        IpAddress: httpContext.Connection.RemoteIpAddress?.ToString(),
+        UserAgent: httpContext.Request.Headers["User-Agent"].ToString()
+    );
+    await auditRepo.AddAsync(auditEvent, cancellationToken);
     return Results.Ok(new { message = "Logged out", sessionId = tenantContext.SessionId });
 })
 .WithName("Logout")

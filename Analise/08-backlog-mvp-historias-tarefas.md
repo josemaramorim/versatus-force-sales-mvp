@@ -173,6 +173,73 @@ Tasks:
 
 ---
 
+## Sincronizacao atual com GitHub
+
+Data de referencia: 2026-03-25
+
+Resumo atual:
+
+- Issues abertas: 23
+- Issues fechadas: 8
+- Historias com evidencias de implementacao no codigo: MVP-01, MVP-02
+- Modulos ainda sem implementacao identificada no backend: Catalogo, Pedidos, Integracao
+- Frontend MVP ainda pendente de execucao
+
+Historias e tarefas sincronizadas:
+
+- `MVP-01 Auth` -> issue `#1` aberta
+	- `#8 Criar endpoint de login` -> fechada
+	- `#9 Implementar refresh token` -> fechada
+	- `#10 Adicionar middleware de tenant` -> fechada
+	- Observacao: historia candidata a fechamento apos conferencia final de aceite
+
+- `MVP-02 Licenca` -> issue `#2` aberta
+	- `#11 Persistir limite por tenant` -> fechada
+	- `#12 Controlar sessoes ativas no Redis` -> fechada
+	- `#13 Bloquear login acima do limite` -> fechada
+	- `#14 Criar endpoint admin de sessoes ativas` -> fechada
+	- Observacao: historia candidata a fechamento apos conferencia final de aceite
+
+- `MVP-03 Catalogo` -> issue `#3` aberta
+	- `#15 Endpoint de clientes` -> fechada
+	- `#16 Endpoint de produtos` -> implementada no codigo, candidata a fechamento
+	- `#17 Cache de leitura no Redis` -> implementada no codigo, candidata a fechamento
+
+- `MVP-04 Pedidos` -> issue `#4` aberta
+	- `#18 Modelagem pedido/item/parcela` -> aberta
+	- `#19 Endpoint criar pedido` -> aberta
+	- `#20 Regras de calculo e validacao` -> aberta
+	- `#21 Endpoint listar e detalhar pedido` -> aberta
+
+- `MVP-05 Integracao` -> issue `#5` aberta
+	- `#22 Publicar evento pedido.enviado` -> aberta
+	- `#23 Worker adaptador ERP` -> aberta
+	- `#24 Consumir evento de retorno` -> aberta
+
+- `MVP-06 Frontend` -> issue `#6` aberta
+	- `#25 Tela de login` -> aberta
+	- `#26 Dashboard de pedidos` -> aberta
+	- `#27 Tela novo pedido` -> aberta
+	- `#28 Tela historico com status ERP` -> aberta
+
+- `MVP-07 Qualidade` -> issue `#7` aberta
+	- `#29 Criar roteiro de teste MVP` -> aberta
+	- `#30 Ajustar mensagens de erro para usuario` -> aberta
+	- `#31 Criar script de apresentacao` -> aberta
+
+Gaps identificados:
+
+- Auditoria de login/logout foi iniciada no codigo, mas ainda nao aparece formalizada neste backlog MVP nem como issue dedicada no GitHub.
+- Recomendada a criacao de uma task tecnica separada para rastrear persistencia, consulta e testes da auditoria.
+
+Proximo bloco recomendado:
+
+1. Encerrar as historias `#1` e `#2` apos validacao final dos criterios de aceite.
+2. Fechar `#16` e `#17` para concluir a historia de catalogo.
+3. Em seguida abrir execucao concentrada de `MVP-04 Pedidos`, que e o maior bloqueador funcional do MVP.
+
+---
+
 ## Regras de divisao para manter controle
 
 1. Story maximo 3 dias uteis.

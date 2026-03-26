@@ -23,4 +23,52 @@ This document describes the recommended workflow for this repository.
 - Avoid auto-resolving conflicts without human review.
 - Keep `main` and `develop` protected (required checks, code owners, no forced pushes).
 
-If you want, I can also add branch protection suggestions and a sample `CODEOWNERS` file.
+## YAML snippets (reference)
+
+Feature branch -> develop:
+
+```yaml
+on:
+	push:
+		branches-ignore: [main, develop]
+jobs:
+	build-test:
+		runs-on: ubuntu-latest
+		steps:
+			- uses: actions/checkout@v4
+			- uses: actions/setup-dotnet@v4
+				with:
+					dotnet-version: 8.0.x
+			- run: dotnet restore
+			- run: dotnet build --configuration Release --no-restore
+			- run: dotnet test --no-build --verbosity normal
+			- name: Create PR to develop
+				if: github.event_name == 'push'
+				continue-on-error: true
+				uses: actions/github-script@v6
+				with:
+					github-token: ${{ secrets.REPO_BOT_TOKEN }}
+					script: |
+						// ...see repo workflow example...
+```
+
+develop -> main release:
+
+```yaml
+on:
+	push:
+		branches: [develop]
+jobs:
+	create-release-pr:
+		runs-on: ubuntu-latest
+		steps:
+			- uses: actions/checkout@v4
+			- name: Create develop -> main PR
+				if: github.event_name == 'push'
+				continue-on-error: true
+				uses: actions/github-script@v6
+				with:
+					github-token: ${{ secrets.REPO_BOT_TOKEN }}
+					script: |
+						// ...see repo workflow example...
+```
