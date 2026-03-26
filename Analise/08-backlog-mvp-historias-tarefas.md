@@ -203,7 +203,7 @@ Historias e tarefas sincronizadas:
 - `MVP-03 Catalogo` -> issue `#3` aberta
 	- `#15 Endpoint de clientes` -> fechada
 	- `#16 Endpoint de produtos` -> implementada no codigo, candidata a fechamento
-	- `#17 Cache de leitura no Redis` -> aberta
+	- `#17 Cache de leitura no Redis` -> implementada no codigo, candidata a fechamento
 
 - `MVP-04 Pedidos` -> issue `#4` aberta
 	- `#18 Modelagem pedido/item/parcela` -> aberta
@@ -235,7 +235,7 @@ Gaps identificados:
 Proximo bloco recomendado:
 
 1. Encerrar as historias `#1` e `#2` apos validacao final dos criterios de aceite.
-2. Fechar `#16` e atacar `#17` para concluir a historia de catalogo.
+2. Fechar `#16` e `#17` para concluir a historia de catalogo.
 3. Em seguida abrir execucao concentrada de `MVP-04 Pedidos`, que e o maior bloqueador funcional do MVP.
 
 ---

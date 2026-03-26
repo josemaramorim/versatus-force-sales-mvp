@@ -1,13 +1,16 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Versatus.ForcaVendas.Api.Auth;
 using Versatus.ForcaVendas.Api.Tests.Stubs;
+using Versatus.ForcaVendas.Application.Catalogo;
 using Versatus.ForcaVendas.Application.Licenca;
 using Versatus.ForcaVendas.Application.Sessao;
 using Xunit;
@@ -31,6 +34,10 @@ public class CatalogTests : IClassFixture<WebApplicationFactory<Program>>
                 var subscriptionDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(ITenantSubscriptionRepository));
                 if (subscriptionDescriptor is not null) services.Remove(subscriptionDescriptor);
                 services.AddSingleton<ITenantSubscriptionRepository, InMemoryTenantSubscriptionRepository>();
+
+                var productDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IProductCatalogRepository));
+                if (productDescriptor is not null) services.Remove(productDescriptor);
+                services.AddSingleton<IProductCatalogRepository, TestProductCatalogRepository>();
             });
         });
     }
@@ -65,4 +72,30 @@ public class CatalogTests : IClassFixture<WebApplicationFactory<Program>>
         string Unit,
         decimal Price,
         decimal AvailableStock);
+
+    private sealed class TestProductCatalogRepository : IProductCatalogRepository
+    {
+        private static readonly ProductSummary[] Products =
+        [
+            new("prod-001", "SKU-CAFE-001", "Cafe Torrado 500g", "UN", 18.90m, 120m),
+            new("prod-002", "SKU-ACUC-001", "Acucar Refinado 1kg", "UN", 6.50m, 85m)
+        ];
+
+        public Task<IReadOnlyList<ProductSummary>> SearchProductsAsync(
+            string tenantId,
+            string? query,
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            var normalized = query?.Trim() ?? string.Empty;
+            var result = Products
+                .Where(p => string.IsNullOrWhiteSpace(normalized)
+                    || p.Sku.Contains(normalized, StringComparison.OrdinalIgnoreCase)
+                    || p.Name.Contains(normalized, StringComparison.OrdinalIgnoreCase))
+                .Take(limit)
+                .ToList();
+
+            return Task.FromResult((IReadOnlyList<ProductSummary>)result);
+        }
+    }
 }
