@@ -36,11 +36,11 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
                 if (subscriptionDescriptor is not null) services.Remove(subscriptionDescriptor);
                 services.AddSingleton<ITenantSubscriptionRepository, InMemoryTenantSubscriptionRepository>();
 
-                var dbOptionsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<PedidosDbContext>));
-                if (dbOptionsDescriptor is not null) services.Remove(dbOptionsDescriptor);
+                var dbOptionsDescriptors = services.Where(d => d.ServiceType == typeof(DbContextOptions<PedidosDbContext>)).ToList();
+                foreach (var desc in dbOptionsDescriptors) services.Remove(desc);
 
-                var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(PedidosDbContext));
-                if (dbContextDescriptor is not null) services.Remove(dbContextDescriptor);
+                var dbContextDescriptors = services.Where(d => d.ServiceType == typeof(PedidosDbContext)).ToList();
+                foreach (var desc in dbContextDescriptors) services.Remove(desc);
 
                 services.AddDbContext<PedidosDbContext>(options =>
                     options.UseInMemoryDatabase($"pedidos-tests-{Guid.NewGuid()}"));

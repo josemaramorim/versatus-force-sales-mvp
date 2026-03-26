@@ -294,6 +294,8 @@ app.MapPost("/pedidos", async (
         request.Itens,
         request.CondicaoPagamento), cancellationToken);
 
+    Console.WriteLine($"DEBUG: Created Pedido id={result.PedidoId} tenant={tenantContext.TenantId}");
+
     return Results.Created($"/pedidos/{result.PedidoId}", new
     {
         pedidoId = result.PedidoId,
@@ -318,6 +320,9 @@ app.MapGet("/pedidos/{id}", async (
     {
         return Results.Unauthorized();
     }
+
+    var existCount = await db.Pedidos.CountAsync(p => p.Id == id, cancellationToken);
+    Console.WriteLine($"DEBUG: GetPedido id={id} tenant={tenantContext.TenantId} existCount={existCount}");
 
     var pedido = await db.Pedidos
         .Where(p => p.Id == id)
