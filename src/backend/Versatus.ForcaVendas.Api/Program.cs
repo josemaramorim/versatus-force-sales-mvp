@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System.Text.Json;
 using Prometheus;
 using Versatus.ForcaVendas.Api.Health;
 using Versatus.ForcaVendas.Application.Catalogo;
