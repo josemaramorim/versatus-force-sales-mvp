@@ -162,7 +162,7 @@ app.MapPost("/auth/login", async (
 })
 .WithName("Login")
 .WithOpenApi();
-
+ 
 app.MapPost("/auth/refresh", (
     RefreshTokenRequest request,
     IOptions<AuthOptions> options,
