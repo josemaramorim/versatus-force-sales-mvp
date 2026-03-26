@@ -3,7 +3,6 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
 using FluentValidation;
-using FluentValidation.DependencyInjectionExtensions;
 using Prometheus;
 using Versatus.ForcaVendas.Api.Health;
 using Versatus.ForcaVendas.Application.Catalogo;
