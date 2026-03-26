@@ -271,6 +271,7 @@ app.MapGet("/catalogo/produtos", async (
 .WithName("SearchProducts")
 .WithOpenApi();
 
+<<<<<<< HEAD
 app.MapPost("/pedidos", async (
     ITenantContext tenantContext,
     CriarPedidoRequest request,
@@ -308,6 +309,8 @@ app.MapPost("/pedidos", async (
 .WithName("CreatePedido")
 .WithOpenApi();
 
+=======
+>>>>>>> origin/main
 app.MapMethods("/auth/heartbeat", ["PATCH"], async (
     ITenantContext tenantContext,
     ISessionStore sessionStore,
