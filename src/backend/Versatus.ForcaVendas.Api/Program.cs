@@ -299,7 +299,10 @@ app.MapPost("/pedidos", async (
         pedidoId = result.PedidoId,
         status = result.Status,
         itensCount = result.ItensCount,
-        parcelasCount = result.ParcelasCount
+        parcelasCount = result.ParcelasCount,
+        totalBruto = result.TotalBruto,
+        totalDesconto = result.TotalDesconto,
+        totalLiquido = result.TotalLiquido
     });
 })
 .WithName("CreatePedido")
