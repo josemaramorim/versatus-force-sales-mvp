@@ -35,6 +35,7 @@ builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogR
 builder.Services.AddDbContext<PedidosDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddMediatR(typeof(CriarPedidoCommand));
+builder.Services.AddValidatorsFromAssemblyContaining<CriarPedidoRequestValidator>();
 builder.Services.AddHealthChecks()
     .AddCheck<RedisHealthCheck>("redis");
 
