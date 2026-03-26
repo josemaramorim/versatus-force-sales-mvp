@@ -307,6 +307,67 @@ app.MapPost("/pedidos", async (
 })
 .WithName("CreatePedido")
 .WithOpenApi();
+
+app.MapGet("/pedidos/{id}", async (
+    ITenantContext tenantContext,
+    Guid id,
+    PedidosDbContext db,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var pedido = await db.Pedidos
+        .Where(p => p.TenantId == tenantContext.TenantId && p.Id == id)
+        .Include(p => p.Itens)
+        .Include(p => p.Parcelas)
+        .Include(p => p.Status)
+        .FirstOrDefaultAsync(cancellationToken);
+
+    if (pedido is null)
+    {
+        return Results.NotFound();
+    }
+
+    var itens = pedido.Itens.Select(i => new PedidoItemDto(
+        i.ProdutoId,
+        i.Sku,
+        i.Nome,
+        i.Quantidade,
+        i.PrecoUnitario,
+        i.Desconto,
+        i.Total)).ToList();
+
+    var parcelas = pedido.Parcelas.OrderBy(p => p.Numero).Select(p => new PedidoParcelaDto(
+        p.Numero,
+        p.DataVencimento,
+        p.Valor,
+        p.FormaPagamento)).ToList();
+
+    var totalBruto = Math.Round(itens.Sum(i => i.Quantidade * i.PrecoUnitario), 2, MidpointRounding.AwayFromZero);
+    var totalDesconto = Math.Round(itens.Sum(i => i.Desconto), 2, MidpointRounding.AwayFromZero);
+    var totalLiquido = Math.Round(totalBruto - totalDesconto, 2, MidpointRounding.AwayFromZero);
+
+    var response = new PedidoResponse(
+        pedido.Id,
+        pedido.TenantId,
+        pedido.ClienteId,
+        pedido.CriadoEm,
+        pedido.Status?.Codigo ?? "",
+        itens.Count,
+        parcelas.Count,
+        totalBruto,
+        totalDesconto,
+        totalLiquido,
+        itens,
+        parcelas);
+
+    return Results.Ok(response);
+})
+.WithName("GetPedido")
+.WithOpenApi();
 app.MapMethods("/auth/heartbeat", ["PATCH"], async (
     ITenantContext tenantContext,
     ISessionStore sessionStore,
