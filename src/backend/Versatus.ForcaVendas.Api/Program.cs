@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
+using MediatR;
+using FluentValidation;
 using Prometheus;
 using Versatus.ForcaVendas.Api.Health;
 using Versatus.ForcaVendas.Application.Catalogo;
@@ -8,6 +11,8 @@ using StackExchange.Redis;
 using Versatus.ForcaVendas.Application.Sessao;
 using Versatus.ForcaVendas.Api.Auth;
 using Versatus.ForcaVendas.Api.Middleware;
+using Versatus.ForcaVendas.Api.Pedidos;
+using Versatus.ForcaVendas.Infrastructure.Data;
 using Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +33,10 @@ builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 builder.Services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
 builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogRepository>();
+builder.Services.AddDbContext<PedidosDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddMediatR(typeof(CriarPedidoCommand));
+builder.Services.AddValidatorsFromAssemblyContaining<CriarPedidoRequestValidator>();
 builder.Services.AddHealthChecks()
     .AddCheck<RedisHealthCheck>("redis");
 
@@ -155,7 +164,7 @@ app.MapPost("/auth/login", async (
 })
 .WithName("Login")
 .WithOpenApi();
-
+ 
 app.MapPost("/auth/refresh", (
     RefreshTokenRequest request,
     IOptions<AuthOptions> options,
@@ -262,6 +271,42 @@ app.MapGet("/catalogo/produtos", async (
 .WithName("SearchProducts")
 .WithOpenApi();
 
+app.MapPost("/pedidos", async (
+    ITenantContext tenantContext,
+    CriarPedidoRequest request,
+    IMediator mediator,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var errors = request.Validate();
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var result = await mediator.Send(new CriarPedidoCommand(
+        tenantContext.TenantId,
+        request.ClienteId,
+        request.Itens,
+        request.CondicaoPagamento), cancellationToken);
+
+    return Results.Created($"/pedidos/{result.PedidoId}", new
+    {
+        pedidoId = result.PedidoId,
+        status = result.Status,
+        itensCount = result.ItensCount,
+        parcelasCount = result.ParcelasCount,
+        totalBruto = result.TotalBruto,
+        totalDesconto = result.TotalDesconto,
+        totalLiquido = result.TotalLiquido
+    });
+})
+.WithName("CreatePedido")
+.WithOpenApi();
 app.MapMethods("/auth/heartbeat", ["PATCH"], async (
     ITenantContext tenantContext,
     ISessionStore sessionStore,
