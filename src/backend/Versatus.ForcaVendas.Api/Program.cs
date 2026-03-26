@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using Versatus.ForcaVendas.Api.Health;
 using Versatus.ForcaVendas.Application.Catalogo;
@@ -8,6 +9,7 @@ using StackExchange.Redis;
 using Versatus.ForcaVendas.Application.Sessao;
 using Versatus.ForcaVendas.Api.Auth;
 using Versatus.ForcaVendas.Api.Middleware;
+using Versatus.ForcaVendas.Infrastructure.Data;
 using Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +30,8 @@ builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 builder.Services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
 builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogRepository>();
+builder.Services.AddDbContext<PedidosDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHealthChecks()
     .AddCheck<RedisHealthCheck>("redis");
 
