@@ -1,0 +1,29 @@
+name: Sync main -> develop
+
+# Dispara quando qualquer commit chega em main (ex: PR de release foi aprovado e mergeado).
+# Faz o merge automático de main em develop para evitar conflitos nos próximos PRs de release.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+          token: ${{ secrets.REPO_BOT_TOKEN }}
+
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main em develop
+        run: |
+          git fetch origin main
+          git merge origin/main --no-edit -m "chore: sync main -> develop [skip ci]"
+          git push origin develop

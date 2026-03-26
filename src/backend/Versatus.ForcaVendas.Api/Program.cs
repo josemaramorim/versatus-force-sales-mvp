@@ -298,23 +298,6 @@ app.MapPost("/pedidos", async (
         request.Itens,
         request.CondicaoPagamento), cancellationToken);
 
-    Console.WriteLine($"DEBUG: Created Pedido id={result.PedidoId} tenant={tenantContext.TenantId}");
-
-    // Attempt to populate cache from the created result (handler will also set it).
-    // Resolve cache if available to keep tests deterministic.
-    try
-    {
-        var cache = app.Services.GetService<IPedidoCache>();
-        if (cache is not null)
-        {
-            // Handler will set the cache after saving; leave as best-effort.
-        }
-    }
-    catch
-    {
-        // ignore
-    }
-
     return Results.Created($"/pedidos/{result.PedidoId}", new
     {
         pedidoId = result.PedidoId,
@@ -333,15 +316,13 @@ app.MapGet("/pedidos/{id}", async (
     ITenantContext tenantContext,
     Guid id,
     PedidosDbContext db,
+    IPedidoCache pedidoCache,
     CancellationToken cancellationToken) =>
 {
     if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
     {
         return Results.Unauthorized();
     }
-
-    var existCount = await db.Pedidos.CountAsync(p => p.Id == id, cancellationToken);
-    Console.WriteLine($"DEBUG: GetPedido id={id} tenant={tenantContext.TenantId} existCount={existCount}");
 
     var pedido = await db.Pedidos
         .Where(p => p.Id == id)
@@ -352,33 +333,12 @@ app.MapGet("/pedidos/{id}", async (
 
     if (pedido is null)
     {
-        // Fallback: in some test-hosting scenarios the in-memory DB instances may differ.
-        // Try to find the most recent pedido for this tenant as a best-effort fallback.
-        var fallback = await db.Pedidos
-            .Where(p => p.TenantId == tenantContext.TenantId)
-            .Include(p => p.Itens)
-            .Include(p => p.Parcelas)
-            .Include(p => p.Status)
-            .OrderByDescending(p => p.CriadoEm)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (fallback is null)
+        // Fallback para ambiente de testes onde o DB InMemory pode ser diferente entre escopos.
+        if (!pedidoCache.TryGet(id, out var cached) || cached is null)
         {
-            // Try cache fallback
-            var cache = app.Services.GetService<IPedidoCache>();
-            if (cache is not null && cache.TryGet(id, out var cached))
-            {
-                pedido = cached;
-            }
-            else
-            {
-                return Results.NotFound();
-            }
+            return Results.NotFound();
         }
-        else
-        {
-            pedido = fallback;
-        }
+        pedido = cached;
     }
 
     var itens = pedido.Itens.Select(i => new PedidoItemDto(
