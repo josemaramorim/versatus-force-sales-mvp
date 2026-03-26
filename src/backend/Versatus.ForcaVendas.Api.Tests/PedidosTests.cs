@@ -81,7 +81,10 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
         body!.Status.Should().Be("rascunho");
         body.ItensCount.Should().Be(2);
         body.ParcelasCount.Should().Be(2);
+        body.TotalBruto.Should().Be(25m);
+        body.TotalDesconto.Should().Be(0m);
+        body.TotalLiquido.Should().Be(25m);
     }
 
-    private sealed record CreatePedidoResponse(string PedidoId, string Status, int ItensCount, int ParcelasCount);
+    private sealed record CreatePedidoResponse(string PedidoId, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido);
 }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
+using FluentValidation;
 using Prometheus;
 using Versatus.ForcaVendas.Api.Health;
 using Versatus.ForcaVendas.Application.Catalogo;
@@ -35,6 +36,7 @@ builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogR
 builder.Services.AddDbContext<PedidosDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddMediatR(typeof(CriarPedidoCommand));
+builder.Services.AddValidatorsFromAssemblyContaining<CriarPedidoRequestValidator>();
 builder.Services.AddHealthChecks()
     .AddCheck<RedisHealthCheck>("redis");
 
@@ -297,7 +299,10 @@ app.MapPost("/pedidos", async (
         pedidoId = result.PedidoId,
         status = result.Status,
         itensCount = result.ItensCount,
-        parcelasCount = result.ParcelasCount
+        parcelasCount = result.ParcelasCount,
+        totalBruto = result.TotalBruto,
+        totalDesconto = result.TotalDesconto,
+        totalLiquido = result.TotalLiquido
     });
 })
 .WithName("CreatePedido")

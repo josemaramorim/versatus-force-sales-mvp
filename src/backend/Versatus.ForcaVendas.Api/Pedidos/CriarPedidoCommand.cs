@@ -11,7 +11,7 @@ public sealed record CriarPedidoCommand(
     IReadOnlyList<CriarPedidoItemRequest> Itens,
     CriarPedidoCondicaoPagamentoRequest CondicaoPagamento) : IRequest<CriarPedidoResult>;
 
-public sealed record CriarPedidoResult(Guid PedidoId, string Status, int ItensCount, int ParcelasCount);
+public sealed record CriarPedidoResult(Guid PedidoId, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido);
 
 public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoCommand, CriarPedidoResult>
 {
@@ -44,10 +44,12 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
             };
         }).ToList();
 
-        var totalPedido = itens.Sum(i => i.Total);
+        var totalBruto = itens.Sum(i => Math.Round(i.Quantidade * i.PrecoUnitario, 2, MidpointRounding.AwayFromZero));
+        var totalDesconto = itens.Sum(i => Math.Round(i.Desconto, 2, MidpointRounding.AwayFromZero));
+        var totalLiquido = Math.Round(totalBruto - totalDesconto, 2, MidpointRounding.AwayFromZero);
         var parcelas = CriarParcelas(
             pedidoId,
-            totalPedido,
+            totalLiquido,
             request.CondicaoPagamento.QuantidadeParcelas,
             request.CondicaoPagamento.PrimeiroVencimento,
             request.CondicaoPagamento.FormaPagamento);
@@ -71,7 +73,7 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
             .Select(s => s.Codigo)
             .FirstOrDefaultAsync(cancellationToken);
 
-        return new CriarPedidoResult(pedido.Id, status ?? "rascunho", itens.Count, parcelas.Count);
+        return new CriarPedidoResult(pedido.Id, status ?? "rascunho", itens.Count, parcelas.Count, totalBruto, totalDesconto, totalLiquido);
     }
 
     private static List<PedidoParcela> CriarParcelas(
