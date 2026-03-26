@@ -130,6 +130,5 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
     private sealed record GetPedidoResponse(string PedidoId, string TenantId, string ClienteId, DateTimeOffset CriadoEm, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido, PedidoItemDto[] Itens, PedidoParcelaDto[] Parcelas);
     private sealed record PedidoItemDto(string ProdutoId, string Sku, string Nome, decimal Quantidade, decimal PrecoUnitario, decimal Desconto, decimal Total);
     private sealed record PedidoParcelaDto(int Numero, DateTime DataVencimento, decimal Valor, string FormaPagamento);
-
     private sealed record CreatePedidoResponse(string PedidoId, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido);
 }
