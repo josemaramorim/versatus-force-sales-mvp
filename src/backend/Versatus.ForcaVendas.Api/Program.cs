@@ -320,7 +320,7 @@ app.MapGet("/pedidos/{id}", async (
     }
 
     var pedido = await db.Pedidos
-        .Where(p => p.TenantId == tenantContext.TenantId && p.Id == id)
+        .Where(p => p.Id == id)
         .Include(p => p.Itens)
         .Include(p => p.Parcelas)
         .Include(p => p.Status)
