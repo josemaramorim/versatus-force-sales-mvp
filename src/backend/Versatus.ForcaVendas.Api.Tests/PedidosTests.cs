@@ -36,11 +36,11 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
                 if (subscriptionDescriptor is not null) services.Remove(subscriptionDescriptor);
                 services.AddSingleton<ITenantSubscriptionRepository, InMemoryTenantSubscriptionRepository>();
 
-                var dbOptionsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<PedidosDbContext>));
-                if (dbOptionsDescriptor is not null) services.Remove(dbOptionsDescriptor);
+                var dbOptionsDescriptors = services.Where(d => d.ServiceType == typeof(DbContextOptions<PedidosDbContext>)).ToList();
+                foreach (var desc in dbOptionsDescriptors) services.Remove(desc);
 
-                var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(PedidosDbContext));
-                if (dbContextDescriptor is not null) services.Remove(dbContextDescriptor);
+                var dbContextDescriptors = services.Where(d => d.ServiceType == typeof(PedidosDbContext)).ToList();
+                foreach (var desc in dbContextDescriptors) services.Remove(desc);
 
                 services.AddDbContext<PedidosDbContext>(options =>
                     options.UseInMemoryDatabase($"pedidos-tests-{Guid.NewGuid()}"));
@@ -86,5 +86,49 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
         body.TotalLiquido.Should().Be(25m);
     }
 
+    [Fact]
+    public async Task Get_pedidos_returns_created_pedido()
+    {
+        var client = _factory.CreateClient();
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/auth/login",
+            new LoginRequest("00000000-0000-0000-0000-000000000001", "admin", "123456"));
+        loginResponse.EnsureSuccessStatusCode();
+
+        var token = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
+
+        var request = new CriarPedidoRequest(
+            ClienteId: "cli-001",
+            Itens:
+            [
+                new CriarPedidoItemRequest("prod-001", "SKU-001", "Produto 1", 2, 10m, 0m),
+                new CriarPedidoItemRequest("prod-002", "SKU-002", "Produto 2", 1, 5m, 0m)
+            ],
+            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest(2, DateTime.UtcNow.Date.AddDays(7), "boleto"));
+
+        var post = await client.PostAsJsonAsync("/pedidos", request);
+        post.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await post.Content.ReadFromJsonAsync<CreatePedidoResponse>();
+        created.Should().NotBeNull();
+
+        var id = Guid.Parse(created!.PedidoId);
+
+        var get = await client.GetAsync($"/pedidos/{id}");
+        get.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await get.Content.ReadFromJsonAsync<GetPedidoResponse>();
+        body.Should().NotBeNull();
+        body!.PedidoId.Should().Be(created.PedidoId);
+        body.ItensCount.Should().Be(2);
+        body.ParcelasCount.Should().Be(2);
+        body.TotalBruto.Should().Be(25m);
+        body.TotalLiquido.Should().Be(25m);
+    }
+
+    private sealed record GetPedidoResponse(string PedidoId, string TenantId, string ClienteId, DateTimeOffset CriadoEm, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido, PedidoItemDto[] Itens, PedidoParcelaDto[] Parcelas);
+    private sealed record PedidoItemDto(string ProdutoId, string Sku, string Nome, decimal Quantidade, decimal PrecoUnitario, decimal Desconto, decimal Total);
+    private sealed record PedidoParcelaDto(int Numero, DateTime DataVencimento, decimal Valor, string FormaPagamento);
     private sealed record CreatePedidoResponse(string PedidoId, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido);
 }

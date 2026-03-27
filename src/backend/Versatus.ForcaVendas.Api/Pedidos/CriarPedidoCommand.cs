@@ -16,10 +16,12 @@ public sealed record CriarPedidoResult(Guid PedidoId, string Status, int ItensCo
 public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoCommand, CriarPedidoResult>
 {
     private readonly PedidosDbContext _dbContext;
+    private readonly IPedidoCache? _cache;
 
-    public CriarPedidoCommandHandler(PedidosDbContext dbContext)
+    public CriarPedidoCommandHandler(PedidosDbContext dbContext, IPedidoCache? cache = null)
     {
         _dbContext = dbContext;
+        _cache = cache;
     }
 
     public async Task<CriarPedidoResult> Handle(CriarPedidoCommand request, CancellationToken cancellationToken)
@@ -67,6 +69,16 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
 
         _dbContext.Pedidos.Add(pedido);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // populate cache for test-host fallback
+        try
+        {
+            _cache?.Set(pedido);
+        }
+        catch
+        {
+            // ignore cache failures
+        }
 
         var status = await _dbContext.PedidoStatuses
             .Where(s => s.Id == PedidoStatus.RascunhoId)

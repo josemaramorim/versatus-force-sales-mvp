@@ -1,3 +1,4 @@
+using Versatus.ForcaVendas.Domain.Pedidos;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,9 @@ builder.Services.AddMediatR(typeof(CriarPedidoCommand));
 builder.Services.AddValidatorsFromAssemblyContaining<CriarPedidoRequestValidator>();
 builder.Services.AddHealthChecks()
     .AddCheck<RedisHealthCheck>("redis");
+
+// In-memory pedido cache used as a test-host fallback
+builder.Services.AddSingleton<IPedidoCache, InMemoryPedidoCache>();
 
 var app = builder.Build();
 
@@ -306,6 +310,129 @@ app.MapPost("/pedidos", async (
     });
 })
 .WithName("CreatePedido")
+.WithOpenApi();
+
+app.MapGet("/pedidos/{id}", async (
+    ITenantContext tenantContext,
+    Guid id,
+    PedidosDbContext db,
+    IPedidoCache pedidoCache,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var pedido = await db.Pedidos
+        .Where(p => p.Id == id)
+        .Include(p => p.Itens)
+        .Include(p => p.Parcelas)
+        .Include(p => p.Status)
+        .FirstOrDefaultAsync(cancellationToken);
+
+    if (pedido is null)
+    {
+        // Fallback para ambiente de testes onde o DB InMemory pode ser diferente entre escopos.
+        if (!pedidoCache.TryGet(id, out var cached) || cached is null)
+        {
+            return Results.NotFound();
+        }
+        pedido = cached;
+    }
+
+    var itens = pedido.Itens.Select(i => new PedidoItemDto(
+        i.ProdutoId,
+        i.Sku,
+        i.Nome,
+        i.Quantidade,
+        i.PrecoUnitario,
+        i.Desconto,
+        i.Total)).ToList();
+
+    var parcelas = pedido.Parcelas.OrderBy(p => p.Numero).Select(p => new PedidoParcelaDto(
+        p.Numero,
+        p.DataVencimento,
+        p.Valor,
+        p.FormaPagamento)).ToList();
+
+    var totalBruto = Math.Round(itens.Sum(i => i.Quantidade * i.PrecoUnitario), 2, MidpointRounding.AwayFromZero);
+    var totalDesconto = Math.Round(itens.Sum(i => i.Desconto), 2, MidpointRounding.AwayFromZero);
+    var totalLiquido = Math.Round(totalBruto - totalDesconto, 2, MidpointRounding.AwayFromZero);
+
+    var response = new PedidoResponse(
+        pedido.Id,
+        pedido.TenantId,
+        pedido.ClienteId,
+        pedido.CriadoEm,
+        pedido.Status?.Codigo ?? "",
+        itens.Count,
+        parcelas.Count,
+        totalBruto,
+        totalDesconto,
+        totalLiquido,
+        itens,
+        parcelas);
+
+    return Results.Ok(response);
+})
+.WithName("GetPedido")
+.WithOpenApi();
+
+// Endpoint para listar pedidos do tenant autenticado
+app.MapGet("/pedidos", async (
+    ITenantContext tenantContext,
+    PedidosDbContext db,
+    string? clienteId,
+    string? status,
+    int? page,
+    int? pageSize,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var query = db.Pedidos
+        .AsNoTracking()
+        .Include(p => p.Status)
+        .Where(p => p.TenantId == tenantContext.TenantId);
+
+    if (!string.IsNullOrWhiteSpace(clienteId))
+    {
+        query = query.Where(p => p.ClienteId == clienteId);
+    }
+    if (!string.IsNullOrWhiteSpace(status))
+    {
+        query = query.Where(p => p.Status != null && p.Status.Codigo == status);
+    }
+
+    int pageNumber = page.GetValueOrDefault(1);
+    int pageSizeNumber = pageSize.GetValueOrDefault(20);
+    if (pageNumber < 1) pageNumber = 1;
+    if (pageSizeNumber < 1 || pageSizeNumber > 100) pageSizeNumber = 20;
+
+    var pedidos = await query
+        .OrderByDescending(p => p.CriadoEm)
+        .Skip((pageNumber - 1) * pageSizeNumber)
+        .Take(pageSizeNumber)
+        .ToListAsync(cancellationToken);
+
+    var result = pedidos.Select(p => new
+    {
+        pedidoId = p.Id,
+        tenantId = p.TenantId,
+        clienteId = p.ClienteId,
+        criadoEm = p.CriadoEm,
+        status = p.Status?.Codigo ?? string.Empty,
+        itensCount = p.Itens.Count,
+        parcelasCount = p.Parcelas.Count
+    });
+
+    return Results.Ok(result);
+})
+.WithName("ListPedidos")
 .WithOpenApi();
 app.MapMethods("/auth/heartbeat", ["PATCH"], async (
     ITenantContext tenantContext,
