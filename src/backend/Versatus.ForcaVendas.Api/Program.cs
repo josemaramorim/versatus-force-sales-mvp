@@ -378,6 +378,62 @@ app.MapGet("/pedidos/{id}", async (
 })
 .WithName("GetPedido")
 .WithOpenApi();
+
+// Endpoint para listar pedidos do tenant autenticado
+app.MapGet("/pedidos", async (
+    ITenantContext tenantContext,
+    PedidosDbContext db,
+    string? clienteId,
+    string? status,
+    int? page,
+    int? pageSize,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var query = db.Pedidos
+        .AsNoTracking()
+        .Include(p => p.Status)
+        .Where(p => p.TenantId == tenantContext.TenantId);
+
+    if (!string.IsNullOrWhiteSpace(clienteId))
+    {
+        query = query.Where(p => p.ClienteId == clienteId);
+    }
+    if (!string.IsNullOrWhiteSpace(status))
+    {
+        query = query.Where(p => p.Status != null && p.Status.Codigo == status);
+    }
+
+    int pageNumber = page.GetValueOrDefault(1);
+    int pageSizeNumber = pageSize.GetValueOrDefault(20);
+    if (pageNumber < 1) pageNumber = 1;
+    if (pageSizeNumber < 1 || pageSizeNumber > 100) pageSizeNumber = 20;
+
+    var pedidos = await query
+        .OrderByDescending(p => p.CriadoEm)
+        .Skip((pageNumber - 1) * pageSizeNumber)
+        .Take(pageSizeNumber)
+        .ToListAsync(cancellationToken);
+
+    var result = pedidos.Select(p => new
+    {
+        pedidoId = p.Id,
+        tenantId = p.TenantId,
+        clienteId = p.ClienteId,
+        criadoEm = p.CriadoEm,
+        status = p.Status?.Codigo ?? string.Empty,
+        itensCount = p.Itens.Count,
+        parcelasCount = p.Parcelas.Count
+    });
+
+    return Results.Ok(result);
+})
+.WithName("ListPedidos")
+.WithOpenApi();
 app.MapMethods("/auth/heartbeat", ["PATCH"], async (
     ITenantContext tenantContext,
     ISessionStore sessionStore,
