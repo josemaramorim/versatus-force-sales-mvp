@@ -86,37 +86,42 @@ export default function NovaVendaPage() {
                   <div className="flex flex-col md:flex-row md:items-end gap-10">
                       <div className="flex-1 space-y-6">
                           <label className="premium-label tracking-[0.4em]">Busca de Cliente Solicitante</label>
-                          <Button 
-                            fullWidth 
-                            size="lg"
-                            className="mt-8 py-8 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl shadow-2xl shadow-blue-500/40 transition-all uppercase tracking-[0.2em] text-xs italic tracking-tighter transform active:scale-95"
-                            onPress={async () => {
-                              const draft = {
-                                clienteId: selectedCliente?.id ?? null,
-                                itens: items,
-                                observacoes,
-                                condicaoPagamentoId: condicaoPagamento,
-                                descontoGlobal,
-                                acrescimoGlobal,
-                                subtotal,
-                                totalFinal,
-                              }
-                              try {
-                                const { createPedido } = await import('@/lib/pedidosMock')
-                                const created = await createPedido(draft)
-                                router.push('/pedidos')
-                                console.log('Pedido criado (mock):', created)
-                              } catch (err) {
-                                console.error('Erro ao criar pedido (mock)', err)
-                                alert('Erro ao criar pedido (mock)')
-                              }
-                            }}
-                          >
-                            Confirmar Pedido
-                          </Button>
+                          <ClientSearch 
+                            selectedId={selectedCliente?.id} 
+                            onSelect={setSelectedCliente} 
+                          />
+                      </div>
+                      <div className="w-full md:w-64 space-y-6 leading-none">  
+                           <label className="premium-label tracking-[0.4em]">CPF / CNPJ Ativo</label>
+                          <div className="h-16 px-8 flex items-center bg-slate-50 dark:bg-slate-950/40 rounded-3xl border border-slate-100 dark:border-slate-900 text-slate-400 font-bold text-lg font-mono tracking-[0.2em] italic leading-none">
+                            {selectedCliente?.documento || '---'}
+                          </div>
+                      </div>
+                  </div>
+              </div>
 
-              {/* Observations Card */}
-              <div className="premium-card-inner p-10 space-y-6 shadow-inner">
+               {/* Items List Card */}
+              <div className="premium-card overflow-hidden">
+                  <div className="p-6 lg:p-10 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6 leading-none bg-slate-50/50 dark:bg-slate-900/50">
+                      <h3 className="text-xl premium-title flex items-center space-x-3 leading-none italic">
+                          <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
+                          <span>Listagem de Itens</span>
+                      </h3>
+                      <Button 
+                        onPress={onOpen}
+                        className="w-full sm:w-auto px-8 py-5 bg-blue-600/10 border border-blue-500/20 text-blue-500 font-black rounded-2xl hover:bg-blue-600 hover:text-white transition-all transform active:scale-95 leading-none shadow-sm italic text-xs tracking-tight capitalize"
+                      >
+                        Nova Linha
+                      </Button>
+                  </div>
+
+                  <div className="p-4 lg:p-8 overflow-x-auto">
+                      <OrderTable items={items} onRemove={handleRemoveItem} /> 
+                  </div>
+              </div>
+
+                      {/* Observations Card */}
+                      <div className="premium-card-inner p-10 space-y-6 shadow-inner">
                   <h3 className="text-xl premium-title flex items-center space-x-3 leading-none italic">
                       <span className="w-1.5 h-6 bg-amber-600 rounded-full"></span>
                       <span>Observações Finais</span>
