@@ -56,9 +56,9 @@ public sealed record CriarPedidoRequest(
         }
         else
         {
-            if (CondicaoPagamento.QuantidadeParcelas <= 0)
+            if (string.IsNullOrWhiteSpace(CondicaoPagamento.CondicaoPagamentoId))
             {
-                errors["condicaoPagamento.quantidadeParcelas"] = ["quantidadeParcelas must be greater than zero."];
+                errors["condicaoPagamento.condicaoPagamentoId"] = ["condicaoPagamentoId is required."];
             }
 
             if (CondicaoPagamento.PrimeiroVencimento == default)
@@ -85,6 +85,6 @@ public sealed record CriarPedidoItemRequest(
     decimal Desconto);
 
 public sealed record CriarPedidoCondicaoPagamentoRequest(
-    int QuantidadeParcelas,
+    string CondicaoPagamentoId,
     DateTime PrimeiroVencimento,
     string FormaPagamento);

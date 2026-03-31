@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versatus.Net - Previews de Migração</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="max-w-4xl w-full space-y-12">
+        
+        <div class="text-center space-y-4">
+            <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 text-xs font-bold rounded-full border border-blue-200 uppercase tracking-widest mb-4">
+                Protótipos de Interface
+            </div>
+            <h1 class="text-5xl font-black text-slate-900 tracking-tight">Migração Legacy Desktop → Web</h1>
+            <p class="text-slate-500 text-xl font-medium max-w-2xl mx-auto">Selecione abaixo as visualizações geradas a partir dos arquivos .Designer.cs do sistema Small/Versatus.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
+            <!-- Card 1: Login -->
+            <a href="login.html" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-2 transition-all duration-300 group">
+                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900 mb-2">Tela de Login</h3>
+                <p class="text-slate-400 font-medium leading-relaxed">Preview modernizado da tela FLoginSmall. Designer focado em autenticação limpa por Tenant.</p>
+            </a>
+
+            <!-- Card 2: Venda V1 -->
+            <a href="venda.html" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-2 transition-all duration-300 group border-l-4 border-l-blue-600">
+                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900 mb-2 font-mono">Nova Venda V1</h3>
+                <p class="text-slate-400 font-medium leading-relaxed italic">Preview estático original baseado na FVendaSmall.</p>
+            </a>
+
+            <!-- Card 2.1: Venda V2 Interativo -->
+            <a href="venda_v2.html" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-2 transition-all duration-300 group border-l-4 border-l-emerald-500">
+                <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900 mb-2 font-mono">Nova Venda V2</h3>
+                <p class="text-slate-400 font-medium leading-relaxed">Versão Interativa com **Modais** para itens e **Barra de Pesquisa** de Clientes/Produtos.</p>
+            </a>
+
+            <!-- Card 2.1.P: Venda V2 Paginada -->
+            <a href="venda_v2_paginada.html" class="bg-slate-50 p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-2xl hover:shadow-emerald-900/10 hover:-translate-y-2 transition-all duration-300 group border-l-4 border-l-emerald-600">
+                <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900 mb-2 font-mono">Venda V2 Paginada</h3>
+                <p class="text-slate-400 font-medium leading-relaxed italic">Exemplo de listagem com **Paginação (10, 20, 50 linhas)** e controles de navegação.</p>
+            </a>
+
+            <!-- Card 2.2: Venda V3 Dark -->
+            <a href="venda_v3.html" class="bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-800 hover:shadow-2xl hover:shadow-blue-500/20 hover:-translate-y-2 transition-all duration-300 group border-l-4 border-l-blue-400">
+                <div class="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2 font-mono tracking-tighter">Venda V3 (Dark)</h3>
+                <p class="text-slate-500 font-medium leading-relaxed italic">Variante visual noturna (Dark Mode) para ambientes modernos.</p>
+            </a>
+
+            <!-- Card 2.2.P: Venda V3 Paginada -->
+            <a href="venda_v3_paginada.html" class="bg-[#020617] p-8 rounded-3xl shadow-sm border border-slate-900 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-2 transition-all duration-300 group border-l-4 border-l-blue-600">
+                <div class="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 transition-colors shadow-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-600 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2 font-mono tracking-tighter">V3 Paginada (Dark)</h3>
+                <p class="text-slate-600 font-medium leading-relaxed italic">Versão Dark Mode com **Paginação Profissional** integrada na grade de itens.</p>
+            </a>
+
+            <!-- Card 3: Orcamento -->
+            <a href="orcamento.html" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-2 transition-all duration-300 group">
+                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-amber-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900 mb-2">Histórico de Orçamentos</h3>
+                <p class="text-slate-400 font-medium leading-relaxed">Baseado na FOrcamentoSmall. Grid moderna para consulta e conversão rápida em vendas.</p>
+            </a>
+
+            <!-- Card 4: Clientes -->
+            <a href="cliente.html" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-2 transition-all duration-300 group">
+                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900 mb-2">Consulta de Clientes</h3>
+                <p class="text-slate-400 font-medium leading-relaxed">Modernização da FConsultaCliente. Layout em cartões otimizado para busca e pré-cadastro.</p>
+            </a>
+        </div>
+
+        <footer class="text-center text-slate-400 font-medium py-10 border-t border-slate-200">
+            <p>Versatus.Net • Advanced Agentic Coding Architecture</p>
+        </footer>
+
+    </div>
+</body>
+</html>

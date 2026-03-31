@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Versatus.ForcaVendas.Domain.Pedidos;
+using Versatus.ForcaVendas.Domain.Pedidos.Services;
 using Versatus.ForcaVendas.Infrastructure.Data;
 
 namespace Versatus.ForcaVendas.Api.Pedidos;
@@ -16,11 +17,15 @@ public sealed record CriarPedidoResult(Guid PedidoId, string Status, int ItensCo
 public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoCommand, CriarPedidoResult>
 {
     private readonly PedidosDbContext _dbContext;
+    private readonly IPaymentConditionService _paymentService;
+    private readonly IStockValidationService _stockService;
     private readonly IPedidoCache? _cache;
 
-    public CriarPedidoCommandHandler(PedidosDbContext dbContext, IPedidoCache? cache = null)
+    public CriarPedidoCommandHandler(PedidosDbContext dbContext, IPaymentConditionService paymentService, IStockValidationService stockService, IPedidoCache? cache = null)
     {
         _dbContext = dbContext;
+        _paymentService = paymentService;
+        _stockService = stockService;
         _cache = cache;
     }
 
@@ -46,15 +51,24 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
             };
         }).ToList();
 
+        // VALIDAÇÃO DE ESTOQUE VIA SERVICE (Extension point)
+        var hasStock = await _stockService.ValidateStockAsync(itens, request.TenantId, cancellationToken);
+        if (!hasStock)
+        {
+            throw new InvalidOperationException("One or more items do not have enough stock level.");
+        }
+
         var totalBruto = itens.Sum(i => Math.Round(i.Quantidade * i.PrecoUnitario, 2, MidpointRounding.AwayFromZero));
         var totalDesconto = itens.Sum(i => Math.Round(i.Desconto, 2, MidpointRounding.AwayFromZero));
         var totalLiquido = Math.Round(totalBruto - totalDesconto, 2, MidpointRounding.AwayFromZero);
-        var parcelas = CriarParcelas(
+        
+        // CALCULO DE PARCELAMENTO VIA SERVICE (Extension point)
+        var parcelas = await _paymentService.CalcularParcelamentoAsync(
             pedidoId,
             totalLiquido,
-            request.CondicaoPagamento.QuantidadeParcelas,
+            request.CondicaoPagamento.CondicaoPagamentoId, // Agora passamos o ID da regra!
             request.CondicaoPagamento.PrimeiroVencimento,
-            request.CondicaoPagamento.FormaPagamento);
+            cancellationToken);
 
         var pedido = new Pedido
         {
@@ -70,7 +84,6 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
         _dbContext.Pedidos.Add(pedido);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // populate cache for test-host fallback
         try
         {
             _cache?.Set(pedido);
@@ -86,35 +99,5 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
             .FirstOrDefaultAsync(cancellationToken);
 
         return new CriarPedidoResult(pedido.Id, status ?? "rascunho", itens.Count, parcelas.Count, totalBruto, totalDesconto, totalLiquido);
-    }
-
-    private static List<PedidoParcela> CriarParcelas(
-        Guid pedidoId,
-        decimal valorTotal,
-        int quantidadeParcelas,
-        DateTime primeiroVencimento,
-        string formaPagamento)
-    {
-        var parcelas = new List<PedidoParcela>(quantidadeParcelas);
-        var valorBase = Math.Round(valorTotal / quantidadeParcelas, 2, MidpointRounding.AwayFromZero);
-
-        for (var i = 1; i <= quantidadeParcelas; i++)
-        {
-            var valor = i == quantidadeParcelas
-                ? Math.Round(valorTotal - (valorBase * (quantidadeParcelas - 1)), 2, MidpointRounding.AwayFromZero)
-                : valorBase;
-
-            parcelas.Add(new PedidoParcela
-            {
-                Id = Guid.NewGuid(),
-                PedidoId = pedidoId,
-                Numero = i,
-                DataVencimento = primeiroVencimento.Date.AddMonths(i - 1),
-                Valor = valor,
-                FormaPagamento = formaPagamento
-            });
-        }
-
-        return parcelas;
     }
 }

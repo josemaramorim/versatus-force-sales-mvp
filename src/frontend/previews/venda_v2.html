@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versatus.Net - Nova Venda (Interativo V2.2)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .modal-overlay { display: none; }
+        .modal-overlay.active { display: flex; }
+        .search-results { display: none; }
+        .search-results.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-6 relative">
+
+    <!-- Modal Adicionar/Editar Item -->
+    <div id="itemModal" class="modal-overlay fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all">
+            <div class="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Gerenciar Item do Pedido</span>
+                </h2>
+                <button onclick="toggleModal('itemModal')" class="p-2 hover:bg-slate-200 rounded-full transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-6">
+                <!-- Busca de Produto -->
+                <div class="relative">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Pesquisar Produto</label>
+                    <div class="relative">
+                        <input type="text" id="productSearch" oninput="showSearch('productResults')" placeholder="Digite o nome ou SKU..." class="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-slate-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 absolute left-4 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Quantidade</label>
+                        <input type="number" value="1" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-lg text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Preço Unitário</label>
+                        <input type="text" value="R$ 0,00" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-lg text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                     <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Desconto Item (R$)</label>
+                        <input type="text" value="0,00" class="w-full px-4 py-3.5 bg-amber-50 border border-amber-200 rounded-2xl font-bold text-lg text-amber-700 outline-none focus:ring-2 focus:ring-amber-500 transition-all">
+                    </div>
+                     <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Subtotal Item</label>
+                        <div class="w-full px-4 py-3.5 bg-slate-100 rounded-2xl font-black text-xl text-slate-500 border border-slate-200">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <button class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-100 transition-all transform active:scale-95 leading-none">
+                    Confirmar e Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto space-y-8 pb-20 leading-none">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between py-4 border-b border-slate-200 leading-none">
+            <div class="flex items-center space-x-4 leading-none">
+                <div class="p-3 bg-blue-600 rounded-2xl shadow-blue-200 shadow-lg leading-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <div class="leading-none">
+                    <h1 class="text-3xl font-black text-slate-900 tracking-tight leading-none">Vendas & Pedidos</h1>
+                    <p class="text-slate-500 font-medium text-sm mt-1 leading-none tracking-tight capitalize">Registro imediato para ERP Versatus</p>
+                </div>
+            </div>
+            <button class="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-black transition-all">Sincronizar ERP</button>
+        </header>
+
+        <!-- Main Form Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 leading-none">
+            
+            <div class="lg:col-span-2 space-y-8 leading-none">
+                
+                <section class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-8 space-y-6 leading-none">
+                    <div class="flex items-center space-x-2 text-slate-800 font-bold text-xl mb-2 leading-none">
+                        <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center leading-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <span>Informações do Cliente</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 leading-none">
+                        <div class="space-y-2 relative leading-none">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 leading-none">Cliente Selecionado</label>
+                            <div class="relative leading-none">
+                                <input type="text" id="clientSearch" oninput="showSearch('clientResults')" placeholder="Pesquisar..." class="w-full pl-12 pr-4 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-slate-700 font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all leading-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 absolute left-4 top-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="space-y-2 leading-none">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 leading-none font-mono">CPF / CNPJ</label>
+                            <input type="text" readonly value="---" class="w-full px-4 py-3.5 bg-slate-50/50 rounded-2xl border border-slate-100 text-slate-400 font-semibold italic leading-none">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden pb-4 leading-none">
+                    <div class="p-8 pb-4 flex items-center justify-between leading-none">
+                         <div class="flex items-center space-x-2 text-slate-800 font-bold text-xl leading-none">
+                             <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center leading-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
+                            <span>Itens do Pedido</span>
+                        </div>
+                        <button onclick="toggleModal('itemModal')" class="px-6 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-bold rounded-2xl transition-all border border-blue-100 leading-none shadow-sm active:scale-95 italic tracking-tighter">Inserir Linha</button>
+                    </div>
+                    
+                    <div class="overflow-x-auto px-4 leading-none">
+                        <table class="w-full text-left leading-none">
+                            <thead class="bg-slate-50/50 leading-none">
+                                <tr>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-8 leading-none italic">Produto / SKU</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center leading-none">Qtd</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right leading-none">Desc.</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right leading-none pr-8">Total</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center pr-8">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-medium text-slate-700 leading-none italic">
+                                <tr class="hover:bg-slate-50 transition-all border-b border-slate-50 leading-none">
+                                    <td class="px-6 py-5 pl-8 leading-none">
+                                        <div class="font-bold text-slate-800 leading-none">Cerveja Puro Malte 600ml</div>
+                                        <div class="text-[9px] text-slate-400 font-black font-mono tracking-widest mt-1 uppercase leading-none">89076</div>
+                                    </td>
+                                    <td class="px-6 py-5 text-center font-mono leading-none">12 x</td>
+                                    <td class="px-6 py-5 text-right font-mono text-amber-600 leading-none italic">R$ 0,00</td>
+                                    <td class="px-6 py-5 text-right text-blue-600 font-black font-mono text-xl pr-8 tracking-tighter italic leading-none">R$ 102,00</td>
+                                    <!-- FIXED: Added Edit and Delete buttons to V2 -->
+                                    <td class="px-6 py-5 pr-8 leading-none">
+                                        <div class="flex items-center justify-center space-x-2 leading-none">
+                                             <button class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all" onclick="toggleModal('itemModal')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                            </button>
+                                            <button class="text-rose-200 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-xl transition-all">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-8 space-y-4 leading-none">
+                    <div class="flex items-center space-x-2 text-slate-800 font-bold text-xl leading-none">
+                        <div class="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center leading-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </div>
+                        <span>Observações do Pedido</span>
+                    </div>
+                    <textarea rows="4" class="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-2 focus:ring-amber-500 font-medium text-slate-600 italic leading-relaxed" placeholder="Observações de entrega..."></textarea>
+                </section>
+            </div>
+
+            <!-- Summary -->
+            <div class="space-y-8 leading-none">
+                
+                <section class="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 space-y-6 leading-none">
+                    <div class="flex items-center space-x-2 text-slate-800 font-bold text-xl leading-none">
+                        <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center leading-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                        </div>
+                        <span>Condição & Totais</span>
+                    </div>
+                    <div class="space-y-4 leading-none">
+                        <select class="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none border-dashed font-bold text-slate-700 text-sm italic">
+                            <option>A Vista (3% Desc)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 border-t border-slate-50 pt-6 leading-none">
+                        <div class="space-y-4 leading-none">
+                             <label class="block text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none pl-1">Desc. Global</label>
+                             <input type="text" value="0,00" class="w-full px-4 py-4 bg-emerald-50/20 border border-emerald-100 rounded-2xl font-mono text-emerald-600 font-black text-center leading-none italic shadow-inner">
+                        </div>
+                         <div class="space-y-4 leading-none">
+                             <label class="block text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none pl-1">Acresc. Global</label>
+                             <input type="text" value="0,00" class="w-full px-4 py-4 bg-rose-50/20 border border-rose-100 rounded-2xl font-mono text-rose-600 font-black text-center leading-none italic shadow-inner">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-[#0f172a] rounded-[2rem] shadow-2xl p-8 leading-none">
+                    <div class="space-y-6 leading-none">
+                        <div class="flex items-center justify-between text-slate-500 font-bold text-xs uppercase italic tracking-widest leading-none">
+                            <span>Bruto</span>
+                            <span class="font-mono text-white">R$ 102,00</span>
+                        </div>
+                        <div class="flex items-center justify-between text-amber-500 font-bold text-xs uppercase italic tracking-widest leading-none">
+                            <span>Descontos</span>
+                            <span class="font-mono tracking-tighter">- R$ 3,06</span>
+                        </div>
+                        
+                        <div class="pt-6 border-t border-slate-800 leading-none">
+                             <div class="flex flex-col space-y-4 leading-none">
+                                <span class="text-blue-500 font-black text-6xl font-mono tracking-tighter italic text-center leading-none">R$ 98,94</span>
+                                <span class="text-[8px] text-slate-600 font-black uppercase tracking-[0.3em] text-center italic">Pagamento Confirmado em Aberto</span>
+                            </div>
+                        </div>
+                        <button class="w-full py-6 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl shadow-xl shadow-blue-900 transition-all uppercase tracking-widest text-[10px] leading-none italic tracking-tighter transform active:scale-95 shadow-inner">
+                             Concluir Transação
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
+        function showSearch(id) { document.getElementById(id).classList.add('active'); }
+        window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); }
+    </script>
+</body>
+</html>
