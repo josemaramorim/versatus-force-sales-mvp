@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versatus.Net - Orçamentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between pb-8">
+            <div class="space-y-1">
+                <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">Histórico de Orçamentos</h1>
+                <p class="text-slate-500 font-medium">Gerencie e converta seus orçamentos em vendas reais</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="px-6 py-3 bg-white text-slate-700 font-bold rounded-2xl shadow-sm border border-slate-200 hover:bg-slate-50 transition-all flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Exportar PDF</span>
+                </button>
+                <a href="venda.html" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-blue-200 shadow-xl hover:bg-blue-700 transition-all flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Novo Orçamento</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Filters Section -->
+        <section class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-[300px] relative">
+                <input type="text" placeholder="Buscar por cliente, documento ou ID..." class="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-slate-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 absolute left-4 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <div class="flex items-center space-x-3">
+                <select class="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-medium text-slate-600">
+                    <option>Todos os Status</option>
+                    <option>Pendentes</option>
+                    <option>Convertidos</option>
+                    <option>Expirados</option>
+                </select>
+                <input type="date" class="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-medium text-slate-600">
+            </div>
+        </section>
+
+        <!-- Budgets Table -->
+        <section class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                        <th class="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">ID</th>
+                        <th class="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">Cliente</th>
+                        <th class="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">Data Emissão</th>
+                        <th class="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">Valor Total</th>
+                        <th class="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                        <th class="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    <!-- Row 1 -->
+                    <tr class="hover:bg-slate-50/50 transition-all font-medium group">
+                        <td class="px-8 py-6 text-slate-400 font-mono text-sm group-hover:text-blue-500 transition-colors">#10294</td>
+                        <td class="px-8 py-6">
+                            <div class="text-slate-900 font-bold">Padaria do Povo LTDA</div>
+                            <div class="text-xs text-slate-400">Cidade: Campinas, SP</div>
+                        </td>
+                        <td class="px-8 py-6 text-slate-600">28/03/2026</td>
+                        <td class="px-8 py-6 text-slate-900 font-bold font-mono tracking-tighter text-lg">R$ 1.250,50</td>
+                        <td class="px-8 py-6">
+                            <span class="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black rounded-full border border-amber-200 uppercase tracking-widest">Pendente</span>
+                        </td>
+                        <td class="px-8 py-6 text-right space-x-2 opacity-10 md:opacity-100 group-hover:opacity-100 transition-opacity">
+                            <button class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Gerar Venda">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </button>
+                            <button class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                             <button class="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+
+                     <!-- Row 2 -->
+                    <tr class="hover:bg-slate-50/50 transition-all font-medium group">
+                        <td class="px-8 py-6 text-slate-400 font-mono text-sm group-hover:text-blue-500 transition-colors">#10295</td>
+                        <td class="px-8 py-6">
+                            <div class="text-slate-900 font-bold">Mercado Santa Rita</div>
+                            <div class="text-xs text-slate-400">Cidade: Jundiaí, SP</div>
+                        </td>
+                        <td class="px-8 py-6 text-slate-600">29/03/2026</td>
+                        <td class="px-8 py-6 text-slate-900 font-bold font-mono tracking-tighter text-lg">R$ 450,20</td>
+                        <td class="px-8 py-6">
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full border border-emerald-200 uppercase tracking-widest">Convertido</span>
+                        </td>
+                        <td class="px-8 py-6 text-right space-x-2 opacity-10 md:opacity-100 group-hover:opacity-100 transition-opacity">
+                            <button class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                             <button class="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Pagination Content -->
+            <div class="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between text-slate-500 font-medium text-sm">
+                <span>Exibindo 2 de 156 orçamentos</span>
+                <div class="flex items-center space-x-4">
+                    <button class="hover:text-blue-600 transition-all font-bold">Anterior</button>
+                    <div class="flex items-center space-x-1">
+                        <span class="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-lg font-bold">1</span>
+                        <span class="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all cursor-pointer">2</span>
+                        <span class="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all cursor-pointer">3</span>
+                    </div>
+                    <button class="hover:text-blue-600 transition-all font-bold">Próximo</button>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

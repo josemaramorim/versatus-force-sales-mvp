@@ -38,7 +38,7 @@ public sealed class CriarPedidoCondicaoPagamentoRequestValidator : AbstractValid
 {
     public CriarPedidoCondicaoPagamentoRequestValidator()
     {
-        RuleFor(x => x.QuantidadeParcelas).GreaterThan(0).WithMessage("quantidadeParcelas must be greater than zero");
+        RuleFor(x => x.CondicaoPagamentoId).NotEmpty().WithMessage("condicaoPagamentoId is required");
         RuleFor(x => x.PrimeiroVencimento).NotEmpty().WithMessage("primeiroVencimento is required");
         RuleFor(x => x.FormaPagamento).NotEmpty().WithMessage("formaPagamento is required");
     }

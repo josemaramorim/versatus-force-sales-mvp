@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versatus.Net - Nova Venda (Dark Paginada V3.5)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .modal-overlay { display: none; }
+        .modal-overlay.active { display: flex; }
+        .search-results { display: none; }
+        .search-results.active { display: block; }
+        /* Scroll suave para mobile na tabela dark */
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-100 min-h-screen p-4 md:p-6">
+
+    <!-- Modal Adicionar Item (Dark) -->
+    <div id="itemModal" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-md z-50 items-center justify-center p-4">
+        <div class="bg-slate-900 rounded-[2.5rem] border border-slate-800 shadow-2xl w-full max-w-xl overflow-hidden p-1">
+            <div class="p-8 border-b border-slate-800 flex items-center justify-between font-black italic">
+                <h2 class="text-2xl font-bold tracking-tight uppercase leading-none italic">Gerenciar Item</h2>
+                <button onclick="toggleModal('itemModal')" class="p-2 hover:bg-slate-800 rounded-full transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-6 leading-none font-bold italic">
+                <div class="space-y-4 leading-none italic">
+                    <label class="text-xs font-black text-slate-700 uppercase tracking-widest pl-1 leading-none italic opacity-40">Produto</label>
+                    <input type="text" placeholder="Nome ou Código..." class="w-full px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 text-slate-200 font-bold italic shadow-inner">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 leading-none italic">
+                    <div class="space-y-4 leading-none italic">
+                        <label class="text-xs font-black text-slate-700 uppercase tracking-widest leading-none italic opacity-40">Qtd.</label>
+                        <input type="number" value="1" class="w-full px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl font-mono text-xl text-slate-200 shadow-inner">
+                    </div>
+                    <div class="space-y-4 leading-none italic">
+                        <label class="text-xs font-black text-slate-700 uppercase tracking-widest leading-none italic opacity-40">Vlr. Unit.</label>
+                        <input type="text" value="R$ 0,00" class="w-full px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl font-mono text-xl text-slate-200 shadow-inner">
+                    </div>
+                </div>
+
+                <button class="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl shadow-xl shadow-blue-900 transition-all uppercase tracking-widest text-[11px] transform active:scale-95 leading-none italic italic tracking-tighter">
+                    Salvar no Pedido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto space-y-10 pb-20 leading-none">
+        
+        <header class="flex flex-col sm:flex-row items-center justify-between pb-8 border-b border-slate-900 leading-none italic font-black gap-6">
+            <div class="flex items-center space-x-6 leading-none italic font-black">
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-600/80 to-indigo-900 rounded-[1.5rem] flex items-center justify-center shadow-blue-500/10 shadow-2xl leading-none italic font-black border border-blue-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-white font-black italic shadow-inner" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <div class="leading-none italic font-black">
+                    <h1 class="text-4xl font-black tracking-tighter uppercase italic shadow-inner">Versatus</h1>
+                    <span class="text-[8px] font-black text-slate-800 uppercase tracking-[0.6em] mt-2 block opacity-30 italic">High Performance SaaS</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-6 italic font-black opacity-20 uppercase tracking-[0.3em] text-[9px] font-mono leading-none">
+                <span>Versatus.Net Terminal v3.5-DARK</span>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-1 lg:grid-cols-4 gap-10 leading-none italic font-black">
+            
+            <div class="lg:col-span-3 space-y-10 leading-none italic font-black">
+                
+                <div class="bg-slate-900 border border-slate-800 p-8 md:p-12 rounded-[3.5rem] shadow-2xl leading-none italic font-black">
+                    <div class="flex flex-col md:flex-row md:items-end gap-10 leading-none italic font-black">
+                        <div class="flex-1 space-y-5 leading-none italic font-black">
+                            <label class="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none italic opacity-50">Localizar Cliente</label>
+                            <input type="text" placeholder="Nome ou CNPJ..." class="w-full px-6 py-6 bg-slate-950 border border-slate-800 rounded-3xl outline-none focus:ring-1 focus:ring-blue-600 text-xl font-bold text-slate-200 leading-none italic shadow-inner tracking-tight">
+                        </div>
+                        <div class="flex-1 space-y-5 leading-none italic font-black opacity-20">
+                             <label class="text-[10px] font-black text-slate-800 uppercase tracking-widest block leading-none italic opacity-50">Documento Ativo</label>
+                            <div class="py-6 px-8 bg-slate-950 border border-slate-900 rounded-3xl text-slate-700 font-bold text-xl font-mono tracking-widest italic leading-none shadow-inner italic">---</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-[3.5rem] overflow-hidden leading-none italic shadow-2xl">
+                    <div class="p-10 border-b border-slate-800 flex items-center justify-between leading-none italic font-black tracking-widest">
+                        <h3 class="text-xl font-bold flex items-center space-x-3 leading-none italic uppercase tracking-tighter italic">
+                            <span class="w-2 h-7 bg-blue-600 rounded-full italic font-black shadow-lg shadow-blue-500/20"></span>
+                            <span>Listagem de Itens</span>
+                        </h3>
+                        <button onclick="toggleModal('itemModal')" class="px-8 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all transform active:scale-95 leading-none italic uppercase tracking-widest text-[9px] shadow-2xl shadow-blue-900/40">+ Novo Item</button>
+                    </div>
+
+                    <div class="table-responsive overflow-x-auto leading-none italic font-black p-4">
+                        <table class="w-full text-left border-separate border-spacing-y-4 leading-none italic font-black min-w-[750px]">
+                            <thead class="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none italic opacity-20 italic">
+                                <tr>
+                                    <th class="px-8 pb-2 italic">Identificação de Produto</th>
+                                    <th class="px-6 pb-2 text-center uppercase italic">Quant.</th>
+                                    <th class="px-6 pb-2 text-right uppercase italic">Unit.</th>
+                                    <th class="px-6 pb-2 text-right uppercase italic pr-8 italic">Total LÍQ.</th>
+                                    <th class="px-8 pb-2 text-center uppercase italic">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- ITEM MOCK 1-15 WITH BOTH BUTTONS (DARK MODE) -->
+                                <tr class="bg-slate-950/40 border border-slate-800 rounded-3xl shadow-sm hover:bg-slate-950/70 transition-all leading-none italic">
+                                    <td class="px-8 py-7 pb-5 italic"><div class="font-bold text-slate-300 leading-none">Cerveja Puro Malte 600ml</div><div class="text-[9px] text-slate-700 font-black tracking-widest mt-1 opacity-20 font-mono italic">COD-89076</div></td>
+                                    <td class="px-6 py-7 text-center font-mono font-bold text-slate-500 opacity-60 leading-none italic">12 x</td>
+                                    <td class="px-6 py-7 text-right font-mono text-slate-700 text-xs leading-none opacity-30 italic">R$ 8,50</td>
+                                    <td class="px-6 py-7 text-right font-mono text-blue-500 font-black text-2xl italic tracking-tighter pr-8 leading-none opacity-90">R$ 102,00</td>
+                                    <td class="px-8 py-7 text-center leading-none italic">
+                                        <div class="flex items-center justify-center space-x-2 leading-none italic">
+                                            <button onclick="toggleModal('itemModal')" class="p-2.5 bg-slate-900 text-slate-700 hover:text-blue-500 rounded-xl transition-all shadow-inner border border-slate-800 active:scale-90">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                            </button>
+                                            <button class="p-2.5 bg-slate-900 text-slate-900 hover:text-rose-600 rounded-xl transition-all shadow-inner border border-slate-800 active:scale-90">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="bg-slate-950/20 rounded-3xl shadow-sm hover:bg-slate-950/40 transition-all leading-none italic opacity-50">
+                                    <td class="px-8 py-7 pb-5 italic"><div class="font-bold text-slate-500 leading-none">Refrigerante Cola 2L</div><div class="text-[9px] text-slate-900 font-black tracking-widest mt-1 opacity-10 italic">COD-10293</div></td>
+                                    <td class="px-6 py-7 text-center font-mono italic opacity-40 leading-none italic">06 x</td>
+                                    <td class="px-6 py-7 text-right font-mono text-slate-800 text-xs opacity-20 italic">R$ 12,00</td>
+                                    <td class="px-6 py-7 text-right font-mono text-blue-900 font-black text-2xl italic tracking-tighter pr-8 leading-none italic opacity-40">R$ 72,00</td>
+                                    <td class="px-8 py-7 text-center leading-none italic font-black opacity-10">---</td>
+                                </tr>
+                                <tr class="bg-slate-950/5 rounded-3xl italic opacity-10 grayscale leading-none italic">
+                                    <td colspan="5" class="px-8 py-10 text-center uppercase tracking-[0.6em] text-[10px] font-black italic opacity-20">Simulação de 15 itens / Página 2 Oculta</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- DARK PAGINATION SYNC -->
+                    <div class="px-12 py-8 border-t border-slate-800 bg-slate-950/40 flex flex-col sm:flex-row items-center justify-between gap-8 leading-none italic font-black shadow-inner">
+                        <div class="flex items-center space-x-6 leading-none italic font-black">
+                            <span class="text-[9px] font-black text-slate-900 uppercase tracking-widest leading-none italic opacity-30">Páginas por Lote:</span>
+                            <div class="relative leading-none">
+                                <select class="px-6 py-3 bg-slate-950 border border-slate-800 text-slate-500 rounded-xl text-[10px] font-black outline-none focus:ring-1 focus:ring-blue-600 shadow-inner appearance-none pr-10 uppercase tracking-[0.2em] italic">
+                                    <option>10 Itens</option>
+                                    <option>20 Itens</option>
+                                    <option>50 Itens</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-10 leading-none italic font-black">
+                            <span class="hidden md:inline text-[10px] font-black text-slate-800 uppercase tracking-[0.4em] italic opacity-20 uppercase">Total: 15 itens selecionados</span>
+                            <div class="flex items-center space-x-1 leading-none italic shadow-2xl rounded-[2rem] overflow-hidden border border-slate-800">
+                                <button class="w-14 h-14 flex items-center justify-center bg-slate-900 text-slate-800 hover:text-blue-500 transition-all border-r border-slate-800 italic active:bg-blue-900/20">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <div class="px-10 py-4 bg-blue-600/10 text-blue-500 border-r border-slate-800 text-[9px] font-black italic tracking-[0.6em] leading-none uppercase italic shadow-inner tracking-widest">LOTE 01</div>
+                                <button class="w-14 h-14 flex items-center justify-center bg-slate-900 text-slate-800 hover:text-blue-500 transition-all italic active:bg-blue-900/20">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-12 rounded-[4rem] space-y-6 leading-none shadow-2xl italic font-black">
+                    <h3 class="text-xl font-bold flex items-center space-x-3 leading-none italic uppercase tracking-tighter opacity-80 uppercase italic text-center">
+                        <span class="w-1.5 h-6 bg-amber-900 rounded-full italic shadow-sm"></span>
+                        <span>Observações de logística</span>
+                    </h3>
+                    <textarea rows="4" class="w-full p-8 bg-slate-950 border border-slate-800 rounded-[2.5rem] outline-none focus:ring-1 focus:ring-amber-900 text-slate-600 font-medium leading-relaxed italic text-sm shadow-inner uppercase tracking-widest opacity-60 italic" placeholder="Instruções para o entregador ou observações fiscais..."></textarea>
+                </div>
+            </div>
+
+            <!-- Dark Summary Sidebar -->
+            <div class="space-y-10 leading-none italic font-black text-center">
+                
+                <div class="bg-slate-900 border border-slate-800 p-10 rounded-[4.5rem] space-y-12 leading-none shadow-2xl italic font-black shadow-blue-500/5">
+                     <div class="space-y-6 leading-none italic font-black uppercase text-center">
+                        <label class="text-[9px] font-black text-slate-900 uppercase tracking-[0.5em] leading-none italic opacity-40 block">Forma de Pagto</label>
+                        <select class="w-full px-6 py-6 bg-slate-950 border border-slate-800 rounded-3xl outline-none focus:ring-1 focus:ring-blue-600 font-bold text-slate-400 appearance-none text-[10px] italic shadow-inner tracking-widest uppercase opacity-80 italic text-center italic font-black">
+                            <option>Dinheiro (3% Desc)</option>
+                            <option>Pix / QR Code</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 border-t border-slate-800 pt-10 leading-none italic font-black text-center">
+                        <div class="space-y-4 leading-none text-center italic font-black">
+                            <label class="text-[9px] font-black text-slate-800 uppercase tracking-widest leading-none block italic opacity-40">Desc. Global</label>
+                            <input type="text" value="0,00" class="w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl outline-none focus:ring-1 focus:ring-emerald-600 font-mono text-emerald-600 font-black text-center shadow-inner text-sm italic opacity-60">
+                        </div>
+                        <div class="space-y-4 leading-none text-center italic font-black">
+                            <label class="text-[9px] font-black text-slate-800 uppercase tracking-widest leading-none block italic opacity-40">Acresc. Global</label>
+                            <input type="text" value="0,00" class="w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl outline-none focus:ring-1 focus:ring-rose-600 font-mono text-rose-600 font-black text-center shadow-inner text-sm italic opacity-60">
+                        </div>
+                    </div>
+
+                    <div class="pt-10 border-t border-slate-800 space-y-10 leading-none italic font-black text-center">
+                        <div class="flex flex-col space-y-5 leading-none italic font-black text-center">
+                             <span class="text-[9px] font-black text-slate-900 uppercase tracking-[0.6em] leading-none italic opacity-20">Total Bruto Ativo</span>
+                             <span class="text-3xl text-slate-700 font-black font-mono tracking-tighter italic leading-none opacity-30 shadow-inner">R$ 685,50</span>
+                        </div>
+                        <div class="pt-10 border-t border-slate-800 leading-none italic font-black text-center">
+                             <div class="flex flex-col space-y-8 leading-none italic font-black text-center">
+                                <span class="text-7xl font-black font-mono tracking-tighter text-blue-600 italic text-center leading-none italic tracking-tight shadow-blue-900/5 shadow-2xl">R$ 664,94</span>
+                                <span class="px-8 py-3 bg-slate-950 border border-slate-800 rounded-full text-[7px] text-slate-800 font-black uppercase tracking-[0.7em] text-center italic shadow-inner leading-none italic font-black opacity-20">Versatus Terminal 3.5</span>
+                            </div>
+                        </div>
+
+                        <button class="w-full py-8 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-[3rem] shadow-2xl shadow-blue-900 transition-all uppercase tracking-[0.3em] text-[10px] italic tracking-tighter transform active:scale-95 shadow-inner italic font-black tracking-widest leading-none uppercase">
+                            Finalizar Transação
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
+    </script>
+</body>
+</html>

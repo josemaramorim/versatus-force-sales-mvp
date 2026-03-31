@@ -30,3 +30,12 @@ public sealed record PedidoResponse(
     decimal TotalLiquido,
     IReadOnlyList<PedidoItemDto> Itens,
     IReadOnlyList<PedidoParcelaDto> Parcelas);
+
+public sealed record PedidoSummaryDto(
+    Guid PedidoId,
+    string ClienteId,
+    DateTimeOffset CriadoEm,
+    string Status,
+    decimal TotalBruto,
+    decimal TotalDesconto,
+    decimal TotalLiquido);
