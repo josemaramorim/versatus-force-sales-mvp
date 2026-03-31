@@ -75,17 +75,49 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install
+      - name: Install (per package.json)
         if: steps.detect-node.outputs.has_node == 'true'
-        run: npm ci || npm install
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Find all package.json files (excluding node_modules) and run install in each package directory
+          find . -name package.json -not -path "*/node_modules/*" -print0 \
+            | xargs -0 -n1 dirname \
+            | sort -u \
+            | while read -r pkgdir; do
+              echo "--- Installing in $pkgdir ---"
+              if [ -f "$pkgdir/package-lock.json" ] || [ -f "$pkgdir/npm-shrinkwrap.json" ]; then
+                (cd "$pkgdir" && npm ci) || (cd "$pkgdir" && npm install)
+              else
+                (cd "$pkgdir" && npm install)
+              fi
+            done
 
-      - name: Build
+      - name: Build (per package)
         if: steps.detect-node.outputs.has_node == 'true'
-        run: npm run build --if-present
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -name package.json -not -path "*/node_modules/*" -print0 \
+            | xargs -0 -n1 dirname \
+            | sort -u \
+            | while read -r pkgdir; do
+              echo "--- Building in $pkgdir ---"
+              (cd "$pkgdir" && npm run build --if-present) || true
+            done
 
-      - name: Test
+      - name: Test (per package)
         if: steps.detect-node.outputs.has_node == 'true'
-        run: npm test --if-present
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -name package.json -not -path "*/node_modules/*" -print0 \
+            | xargs -0 -n1 dirname \
+            | sort -u \
+            | while read -r pkgdir; do
+              echo "--- Testing in $pkgdir ---"
+              (cd "$pkgdir" && npm test --if-present) || true
+            done
 
       - name: Skip Node build
         if: steps.detect-node.outputs.has_node != 'true'
