@@ -1,0 +1,189 @@
+/* login-v2.module.css */
+/* 
+   Este módulo define o CSS exato extraído do preview login.html (Tailwind v3 CDN)
+   para garantir fidelidade absoluta e independência do tema global do Next.js.
+*/
+
+.wrapper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: #f8fafc; /* bg-slate-50 */
+  transition: all 0.3s ease;
+}
+
+:global(.dark) .wrapper {
+  background-color: #020617; /* bg-slate-950 */
+}
+
+.card {
+  width: 100%;
+  max-width: 28rem; /* max-w-md */
+  background-color: #ffffff;
+  border-radius: 1rem; /* rounded-2xl */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-xl */
+  border: 1px solid #f1f5f9; /* border-slate-100 */
+  padding: 2rem; /* p-8 */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* hover:shadow-2xl */
+}
+
+:global(.dark) .card {
+  background-color: #0f172a; /* bg-slate-900 */
+  border-color: #1e293b; /* border-slate-800 */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2.5rem; /* mb-10 */
+}
+
+.logoBox {
+  width: 4rem; /* w-16 */
+  height: 4rem; /* h-16 */
+  background-color: #2563eb; /* bg-blue-600 */
+  border-radius: 0.75rem; /* rounded-xl */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); /* shadow-lg */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.title {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 700; /* font-bold */
+  color: #1e293b; /* text-slate-800 */
+}
+
+:global(.dark) .title {
+  color: #f8fafc;
+}
+
+.subtitle {
+  color: #64748b; /* text-slate-500 */
+  margin-top: 0.5rem; /* mt-2 */
+}
+
+:global(.dark) .subtitle {
+  color: #94a3b8;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem; /* space-y-6 context */
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #334155; /* text-slate-700 */
+  margin-bottom: 0.5rem; /* mb-2 */
+}
+
+:global(.dark) .label {
+  color: #cbd5e1;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem; /* px-4 py-3 */
+  border-radius: 0.75rem; /* rounded-xl */
+  border: 1px solid #e2e8f0; /* border-slate-200 */
+  outline: none;
+  background-color: #f8fafc; /* bg-slate-50 */
+  transition: all 0.2s ease;
+  color: #0f172a;
+}
+
+.input:focus {
+  border-color: #3b82f6; /* focus:border-blue-500 */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); /* focus:ring-2 */
+}
+
+:global(.dark) .input {
+  background-color: #020617;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+.optionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0; /* py-2 */
+  margin-bottom: 1.5rem;
+}
+
+.rememberMe {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* space-x-2 */
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #cbd5e1;
+  accent-color: #2563eb;
+}
+
+.rememberLabel {
+  font-size: 0.875rem;
+  color: #475569; /* text-slate-600 */
+}
+
+:global(.dark) .rememberLabel {
+  color: #94a3b8;
+}
+
+.forgotPassword {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.forgotPassword:hover {
+  color: #1d4ed8;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 0.875rem 0; /* py-3.5 */
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s ease;
+}
+
+.submitBtn:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4);
+}
+
+.submitBtn:active {
+  transform: scale(0.98);
+}
+
+.footer {
+  text-align: center;
+  color: #94a3b8; /* text-slate-400 */
+  font-size: 0.75rem; /* text-xs */
+  margin-top: 2.5rem; /* mt-10 */
+}

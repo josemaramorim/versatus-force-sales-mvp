@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@source "../../node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2.5rem;
+  --radius-5xl: 3rem;
+  --dark-mode: class;
+}
+
+@layer components {
+  .premium-card {
+    @apply bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] shadow-2xl transition-all duration-300;
+  }
+  
+  .premium-card-inner {
+    @apply bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-900 rounded-[2.5rem];
+  }
+
+  .premium-title {
+    @apply text-slate-900 dark:text-white font-black tracking-tighter leading-none italic;
+  }
+
+  .premium-label {
+    @apply text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-600 leading-none italic;
+  }
+
+  .premium-input {
+    @apply w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200 font-bold transition-all;
+  }
+
+  /* Table style from V3 mockup */
+  .premium-table {
+    @apply w-full text-left border-separate border-spacing-y-4;
+  }
+
+  .premium-table tr {
+    @apply bg-white dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-all;
+  }
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 248, 250, 252;
+  --background-end-rgb: 255, 255, 255;
+}
+
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 2, 6, 23;
+  --background-end-rgb: 15, 23, 42;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
