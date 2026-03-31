@@ -25,11 +25,32 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
-builder.Services.AddScoped<ITenantSubscriptionRepository, NpgsqlTenantSubscriptionRepository>();
-builder.Services.AddSingleton<IConnectionMultiplexer>(
-    _ => ConnectionMultiplexer.Connect(
-        builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
-builder.Services.AddSingleton<ISessionStore, RedisSessionStore>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<ITenantSubscriptionRepository, Versatus.ForcaVendas.Api.Stubs.InMemoryTenantSubscriptionRepository>();
+}
+else
+{
+    builder.Services.AddScoped<ITenantSubscriptionRepository, NpgsqlTenantSubscriptionRepository>();
+}
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+{
+    var redisConn = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+    // Allow multiplexer to continue retrying if Redis is not immediately available in dev
+    if (!redisConn.Contains("abortConnect", StringComparison.OrdinalIgnoreCase))
+    {
+        redisConn += ",abortConnect=false";
+    }
+    return ConnectionMultiplexer.Connect(redisConn);
+});
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<ISessionStore, Versatus.ForcaVendas.Api.Stubs.InMemorySessionStore>();
+}
+else
+{
+    builder.Services.AddSingleton<ISessionStore, RedisSessionStore>();
+}
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 builder.Services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
@@ -468,7 +489,7 @@ app.MapGet("/pedidos", async (
 
     return Results.Ok(result);
 })
-.WithName("ListPedidos")
+.WithName("ListPedidosQuery")
 .WithOpenApi();
 app.MapMethods("/auth/heartbeat", ["PATCH"], async (
     ITenantContext tenantContext,
