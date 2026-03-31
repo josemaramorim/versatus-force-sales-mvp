@@ -34,6 +34,10 @@ builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 builder.Services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
 builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogRepository>();
+builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IPaymentConditionService, Versatus.ForcaVendas.Infrastructure.Data.Services.MockPaymentConditionService>();
+builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IStockValidationService, Versatus.ForcaVendas.Infrastructure.Data.Services.MockStockValidationService>();
+// Configure EF Core to use Postgres via the configured connection string
+// in `appsettings.json` (ConnectionStrings:DefaultConnection).
 builder.Services.AddDbContext<PedidosDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddMediatR(typeof(CriarPedidoCommand));
@@ -310,6 +314,38 @@ app.MapPost("/pedidos", async (
     });
 })
 .WithName("CreatePedido")
+.WithOpenApi();
+
+app.MapGet("/pedidos", async (
+    ITenantContext tenantContext,
+    PedidosDbContext db,
+    CancellationToken cancellationToken) =>
+{
+    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var pedidos = await db.Pedidos
+        .Where(p => p.TenantId == tenantContext.TenantId)
+        .Include(p => p.Status)
+        .Include(p => p.Itens)
+        .OrderByDescending(p => p.CriadoEm)
+        .Take(50) // Limite simples para MVP
+        .Select(p => new PedidoSummaryDto(
+            p.Id,
+            p.ClienteId,
+            p.CriadoEm,
+            p.Status != null ? p.Status.Codigo : "rascunho",
+            Math.Round(p.Itens.Sum(i => i.Quantidade * i.PrecoUnitario), 2),
+            Math.Round(p.Itens.Sum(i => i.Desconto), 2),
+            Math.Round(p.Itens.Sum(i => (i.Quantidade * i.PrecoUnitario) - i.Desconto), 2)
+        ))
+        .ToListAsync(cancellationToken);
+
+    return Results.Ok(pedidos);
+})
+.WithName("ListPedidos")
 .WithOpenApi();
 
 app.MapGet("/pedidos/{id}", async (

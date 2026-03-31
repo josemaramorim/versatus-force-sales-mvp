@@ -68,7 +68,7 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
                 new CriarPedidoItemRequest("prod-001", "SKU-001", "Produto 1", 2, 10m, 0m),
                 new CriarPedidoItemRequest("prod-002", "SKU-002", "Produto 2", 1, 5m, 0m)
             ],
-            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest(2, DateTime.UtcNow.Date.AddDays(7), "boleto"));
+            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("2", DateTime.UtcNow.Date.AddDays(7), "boleto"));
 
         var response = await client.PostAsJsonAsync("/pedidos", request);
 
@@ -106,7 +106,7 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
                 new CriarPedidoItemRequest("prod-001", "SKU-001", "Produto 1", 2, 10m, 0m),
                 new CriarPedidoItemRequest("prod-002", "SKU-002", "Produto 2", 1, 5m, 0m)
             ],
-            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest(2, DateTime.UtcNow.Date.AddDays(7), "boleto"));
+            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("2", DateTime.UtcNow.Date.AddDays(7), "boleto"));
 
         var post = await client.PostAsJsonAsync("/pedidos", request);
         post.StatusCode.Should().Be(HttpStatusCode.Created);
