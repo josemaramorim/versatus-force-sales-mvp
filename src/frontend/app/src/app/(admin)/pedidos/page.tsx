@@ -50,16 +50,37 @@ const statusColorMap: Record<string, "primary" | "success" | "warning" | "danger
   rascunho: "default",
 }
 
-const orders = [
-  { id: "#00124", cliente: "Supermercado Bom Preço", total: "R$ 1.240,00", status: "enviado", data: "Hoje, 14:30" },
-  { id: "#00123", cliente: "Atacado Expresso Ltda", total: "R$ 3.870,50", status: "processado", data: "Hoje, 10:15" },
-  { id: "#00122", cliente: "Mercearia São João", total: "R$ 560,00", status: "rascunho", data: "Ontem, 16:45" },
-  { id: "#00121", cliente: "Distribuidora Norte Sul", total: "R$ 8.200,00", status: "processado", data: "Ontem, 09:20" },
-  { id: "#00120", cliente: "Padaria do Zé", total: "R$ 320,50", status: "erro", data: "28/03/2024" },
-]
+import React, { useEffect } from 'react'
+import { listPedidos } from '@/lib/pedidosMock'
+import { MOCK_CLIENTES } from '@/lib/mocks'
+
+const [initialOrders] = [true]
+
+function mapPedidoToRow(p: any) {
+  const cliente = MOCK_CLIENTES.find(c => c.id === p.clienteId)
+  return {
+    id: p.id,
+    cliente: cliente?.nome ?? (p.clienteId ?? '---'),
+    total: `R$ ${Number(p.totalFinal).toFixed(2)}`,
+    status: p.status ?? 'pendente',
+    data: new Date(p.criadoEm).toLocaleString(),
+  }
+}
 
 export default function PedidosPage() {
   const [filterValue, setFilterValue] = React.useState("")
+  const [orders, setOrders] = React.useState<any[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    listPedidos().then((list) => {
+      if (!mounted) return
+      setOrders(list.map(mapPedidoToRow))
+    }).catch(() => {
+      // noop
+    })
+    return () => { mounted = false }
+  }, [])
 
   const renderCell = React.useCallback((order: any, columnKey: React.Key) => {
     const cellValue = order[columnKey as keyof typeof order]

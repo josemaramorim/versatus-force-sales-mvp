@@ -34,3 +34,6 @@ TestResults/
 # Temporary
 *.tmp
 *.temp
+
+# Allow example env file to be committed
+!.env.example

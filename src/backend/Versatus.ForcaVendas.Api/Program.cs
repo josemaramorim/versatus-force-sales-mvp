@@ -36,6 +36,8 @@ builder.Services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAudit
 builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogRepository>();
 builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IPaymentConditionService, Versatus.ForcaVendas.Infrastructure.Data.Services.MockPaymentConditionService>();
 builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IStockValidationService, Versatus.ForcaVendas.Infrastructure.Data.Services.MockStockValidationService>();
+// Configure EF Core to use Postgres via the configured connection string
+// in `appsettings.json` (ConnectionStrings:DefaultConnection).
 builder.Services.AddDbContext<PedidosDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddMediatR(typeof(CriarPedidoCommand));
