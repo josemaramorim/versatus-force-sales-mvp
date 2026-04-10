@@ -13,6 +13,7 @@ public sealed class PedidosDbContext : DbContext
     public DbSet<PedidoItem> PedidoItens => Set<PedidoItem>();
     public DbSet<PedidoParcela> PedidoParcelas => Set<PedidoParcela>();
     public DbSet<PedidoStatus> PedidoStatuses => Set<PedidoStatus>();
+    public DbSet<TenantSubscriptionEntity> TenantSubscriptions => Set<TenantSubscriptionEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -74,6 +75,33 @@ public sealed class PedidosDbContext : DbContext
                 new PedidoStatus { Id = PedidoStatus.EnviadoId, Codigo = "enviado", Descricao = "Enviado" },
                 new PedidoStatus { Id = PedidoStatus.ProcessadoId, Codigo = "processado", Descricao = "Processado" },
                 new PedidoStatus { Id = PedidoStatus.ErroId, Codigo = "erro", Descricao = "Erro" }
+            );
+        });
+
+        modelBuilder.Entity<TenantSubscriptionEntity>(entity =>
+        {
+            entity.ToTable("assinaturas", "infra");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasColumnName("tenant_id");
+            entity.Property(x => x.CompanyName).HasColumnName("nome_empresa").HasMaxLength(200).IsRequired();
+            entity.Property(x => x.MaxConcurrentUsers).HasColumnName("max_usuarios_simultaneos").IsRequired();
+            entity.Property(x => x.IsActive).HasColumnName("ativo").IsRequired();
+
+            entity.HasData(
+                new TenantSubscriptionEntity
+                {
+                    TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                    CompanyName = "Demo Tenant 1",
+                    MaxConcurrentUsers = 4,
+                    IsActive = true
+                },
+                new TenantSubscriptionEntity
+                {
+                    TenantId = Guid.Parse("00000000-0000-0000-0000-000000000002"),
+                    CompanyName = "Demo Tenant 2",
+                    MaxConcurrentUsers = 4,
+                    IsActive = true
+                }
             );
         });
     }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Versatus.ForcaVendas.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Versatus.ForcaVendas.Infrastructure.Data;
 namespace Versatus.ForcaVendas.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(PedidosDbContext))]
-    partial class PedidosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260410144812_AddInfraAssinaturas")]
+    partial class AddInfraAssinaturas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -208,22 +211,6 @@ namespace Versatus.ForcaVendas.Infrastructure.Data.Migrations
                     b.HasKey("TenantId");
 
                     b.ToTable("assinaturas", "infra");
-
-                    b.HasData(
-                        new
-                        {
-                            TenantId = new Guid("00000000-0000-0000-0000-000000000001"),
-                            CompanyName = "Demo Tenant 1",
-                            IsActive = true,
-                            MaxConcurrentUsers = 4
-                        },
-                        new
-                        {
-                            TenantId = new Guid("00000000-0000-0000-0000-000000000002"),
-                            CompanyName = "Demo Tenant 2",
-                            IsActive = true,
-                            MaxConcurrentUsers = 4
-                        });
                 });
 
             modelBuilder.Entity("Versatus.ForcaVendas.Domain.Pedidos.Pedido", b =>
