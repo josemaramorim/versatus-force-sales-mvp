@@ -48,6 +48,16 @@ builder.Services.AddHealthChecks()
 // In-memory pedido cache used as a test-host fallback
 builder.Services.AddSingleton<IPedidoCache, InMemoryPedidoCache>();
 
+// CORS: permite o frontend Next.js consumir a API em dev
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendDev", policy =>
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -58,6 +68,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("FrontendDev");
 app.UseMiddleware<TenantContextMiddleware>();
 
 // Prometheus metrics for HTTP + metrics endpoint
@@ -114,20 +125,19 @@ app.MapPost("/auth/login", async (
             statusCode: StatusCodes.Status500InternalServerError);
     }
 
-    var tenantExists = authOptions.Tenants
-        .Any(t => string.Equals(t, request.TenantId, StringComparison.OrdinalIgnoreCase));
-
-    if (!tenantExists)
-    {
-        return Results.Unauthorized();
-    }
-
     var user = authOptions.Users.FirstOrDefault(u =>
-        string.Equals(u.TenantId, request.TenantId, StringComparison.OrdinalIgnoreCase) &&
         string.Equals(u.Username, request.Username, StringComparison.OrdinalIgnoreCase) &&
         string.Equals(u.Password, request.Password, StringComparison.Ordinal));
 
     if (user is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var tenantExists = authOptions.Tenants
+        .Any(t => string.Equals(t, user.TenantId, StringComparison.OrdinalIgnoreCase));
+
+    if (!tenantExists)
     {
         return Results.Unauthorized();
     }
