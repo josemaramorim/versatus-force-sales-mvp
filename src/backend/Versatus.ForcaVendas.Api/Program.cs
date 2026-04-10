@@ -468,7 +468,7 @@ app.MapGet("/pedidos", async (
 
     return Results.Ok(result);
 })
-.WithName("ListPedidosPaginado")
+.WithName("ListPedidosQuery")
 .WithOpenApi();
 app.MapMethods("/auth/heartbeat", ["PATCH"], async (
     ITenantContext tenantContext,
