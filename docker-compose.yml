@@ -1,35 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: fvs-postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-fvs}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fvs_dev_pass}
-      POSTGRES_DB: ${POSTGRES_DB:-forca_vendas}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fvs}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: fvs-redis
-    command: redis-server --save 60 1 --loglevel warning
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
 
   rabbitmq:
     # Use non-alpine management image to avoid occasional registry issues
@@ -50,6 +19,4 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:
-  redis_data:
   rabbitmq_data:
