@@ -24,7 +24,7 @@ public sealed class NpgsqlTenantSubscriptionRepository(IConfiguration configurat
 
         const string sql = @"
             SELECT tenant_id, nome_empresa, max_usuarios_simultaneos, ativo
-            FROM infra.assinaturas
+            FROM assinaturas
             WHERE tenant_id = @tenant_id
             LIMIT 1;";
 

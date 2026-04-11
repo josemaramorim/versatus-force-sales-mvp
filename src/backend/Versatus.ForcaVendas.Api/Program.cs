@@ -26,6 +26,7 @@ builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOpt
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
 builder.Services.AddScoped<ITenantSubscriptionRepository, NpgsqlTenantSubscriptionRepository>();
+builder.Services.AddScoped<Versatus.ForcaVendas.Domain.Auth.IUsuarioRepository, NpgsqlUsuarioRepository>();
 builder.Services.AddSingleton<IConnectionMultiplexer>(
     _ => ConnectionMultiplexer.Connect(
         builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
@@ -105,6 +106,7 @@ app.MapPost("/auth/login", async (
     IOptions<AuthOptions> options,
     IJwtTokenService tokenService,
     IRefreshTokenStore refreshTokenStore,
+    Versatus.ForcaVendas.Domain.Auth.IUsuarioRepository usuarioRepository,
     ITenantSubscriptionRepository subscriptionRepository,
     ISessionStore sessionStore,
     ISessionAuditEventRepository auditRepo,
@@ -118,21 +120,31 @@ app.MapPost("/auth/login", async (
     }
 
     var authOptions = options.Value;
-    if (authOptions.Tenants.Count == 0 || authOptions.Users.Count == 0)
+    if (authOptions.Tenants.Count == 0)
     {
         return Results.Problem(
             detail: "Configuracao de autenticacao invalida no servidor.",
             statusCode: StatusCodes.Status500InternalServerError);
     }
 
-    var user = authOptions.Users.FirstOrDefault(u =>
-        string.Equals(u.Username, request.Username, StringComparison.OrdinalIgnoreCase) &&
-        string.Equals(u.Password, request.Password, StringComparison.Ordinal));
-
-    if (user is null)
+    var usuarioBanco = await usuarioRepository.GetByUsernameAsync(request.Username, cancellationToken);
+    if (usuarioBanco is null)
     {
-        return Results.Unauthorized();
+         return Results.Unauthorized();
     }
+
+    if (!BCrypt.Net.BCrypt.Verify(request.Password, usuarioBanco.PasswordHash))
+    {
+         return Results.Unauthorized();
+    }
+
+    var user = new DemoUser
+    {
+        UserId = usuarioBanco.Id.ToString(),
+        TenantId = usuarioBanco.TenantId.ToString(),
+        Username = usuarioBanco.Username,
+        Password = "" 
+    };
 
     var tenantExists = authOptions.Tenants
         .Any(t => string.Equals(t, user.TenantId, StringComparison.OrdinalIgnoreCase));
@@ -183,11 +195,13 @@ app.MapPost("/auth/login", async (
 .WithName("Login")
 .WithOpenApi();
  
-app.MapPost("/auth/refresh", (
+app.MapPost("/auth/refresh", async (
     RefreshTokenRequest request,
     IOptions<AuthOptions> options,
     IJwtTokenService tokenService,
-    IRefreshTokenStore refreshTokenStore) =>
+    Versatus.ForcaVendas.Domain.Auth.IUsuarioRepository usuarioRepository,
+    IRefreshTokenStore refreshTokenStore,
+    CancellationToken cancellationToken) =>
 {
     var errors = request.Validate();
     if (errors.Count > 0)
@@ -200,14 +214,25 @@ app.MapPost("/auth/refresh", (
         return Results.Unauthorized();
     }
 
-    var user = options.Value.Users.FirstOrDefault(u =>
-        string.Equals(u.UserId, tokenInfo.UserId, StringComparison.Ordinal) &&
-        string.Equals(u.TenantId, tokenInfo.TenantId, StringComparison.OrdinalIgnoreCase));
-
-    if (user is null)
+    if (!Guid.TryParse(tokenInfo.UserId, out var userId))
     {
         return Results.Unauthorized();
     }
+
+    var usuarioBanco = await usuarioRepository.GetByIdAsync(userId, cancellationToken);
+
+    if (usuarioBanco is null || !string.Equals(usuarioBanco.TenantId.ToString(), tokenInfo.TenantId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Unauthorized();
+    }
+
+    var user = new DemoUser
+    {
+        UserId = usuarioBanco.Id.ToString(),
+        TenantId = usuarioBanco.TenantId.ToString(),
+        Username = usuarioBanco.Username,
+        Password = "" 
+    };
 
     var tokenPair = tokenService.Generate(user);
 
@@ -326,37 +351,6 @@ app.MapPost("/pedidos", async (
 .WithName("CreatePedido")
 .WithOpenApi();
 
-app.MapGet("/pedidos", async (
-    ITenantContext tenantContext,
-    PedidosDbContext db,
-    CancellationToken cancellationToken) =>
-{
-    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
-    {
-        return Results.Unauthorized();
-    }
-
-    var pedidos = await db.Pedidos
-        .Where(p => p.TenantId == tenantContext.TenantId)
-        .Include(p => p.Status)
-        .Include(p => p.Itens)
-        .OrderByDescending(p => p.CriadoEm)
-        .Take(50) // Limite simples para MVP
-        .Select(p => new PedidoSummaryDto(
-            p.Id,
-            p.ClienteId,
-            p.CriadoEm,
-            p.Status != null ? p.Status.Codigo : "rascunho",
-            Math.Round(p.Itens.Sum(i => i.Quantidade * i.PrecoUnitario), 2),
-            Math.Round(p.Itens.Sum(i => i.Desconto), 2),
-            Math.Round(p.Itens.Sum(i => (i.Quantidade * i.PrecoUnitario) - i.Desconto), 2)
-        ))
-        .ToListAsync(cancellationToken);
-
-    return Results.Ok(pedidos);
-})
-.WithName("ListPedidos")
-.WithOpenApi();
 
 app.MapGet("/pedidos/{id}", async (
     ITenantContext tenantContext,

@@ -207,7 +207,7 @@ namespace Versatus.ForcaVendas.Infrastructure.Data.Migrations
 
                     b.HasKey("TenantId");
 
-                    b.ToTable("assinaturas", "infra");
+                    b.ToTable("assinaturas", (string)null);
 
                     b.HasData(
                         new
@@ -223,6 +223,73 @@ namespace Versatus.ForcaVendas.Infrastructure.Data.Migrations
                             CompanyName = "Demo Tenant 2",
                             IsActive = true,
                             MaxConcurrentUsers = 4
+                        });
+                });
+
+            modelBuilder.Entity("Versatus.ForcaVendas.Infrastructure.Data.UsuarioEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
+                    b.Property<DateTimeOffset>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("password_hash");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("role");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("username");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Username")
+                        .IsUnique();
+
+                    b.ToTable("usuarios", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("7c90e66f-0af5-4ded-90e2-0df0a0b2d001"),
+                            Ativo = true,
+                            CriadoEm = new DateTimeOffset(new DateTime(2026, 4, 10, 19, 40, 52, 720, DateTimeKind.Unspecified).AddTicks(5624), new TimeSpan(0, 0, 0, 0, 0)),
+                            PasswordHash = "$2a$11$NnPJnS3XBqkz9EnLYkUmMOKMrjXHb7jPcG8eVxZ8TjiDGVGcRtr7.",
+                            Role = "admin",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            Username = "admin"
+                        },
+                        new
+                        {
+                            Id = new Guid("7c90e66f-0af5-4ded-90e2-0df0a0b2d002"),
+                            Ativo = true,
+                            CriadoEm = new DateTimeOffset(new DateTime(2026, 4, 10, 19, 40, 52, 720, DateTimeKind.Unspecified).AddTicks(5631), new TimeSpan(0, 0, 0, 0, 0)),
+                            PasswordHash = "$2a$11$NnPJnS3XBqkz9EnLYkUmMOKMrjXHb7jPcG8eVxZ8TjiDGVGcRtr7.",
+                            Role = "gestor",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            Username = "gestor"
                         });
                 });
 
