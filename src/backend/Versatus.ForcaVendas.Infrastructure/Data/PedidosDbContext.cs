@@ -14,9 +14,23 @@ public sealed class PedidosDbContext : DbContext
     public DbSet<PedidoParcela> PedidoParcelas => Set<PedidoParcela>();
     public DbSet<PedidoStatus> PedidoStatuses => Set<PedidoStatus>();
     public DbSet<TenantSubscriptionEntity> TenantSubscriptions => Set<TenantSubscriptionEntity>();
+    public DbSet<UsuarioEntity> Usuarios => Set<UsuarioEntity>();
+    public DbSet<SessionAuditEventEntity> AuditEvents => Set<SessionAuditEventEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<SessionAuditEventEntity>(entity =>
+        {
+            entity.ToTable("audit_events");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.UserId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.TenantId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.EventType).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Timestamp).IsRequired();
+            entity.Property(x => x.IpAddress).HasMaxLength(64);
+            entity.Property(x => x.UserAgent).HasMaxLength(512);
+        });
+
         modelBuilder.Entity<Pedido>(entity =>
         {
             entity.ToTable("pedidos");
@@ -80,7 +94,7 @@ public sealed class PedidosDbContext : DbContext
 
         modelBuilder.Entity<TenantSubscriptionEntity>(entity =>
         {
-            entity.ToTable("assinaturas", "infra");
+            entity.ToTable("assinaturas");
             entity.HasKey(x => x.TenantId);
             entity.Property(x => x.TenantId).HasColumnName("tenant_id");
             entity.Property(x => x.CompanyName).HasColumnName("nome_empresa").HasMaxLength(200).IsRequired();
@@ -101,6 +115,49 @@ public sealed class PedidosDbContext : DbContext
                     CompanyName = "Demo Tenant 2",
                     MaxConcurrentUsers = 4,
                     IsActive = true
+                }
+            );
+        });
+
+        modelBuilder.Entity<UsuarioEntity>(entity =>
+        {
+            entity.ToTable("usuarios");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasColumnName("id");
+            entity.Property(x => x.TenantId).HasColumnName("tenant_id").IsRequired();
+            entity.Property(x => x.Username).HasColumnName("username").HasMaxLength(64).IsRequired();
+            entity.Property(x => x.PasswordHash).HasColumnName("password_hash").HasMaxLength(256).IsRequired();
+            entity.Property(x => x.Role).HasColumnName("role").HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Ativo).HasColumnName("ativo").IsRequired();
+            entity.Property(x => x.CriadoEm).HasColumnName("criado_em").IsRequired();
+
+            entity.HasIndex(x => new { x.TenantId, x.Username }).IsUnique();
+
+            // Seed initial data
+            var adminId = Guid.Parse("7c90e66f-0af5-4ded-90e2-0df0a0b2d001");
+            var gestorId = Guid.Parse("7c90e66f-0af5-4ded-90e2-0df0a0b2d002");
+            var defaultPasswordHash = BCrypt.Net.BCrypt.HashPassword("123456");
+
+            entity.HasData(
+                new UsuarioEntity
+                {
+                    Id = adminId,
+                    TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                    Username = "admin",
+                    PasswordHash = defaultPasswordHash,
+                    Role = "admin",
+                    Ativo = true,
+                    CriadoEm = DateTimeOffset.UtcNow
+                },
+                new UsuarioEntity
+                {
+                    Id = gestorId,
+                    TenantId = Guid.Parse("00000000-0000-0000-0000-000000000002"),
+                    Username = "gestor",
+                    PasswordHash = defaultPasswordHash,
+                    Role = "gestor",
+                    Ativo = true,
+                    CriadoEm = DateTimeOffset.UtcNow
                 }
             );
         });

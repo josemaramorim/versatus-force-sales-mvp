@@ -21,18 +21,47 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Versatus Força de Vendas API", Version = "v1" });
+    
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
 builder.Services.AddScoped<ITenantSubscriptionRepository, NpgsqlTenantSubscriptionRepository>();
+builder.Services.AddScoped<Versatus.ForcaVendas.Domain.Auth.IUsuarioRepository, NpgsqlUsuarioRepository>();
 builder.Services.AddSingleton<IConnectionMultiplexer>(
     _ => ConnectionMultiplexer.Connect(
         builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
 builder.Services.AddSingleton<ISessionStore, RedisSessionStore>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
-builder.Services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
+builder.Services.AddScoped<ISessionAuditEventRepository, NpgsqlSessionAuditEventRepository>();
 builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogRepository>();
 builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IPaymentConditionService, Versatus.ForcaVendas.Infrastructure.Data.Services.MockPaymentConditionService>();
 builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IStockValidationService, Versatus.ForcaVendas.Infrastructure.Data.Services.MockStockValidationService>();
@@ -105,6 +134,7 @@ app.MapPost("/auth/login", async (
     IOptions<AuthOptions> options,
     IJwtTokenService tokenService,
     IRefreshTokenStore refreshTokenStore,
+    Versatus.ForcaVendas.Domain.Auth.IUsuarioRepository usuarioRepository,
     ITenantSubscriptionRepository subscriptionRepository,
     ISessionStore sessionStore,
     ISessionAuditEventRepository auditRepo,
@@ -118,18 +148,36 @@ app.MapPost("/auth/login", async (
     }
 
     var authOptions = options.Value;
-    if (authOptions.Tenants.Count == 0 || authOptions.Users.Count == 0)
+    if (authOptions.Tenants.Count == 0)
     {
         return Results.Problem(
             detail: "Configuracao de autenticacao invalida no servidor.",
             statusCode: StatusCodes.Status500InternalServerError);
     }
 
-    var user = authOptions.Users.FirstOrDefault(u =>
-        string.Equals(u.Username, request.Username, StringComparison.OrdinalIgnoreCase) &&
-        string.Equals(u.Password, request.Password, StringComparison.Ordinal));
+    var usuarioBanco = await usuarioRepository.GetByUsernameAsync(request.Username, cancellationToken);
+    if (usuarioBanco is null)
+    {
+         return Results.Unauthorized();
+    }
 
-    if (user is null)
+    if (!BCrypt.Net.BCrypt.Verify(request.Password, usuarioBanco.PasswordHash))
+    {
+         return Results.Unauthorized();
+    }
+
+    var user = new DemoUser
+    {
+        UserId = usuarioBanco.Id.ToString(),
+        TenantId = usuarioBanco.TenantId.ToString(),
+        Username = usuarioBanco.Username,
+        Password = "" 
+    };
+
+    var tenantExists = authOptions.Tenants
+        .Any(t => string.Equals(t, user.TenantId, StringComparison.OrdinalIgnoreCase));
+
+    if (!tenantExists)
     {
         return Results.Unauthorized();
     }
@@ -183,11 +231,13 @@ app.MapPost("/auth/login", async (
 .WithName("Login")
 .WithOpenApi();
  
-app.MapPost("/auth/refresh", (
+app.MapPost("/auth/refresh", async (
     RefreshTokenRequest request,
     IOptions<AuthOptions> options,
     IJwtTokenService tokenService,
-    IRefreshTokenStore refreshTokenStore) =>
+    Versatus.ForcaVendas.Domain.Auth.IUsuarioRepository usuarioRepository,
+    IRefreshTokenStore refreshTokenStore,
+    CancellationToken cancellationToken) =>
 {
     var errors = request.Validate();
     if (errors.Count > 0)
@@ -200,14 +250,25 @@ app.MapPost("/auth/refresh", (
         return Results.Unauthorized();
     }
 
-    var user = options.Value.Users.FirstOrDefault(u =>
-        string.Equals(u.UserId, tokenInfo.UserId, StringComparison.Ordinal) &&
-        string.Equals(u.TenantId, tokenInfo.TenantId, StringComparison.OrdinalIgnoreCase));
-
-    if (user is null)
+    if (!Guid.TryParse(tokenInfo.UserId, out var userId))
     {
         return Results.Unauthorized();
     }
+
+    var usuarioBanco = await usuarioRepository.GetByIdAsync(userId, cancellationToken);
+
+    if (usuarioBanco is null || !string.Equals(usuarioBanco.TenantId.ToString(), tokenInfo.TenantId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Unauthorized();
+    }
+
+    var user = new DemoUser
+    {
+        UserId = usuarioBanco.Id.ToString(),
+        TenantId = usuarioBanco.TenantId.ToString(),
+        Username = usuarioBanco.Username,
+        Password = "" 
+    };
 
     var tokenPair = tokenService.Generate(user);
 
@@ -326,37 +387,6 @@ app.MapPost("/pedidos", async (
 .WithName("CreatePedido")
 .WithOpenApi();
 
-app.MapGet("/pedidos", async (
-    ITenantContext tenantContext,
-    PedidosDbContext db,
-    CancellationToken cancellationToken) =>
-{
-    if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
-    {
-        return Results.Unauthorized();
-    }
-
-    var pedidos = await db.Pedidos
-        .Where(p => p.TenantId == tenantContext.TenantId)
-        .Include(p => p.Status)
-        .Include(p => p.Itens)
-        .OrderByDescending(p => p.CriadoEm)
-        .Take(50) // Limite simples para MVP
-        .Select(p => new PedidoSummaryDto(
-            p.Id,
-            p.ClienteId,
-            p.CriadoEm,
-            p.Status != null ? p.Status.Codigo : "rascunho",
-            Math.Round(p.Itens.Sum(i => i.Quantidade * i.PrecoUnitario), 2),
-            Math.Round(p.Itens.Sum(i => i.Desconto), 2),
-            Math.Round(p.Itens.Sum(i => (i.Quantidade * i.PrecoUnitario) - i.Desconto), 2)
-        ))
-        .ToListAsync(cancellationToken);
-
-    return Results.Ok(pedidos);
-})
-.WithName("ListPedidos")
-.WithOpenApi();
 
 app.MapGet("/pedidos/{id}", async (
     ITenantContext tenantContext,
@@ -589,4 +619,5 @@ app.MapPost("/auth/logout", async (
 .WithName("Logout")
 .WithOpenApi();
 
+app.MapControllers();
 app.Run();
