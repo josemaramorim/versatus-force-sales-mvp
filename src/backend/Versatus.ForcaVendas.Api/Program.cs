@@ -182,7 +182,6 @@ app.MapPost("/auth/login", async (
         return Results.Unauthorized();
     }
 
-
     var subscription = await subscriptionRepository.GetByTenantIdAsync(user.TenantId, cancellationToken);
     if (subscription is null || !subscription.IsActive)
     {
