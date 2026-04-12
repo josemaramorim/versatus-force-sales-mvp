@@ -8,6 +8,10 @@ public sealed class Pedido
     public DateTimeOffset CriadoEm { get; set; }
     public DateTimeOffset? AtualizadoEm { get; set; }
     public int StatusId { get; set; }
+    public decimal TotalBruto { get; set; }
+    public decimal TotalDesconto { get; set; }
+    public decimal TotalLiquido { get; set; }
+    public string? Observacao { get; set; }
 
     public PedidoStatus? Status { get; set; }
     public ICollection<PedidoItem> Itens { get; set; } = new List<PedidoItem>();

@@ -5,6 +5,13 @@ namespace Versatus.ForcaVendas.Infrastructure.Data;
 
 public sealed class PedidosDbContext : DbContext
 {
+    private static readonly Guid AdminUserId = Guid.Parse("7c90e66f-0af5-4ded-90e2-0df0a0b2d001");
+    private static readonly Guid GestorUserId = Guid.Parse("7c90e66f-0af5-4ded-90e2-0df0a0b2d002");
+    private static readonly Guid AdminTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    private static readonly Guid GestorTenantId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+    private static readonly DateTimeOffset SeedCreatedAt = new(new DateTime(2026, 4, 12, 16, 7, 19, 627, DateTimeKind.Unspecified), TimeSpan.Zero);
+    private const string SeedPasswordHash = "$2a$11$ciSTyOS/P1XmbUlSxGlhaeKggvqND4mOTYTakRxHtm52LS/kJclmO";
+
     public PedidosDbContext(DbContextOptions<PedidosDbContext> options) : base(options)
     {
     }
@@ -37,6 +44,10 @@ public sealed class PedidosDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.TenantId).HasMaxLength(64).IsRequired();
             entity.Property(x => x.ClienteId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.TotalBruto).HasPrecision(18, 2).IsRequired();
+            entity.Property(x => x.TotalDesconto).HasPrecision(18, 2).IsRequired();
+            entity.Property(x => x.TotalLiquido).HasPrecision(18, 2).IsRequired();
+            entity.Property(x => x.Observacao).HasMaxLength(1000);
             entity.Property(x => x.CriadoEm).IsRequired();
             entity.HasOne(x => x.Status)
                 .WithMany(x => x.Pedidos)
@@ -134,30 +145,26 @@ public sealed class PedidosDbContext : DbContext
             entity.HasIndex(x => new { x.TenantId, x.Username }).IsUnique();
 
             // Seed initial data
-            var adminId = Guid.Parse("7c90e66f-0af5-4ded-90e2-0df0a0b2d001");
-            var gestorId = Guid.Parse("7c90e66f-0af5-4ded-90e2-0df0a0b2d002");
-            var defaultPasswordHash = BCrypt.Net.BCrypt.HashPassword("123456");
-
             entity.HasData(
                 new UsuarioEntity
                 {
-                    Id = adminId,
-                    TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                    Id = AdminUserId,
+                    TenantId = AdminTenantId,
                     Username = "admin",
-                    PasswordHash = defaultPasswordHash,
+                    PasswordHash = SeedPasswordHash,
                     Role = "admin",
                     Ativo = true,
-                    CriadoEm = DateTimeOffset.UtcNow
+                    CriadoEm = SeedCreatedAt
                 },
                 new UsuarioEntity
                 {
-                    Id = gestorId,
-                    TenantId = Guid.Parse("00000000-0000-0000-0000-000000000002"),
+                    Id = GestorUserId,
+                    TenantId = GestorTenantId,
                     Username = "gestor",
-                    PasswordHash = defaultPasswordHash,
+                    PasswordHash = SeedPasswordHash,
                     Role = "gestor",
                     Ativo = true,
-                    CriadoEm = DateTimeOffset.UtcNow
+                    CriadoEm = SeedCreatedAt.AddTicks(10)
                 }
             );
         });

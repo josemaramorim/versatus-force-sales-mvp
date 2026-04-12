@@ -6,6 +6,7 @@ import { ClientSearch } from '@/components/vendas/ClientSearch'
 import { OrderTable } from '@/components/vendas/OrderTable'
 import { ItemModal } from '@/components/vendas/ItemModal'
 import { ItemPedido, Cliente } from '@/types/vendas'
+import { criarPedidoApi } from '@/lib/vendaApi'
 import { 
   Plus, 
   ShoppingCart, 
@@ -44,6 +45,8 @@ export default function NovaVendaPage() {
   const [condicaoPagamento, setCondicaoPagamento] = useState('avento')
   const [descontoGlobal, setDescontoGlobal] = useState(0)
   const [acrescimoGlobal, setAcrescimoGlobal] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const subtotal = useMemo(() => items.reduce((acc, item) => acc + item.total, 0), [items])
   const totalFinal = useMemo(() => subtotal - descontoGlobal + acrescimoGlobal, [subtotal, descontoGlobal, acrescimoGlobal])
@@ -54,6 +57,55 @@ export default function NovaVendaPage() {
 
   function handleRemoveItem(id: string) {
     setItems(prev => prev.filter(item => item.id !== id))
+  }
+
+  async function handleConfirmarPedido() {
+    if (!selectedCliente) {
+      setSubmitError('Selecione um cliente para continuar.')
+      return
+    }
+    if (items.length === 0) {
+      setSubmitError('Adicione ao menos um item ao pedido.')
+      return
+    }
+
+    setSubmitError(null)
+    setIsSubmitting(true)
+
+    const condicaoMap: Record<string, { condicaoPagamentoId: string; formaPagamento: string }> = {
+      avento: { condicaoPagamentoId: 'avista', formaPagamento: 'dinheiro' },
+      '30_60': { condicaoPagamentoId: '30_60', formaPagamento: 'boleto' },
+    }
+    const cond = condicaoMap[condicaoPagamento] ?? condicaoMap['avento']
+
+    // First vencimento = today + 30 days
+    const primeiroVencimento = new Date()
+    primeiroVencimento.setDate(primeiroVencimento.getDate() + 30)
+
+    try {
+      await criarPedidoApi({
+        clienteId: selectedCliente.id,
+        itens: items.map(i => ({
+          produtoId: i.produtoId,
+          sku: i.sku,
+          nome: i.nome,
+          quantidade: i.quantidade,
+          precoUnitario: i.valorUnitario,
+          desconto: i.valorDesconto,
+        })),
+        condicaoPagamento: {
+          condicaoPagamentoId: cond.condicaoPagamentoId,
+          primeiroVencimento: primeiroVencimento.toISOString(),
+          formaPagamento: cond.formaPagamento,
+        },
+        observacao: observacoes || undefined,
+      })
+      router.push('/pedidos')
+    } catch {
+      setSubmitError('Erro ao registrar pedido. Tente novamente.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -205,11 +257,15 @@ export default function NovaVendaPage() {
                       <Button 
                         fullWidth 
                         size="lg"
+                        isLoading={isSubmitting}
                         className="mt-8 py-8 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl shadow-2xl shadow-blue-500/40 transition-all uppercase tracking-[0.2em] text-xs italic tracking-tighter transform active:scale-95"
-                        onPress={() => alert('Pedido faturado com sucesso no Versatus ERP!')}
+                        onPress={handleConfirmarPedido}
                       >
                         Confirmar Pedido
                       </Button>
+                      {submitError && (
+                        <p className="text-xs text-red-400 font-bold text-center mt-2">{submitError}</p>
+                      )}
                   </div>
               </div>
 

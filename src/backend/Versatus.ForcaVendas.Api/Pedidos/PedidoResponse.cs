@@ -29,7 +29,8 @@ public sealed record PedidoResponse(
     decimal TotalDesconto,
     decimal TotalLiquido,
     IReadOnlyList<PedidoItemDto> Itens,
-    IReadOnlyList<PedidoParcelaDto> Parcelas);
+    IReadOnlyList<PedidoParcelaDto> Parcelas,
+    string? Observacao = null);
 
 public sealed record PedidoSummaryDto(
     Guid PedidoId,

@@ -55,7 +55,7 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
 
         var loginResponse = await client.PostAsJsonAsync(
             "/auth/login",
-            new LoginRequest("00000000-0000-0000-0000-000000000001", "admin", "123456"));
+            new LoginRequest("admin", "123456"));
         loginResponse.EnsureSuccessStatusCode();
 
         var token = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
@@ -65,10 +65,10 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
             ClienteId: "cli-001",
             Itens:
             [
-                new CriarPedidoItemRequest("prod-001", "SKU-001", "Produto 1", 2, 10m, 0m),
-                new CriarPedidoItemRequest("prod-002", "SKU-002", "Produto 2", 1, 5m, 0m)
+                new CriarPedidoItemRequest("prod-001", "SKU-001", "Produto 1", 10, 100m, 50m)
             ],
-            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("2", DateTime.UtcNow.Date.AddDays(7), "boleto"));
+            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("2", DateTime.UtcNow.Date.AddDays(7), "boleto"),
+            Observacao: "Pedido com observacao para teste");
 
         var response = await client.PostAsJsonAsync("/pedidos", request);
 
@@ -79,11 +79,11 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
         var body = await response.Content.ReadFromJsonAsync<CreatePedidoResponse>();
         body.Should().NotBeNull();
         body!.Status.Should().Be("rascunho");
-        body.ItensCount.Should().Be(2);
+        body.ItensCount.Should().Be(1);
         body.ParcelasCount.Should().Be(2);
-        body.TotalBruto.Should().Be(25m);
-        body.TotalDesconto.Should().Be(0m);
-        body.TotalLiquido.Should().Be(25m);
+        body.TotalBruto.Should().Be(1000m);
+        body.TotalDesconto.Should().Be(50m);
+        body.TotalLiquido.Should().Be(950m);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
 
         var loginResponse = await client.PostAsJsonAsync(
             "/auth/login",
-            new LoginRequest("00000000-0000-0000-0000-000000000001", "admin", "123456"));
+            new LoginRequest("admin", "123456"));
         loginResponse.EnsureSuccessStatusCode();
 
         var token = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
@@ -106,7 +106,8 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
                 new CriarPedidoItemRequest("prod-001", "SKU-001", "Produto 1", 2, 10m, 0m),
                 new CriarPedidoItemRequest("prod-002", "SKU-002", "Produto 2", 1, 5m, 0m)
             ],
-            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("2", DateTime.UtcNow.Date.AddDays(7), "boleto"));
+            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("2", DateTime.UtcNow.Date.AddDays(7), "boleto"),
+            Observacao: "Entregar no periodo da tarde");
 
         var post = await client.PostAsJsonAsync("/pedidos", request);
         post.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -124,10 +125,46 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
         body.ItensCount.Should().Be(2);
         body.ParcelasCount.Should().Be(2);
         body.TotalBruto.Should().Be(25m);
+        body.TotalDesconto.Should().Be(0m);
         body.TotalLiquido.Should().Be(25m);
+        body.Observacao.Should().Be("Entregar no periodo da tarde");
     }
 
-    private sealed record GetPedidoResponse(string PedidoId, string TenantId, string ClienteId, DateTimeOffset CriadoEm, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido, PedidoItemDto[] Itens, PedidoParcelaDto[] Parcelas);
+    [Fact]
+    public async Task Get_pedidos_list_returns_totals_for_authenticated_tenant()
+    {
+        var client = _factory.CreateClient();
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/auth/login",
+            new LoginRequest("admin", "123456"));
+        loginResponse.EnsureSuccessStatusCode();
+
+        var token = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
+
+        var request = new CriarPedidoRequest(
+            ClienteId: "cli-002",
+            Itens:
+            [
+                new CriarPedidoItemRequest("prod-010", "SKU-010", "Produto 10", 4, 25m, 10m)
+            ],
+            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("1", DateTime.UtcNow.Date.AddDays(7), "boleto"));
+
+        var post = await client.PostAsJsonAsync("/pedidos", request);
+        post.EnsureSuccessStatusCode();
+
+        var list = await client.GetFromJsonAsync<PedidoSummaryResponse[]>("/pedidos");
+        list.Should().NotBeNull();
+        list.Should().ContainSingle(p =>
+            p.ClienteId == "cli-002"
+            && p.TotalBruto == 100m
+            && p.TotalDesconto == 10m
+            && p.TotalLiquido == 90m);
+    }
+
+    private sealed record GetPedidoResponse(string PedidoId, string TenantId, string ClienteId, DateTimeOffset CriadoEm, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido, PedidoItemDto[] Itens, PedidoParcelaDto[] Parcelas, string? Observacao);
+    private sealed record PedidoSummaryResponse(string PedidoId, string TenantId, string ClienteId, DateTimeOffset CriadoEm, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido);
     private sealed record PedidoItemDto(string ProdutoId, string Sku, string Nome, decimal Quantidade, decimal PrecoUnitario, decimal Desconto, decimal Total);
     private sealed record PedidoParcelaDto(int Numero, DateTime DataVencimento, decimal Valor, string FormaPagamento);
     private sealed record CreatePedidoResponse(string PedidoId, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido);

@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { MOCK_PRODUTOS, MOCK_NATUREZAS } from '@/lib/mocks'
+import { searchProdutos } from '@/lib/vendaApi'
 import { ItemPedido, Produto } from '@/types/vendas'
 import { 
   Plus, 
@@ -51,6 +52,15 @@ interface ItemModalProps {
 
 export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null)
+  const [produtos, setProdutos] = useState<Produto[]>(MOCK_PRODUTOS)
+
+  useEffect(() => {
+    searchProdutos()
+      .then(setProdutos)
+      .catch(() => {
+        // keep mock fallback on network error
+      })
+  }, [])
 
   const {
     handleSubmit,
@@ -90,7 +100,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
   }, [isOpen, reset])
 
   function handleProductChange(id: React.Key | null) {
-    const produto = MOCK_PRODUTOS.find((p) => p.id === id)
+    const produto = produtos.find((p) => p.id === id)
     if (produto) {
       setSelectedProduto(produto)
       setValue('produtoId', produto.id)
@@ -161,7 +171,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                       radius="lg"
                       labelPlacement="outside"
                       className="max-w-full"
-                      defaultItems={MOCK_PRODUTOS}
+                      defaultItems={produtos}
                       onSelectionChange={handleProductChange}
                       startContent={<Search className="text-slate-600 h-6 w-6 ml-2" />}
                       inputProps={{

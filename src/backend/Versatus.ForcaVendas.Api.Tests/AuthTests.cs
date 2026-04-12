@@ -38,7 +38,7 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var client = _factory.CreateClient();
 
-        var loginReq = new LoginRequest("00000000-0000-0000-0000-000000000001", "admin", "123456");
+        var loginReq = new LoginRequest("admin", "123456");
         var loginResp = await client.PostAsJsonAsync("/auth/login", loginReq);
         loginResp.EnsureSuccessStatusCode();
 

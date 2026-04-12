@@ -16,4 +16,11 @@ public sealed class InMemoryPedidoCache : IPedidoCache
     {
         return _map.TryGetValue(id, out pedido);
     }
+
+    public IReadOnlyCollection<Pedido> GetByTenant(string tenantId)
+    {
+        return _map.Values
+            .Where(p => string.Equals(p.TenantId, tenantId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+    }
 }
