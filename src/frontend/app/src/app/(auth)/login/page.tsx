@@ -1,28 +1,37 @@
-'use client'
+﻿'use client'
 
-import styles from './login.module.css'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { login, loginDemo } from '@/lib/auth'
-import { Loader2, AlertCircle, Moon, Sun, MonitorPlay } from 'lucide-react'
+import { Loader2, AlertCircle, Moon, Sun, Eye, EyeOff, Zap, MonitorPlay } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
 const schema = z.object({
-  tenantId: z.string().min(1, 'Informe o ID do Tenant'),
   username: z.string().min(1, 'Informe o usuário'),
   password: z.string().min(1, 'Informe a senha'),
 })
 
 type FormValues = z.infer<typeof schema>
 
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+  }),
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const { setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => setMounted(true), [])
 
@@ -43,10 +52,10 @@ export default function LoginPage() {
     try {
       await login(values)
       router.push('/dashboard')
-    } catch (err: any) {
-      const status = err.response?.status
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status
       if (status === 401) {
-        setServerError('Credenciais inválidas. Verifique tenant, usuário e senha.')
+        setServerError('Credenciais inválidas. Verifique seu usuário e senha.')
       } else {
         setServerError('Erro ao conectar com o servidor. Tente novamente.')
       }
@@ -54,104 +63,152 @@ export default function LoginPage() {
   }
 
   return (
-    <div className={styles.wrapper}>
-      {/* Theme Toggle - Moderna e Discreta */}
-      <div className="absolute top-8 right-8">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-slate-950">
+      {/* Gradientes de fundo animados */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-violet-600/20 blur-[120px] animate-pulse" />
+        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-[80px]" />
+      </div>
+
+      {/* Grid decorativo */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      {/* Theme Toggle */}
+      <div className="absolute top-6 right-6 z-20">
         <button
+          id="theme-toggle-btn"
           onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-          className="p-3 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800 transition-all hover:scale-110 active:scale-95"
+          className="p-2.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all duration-200 hover:scale-105 active:scale-95"
           title="Alternar Tema"
         >
-          {mounted && (resolvedTheme === 'dark' ? <Sun className="h-5 w-5 text-amber-500" /> : <Moon className="h-5 w-5 text-blue-600" />)}
+          {mounted && (resolvedTheme === 'dark'
+            ? <Sun className="h-4 w-4 text-amber-400" />
+            : <Moon className="h-4 w-4 text-blue-300" />)}
         </button>
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <div className={styles.logoBox}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 className={styles.title}>Versatus.Net</h1>
-          <p className={styles.subtitle}>Bem-vindo de volta, Sales Force</p>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          {serverError && (
-            <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-600 mb-6 animate-in fade-in slide-in-from-top-1">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{serverError}</span>
+      {/* Card principal */}
+      <motion.div
+        initial={{ opacity: 0, y: 32, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 w-full max-w-md mx-4"
+      >
+        <div className="bg-white/[0.07] backdrop-blur-xl border border-white/[0.12] rounded-3xl p-8 shadow-2xl shadow-black/40">
+          {/* Logo e header */}
+          <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-blue-600 shadow-lg shadow-violet-500/30 mb-5">
+              <Zap className="h-8 w-8 text-white" strokeWidth={2.5} />
             </div>
-          )}
+            <h1 className="text-2xl font-bold text-white tracking-tight">Versatus Force Sales</h1>
+            <p className="text-sm text-slate-400 mt-1.5">Bem-vindo de volta! Acesse sua conta.</p>
+          </motion.div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>ID do Tenant</label>
-            <input
-              {...register('tenantId')}
-              type="text"
-              placeholder="ex: versatus-demo"
-              className={styles.input}
-            />
-            {errors.tenantId && <p className="text-[11px] text-red-500 mt-1 pl-1">{errors.tenantId.message}</p>}
-          </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* Erro do servidor */}
+            <AnimatePresence>
+              {serverError && (
+                <motion.div
+                  key="server-error"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-sm text-red-300"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-400" />
+                  <span>{serverError}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Usuário</label>
-            <input
-              {...register('username')}
-              type="text"
-              placeholder="seu_usuario"
-              autoComplete="username"
-              className={styles.input}
-            />
-            {errors.username && <p className="text-[11px] text-red-500 mt-1 pl-1">{errors.username.message}</p>}
-          </div>
+            {/* Campo: Usuário */}
+            <motion.div custom={1} variants={fadeUp} initial="hidden" animate="visible">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
+                Usuário
+              </label>
+              <input
+                id="login-username"
+                {...register('username')}
+                type="text"
+                placeholder="Digite seu usuário"
+                autoComplete="username"
+                autoFocus
+                className="w-full rounded-xl bg-white/[0.06] border border-white/[0.12] px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200"
+              />
+              {errors.username && <p className="text-[11px] text-red-400 mt-1.5 pl-1">{errors.username.message}</p>}
+            </motion.div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Senha</label>
-            <input
-              {...register('password')}
-              type="password"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              className={styles.input}
-            />
-            {errors.password && <p className="text-[11px] text-red-500 mt-1 pl-1">{errors.password.message}</p>}
-          </div>
+            {/* Campo: Senha */}
+            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
+                Senha
+              </label>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className="w-full rounded-xl bg-white/[0.06] border border-white/[0.12] px-4 py-3 pr-11 text-sm text-white placeholder-slate-500 outline-none focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-[11px] text-red-400 mt-1.5 pl-1">{errors.password.message}</p>}
+            </motion.div>
 
-          <div className={styles.optionsRow}>
-            <label className={styles.rememberMe}>
-              <input type="checkbox" className={styles.checkbox} />
-              <span className={styles.rememberLabel}>Lembrar de mim</span>
-            </label>
-            <a href="#" className={styles.forgotPassword}>Esqueceu a senha?</a>
-          </div>
+            {/* Esqueceu a senha */}
+            <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible" className="flex justify-end">
+              <a href="#" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                Esqueceu a senha?
+              </a>
+            </motion.div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={styles.submitBtn}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-5 w-5 animate-spin mx-auto" />
-            ) : (
-              'Entrar no Sistema'
-            )}
-          </button>
+            {/* Botão Entrar */}
+            <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible">
+              <button
+                id="login-submit-btn"
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 text-white text-sm font-semibold tracking-wide hover:from-violet-500 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98]"
+              >
+                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : 'Entrar no Sistema'}
+              </button>
+            </motion.div>
 
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3.5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-slate-50 transition-all active:scale-95 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900"
-          >
-            <MonitorPlay className="h-4 w-4" />
-            Modo de Demonstração (Sem ERP)
-          </button>
-        </form>
+            {/* Botão Demo */}
+            <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible">
+              <button
+                id="login-demo-btn"
+                type="button"
+                onClick={handleDemoLogin}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/[0.1] text-xs font-semibold uppercase tracking-[0.15em] text-slate-500 hover:text-slate-300 hover:border-white/20 hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98]"
+              >
+                <MonitorPlay className="h-3.5 w-3.5" />
+                Modo Demonstração
+              </button>
+            </motion.div>
+          </form>
 
-        <p className={styles.footer}>Versatus.Net Desktop Migration v2.0</p>
-      </div>
+          <motion.p custom={6} variants={fadeUp} initial="hidden" animate="visible" className="text-center text-[11px] text-slate-600 mt-7">
+            Versatus.Net — Force Sales v2.0
+          </motion.p>
+        </div>
+      </motion.div>
     </div>
   )
 }

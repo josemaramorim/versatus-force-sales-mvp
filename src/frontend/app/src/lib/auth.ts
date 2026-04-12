@@ -2,7 +2,6 @@ import api from './api'
 import { useAuthStore } from '@/store/authStore'
 
 export interface LoginPayload {
-  tenantId: string
   username: string
   password: string
 }
