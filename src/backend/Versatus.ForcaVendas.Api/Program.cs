@@ -21,7 +21,35 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Versatus Força de Vendas API", Version = "v1" });
+    
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
@@ -33,7 +61,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(
 builder.Services.AddSingleton<ISessionStore, RedisSessionStore>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
-builder.Services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
+builder.Services.AddScoped<ISessionAuditEventRepository, NpgsqlSessionAuditEventRepository>();
 builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogRepository>();
 builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IPaymentConditionService, Versatus.ForcaVendas.Infrastructure.Data.Services.MockPaymentConditionService>();
 builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IStockValidationService, Versatus.ForcaVendas.Infrastructure.Data.Services.MockStockValidationService>();
@@ -583,4 +611,5 @@ app.MapPost("/auth/logout", async (
 .WithName("Logout")
 .WithOpenApi();
 
+app.MapControllers();
 app.Run();

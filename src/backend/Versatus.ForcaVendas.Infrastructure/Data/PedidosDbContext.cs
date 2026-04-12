@@ -15,9 +15,22 @@ public sealed class PedidosDbContext : DbContext
     public DbSet<PedidoStatus> PedidoStatuses => Set<PedidoStatus>();
     public DbSet<TenantSubscriptionEntity> TenantSubscriptions => Set<TenantSubscriptionEntity>();
     public DbSet<UsuarioEntity> Usuarios => Set<UsuarioEntity>();
+    public DbSet<SessionAuditEventEntity> AuditEvents => Set<SessionAuditEventEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<SessionAuditEventEntity>(entity =>
+        {
+            entity.ToTable("audit_events");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.UserId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.TenantId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.EventType).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Timestamp).IsRequired();
+            entity.Property(x => x.IpAddress).HasMaxLength(64);
+            entity.Property(x => x.UserAgent).HasMaxLength(512);
+        });
+
         modelBuilder.Entity<Pedido>(entity =>
         {
             entity.ToTable("pedidos");
