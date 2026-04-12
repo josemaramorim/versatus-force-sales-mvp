@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,12 +11,8 @@ namespace Versatus.ForcaVendas.Infrastructure.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: "infra");
-
             migrationBuilder.CreateTable(
                 name: "assinaturas",
-                schema: "infra",
                 columns: table => new
                 {
                     tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -34,8 +30,7 @@ namespace Versatus.ForcaVendas.Infrastructure.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "assinaturas",
-                schema: "infra");
+                name: "assinaturas");
         }
     }
 }

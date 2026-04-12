@@ -1,15 +1,10 @@
 namespace Versatus.ForcaVendas.Api.Auth;
 
-public sealed record LoginRequest(string TenantId, string Username, string Password)
+public sealed record LoginRequest(string Username, string Password)
 {
     public Dictionary<string, string[]> Validate()
     {
         var errors = new Dictionary<string, string[]>();
-
-        if (string.IsNullOrWhiteSpace(TenantId))
-        {
-            errors["tenantId"] = ["tenantId is required."];
-        }
 
         if (string.IsNullOrWhiteSpace(Username))
         {
