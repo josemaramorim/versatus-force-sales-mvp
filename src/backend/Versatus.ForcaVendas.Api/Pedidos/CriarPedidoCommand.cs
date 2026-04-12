@@ -10,7 +10,8 @@ public sealed record CriarPedidoCommand(
     string TenantId,
     string ClienteId,
     IReadOnlyList<CriarPedidoItemRequest> Itens,
-    CriarPedidoCondicaoPagamentoRequest CondicaoPagamento) : IRequest<CriarPedidoResult>;
+    CriarPedidoCondicaoPagamentoRequest CondicaoPagamento,
+    string? Observacao = null) : IRequest<CriarPedidoResult>;
 
 public sealed record CriarPedidoResult(Guid PedidoId, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido);
 
@@ -18,14 +19,12 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
 {
     private readonly PedidosDbContext _dbContext;
     private readonly IPaymentConditionService _paymentService;
-    private readonly IStockValidationService _stockService;
     private readonly IPedidoCache? _cache;
 
-    public CriarPedidoCommandHandler(PedidosDbContext dbContext, IPaymentConditionService paymentService, IStockValidationService stockService, IPedidoCache? cache = null)
+    public CriarPedidoCommandHandler(PedidosDbContext dbContext, IPaymentConditionService paymentService, IPedidoCache? cache = null)
     {
         _dbContext = dbContext;
         _paymentService = paymentService;
-        _stockService = stockService;
         _cache = cache;
     }
 
@@ -51,13 +50,6 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
             };
         }).ToList();
 
-        // VALIDAÇÃO DE ESTOQUE VIA SERVICE (Extension point)
-        var hasStock = await _stockService.ValidateStockAsync(itens, request.TenantId, cancellationToken);
-        if (!hasStock)
-        {
-            throw new InvalidOperationException("One or more items do not have enough stock level.");
-        }
-
         var totalBruto = itens.Sum(i => Math.Round(i.Quantidade * i.PrecoUnitario, 2, MidpointRounding.AwayFromZero));
         var totalDesconto = itens.Sum(i => Math.Round(i.Desconto, 2, MidpointRounding.AwayFromZero));
         var totalLiquido = Math.Round(totalBruto - totalDesconto, 2, MidpointRounding.AwayFromZero);
@@ -66,7 +58,7 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
         var parcelas = await _paymentService.CalcularParcelamentoAsync(
             pedidoId,
             totalLiquido,
-            request.CondicaoPagamento.CondicaoPagamentoId, // Agora passamos o ID da regra!
+            request.CondicaoPagamento.CondicaoPagamentoId,
             request.CondicaoPagamento.PrimeiroVencimento,
             cancellationToken);
 
@@ -77,6 +69,10 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
             ClienteId = request.ClienteId,
             CriadoEm = criadoEm,
             StatusId = PedidoStatus.RascunhoId,
+            TotalBruto = totalBruto,
+            TotalDesconto = totalDesconto,
+            TotalLiquido = totalLiquido,
+            Observacao = request.Observacao,
             Itens = itens,
             Parcelas = parcelas
         };

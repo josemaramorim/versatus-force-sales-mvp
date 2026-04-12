@@ -3,7 +3,8 @@ namespace Versatus.ForcaVendas.Api.Pedidos;
 public sealed record CriarPedidoRequest(
     string ClienteId,
     IReadOnlyList<CriarPedidoItemRequest> Itens,
-    CriarPedidoCondicaoPagamentoRequest CondicaoPagamento)
+    CriarPedidoCondicaoPagamentoRequest CondicaoPagamento,
+    string? Observacao = null)
 {
     public Dictionary<string, string[]> Validate()
     {

@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Autocomplete, AutocompleteItem, Avatar } from '@nextui-org/react'
+import { searchClientes } from '@/lib/vendaApi'
 import { MOCK_CLIENTES } from '@/lib/mocks'
 import { Cliente } from '@/types/vendas'
 import { Search } from 'lucide-react'
@@ -12,8 +13,18 @@ interface ClientSearchProps {
 }
 
 export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
+  const [clientes, setClientes] = useState<Cliente[]>(MOCK_CLIENTES)
+
+  useEffect(() => {
+    searchClientes()
+      .then(setClientes)
+      .catch(() => {
+        // keep mock fallback on network error
+      })
+  }, [])
+
   const onSelectionChange = (id: React.Key | null) => {
-    const cliente = MOCK_CLIENTES.find((c) => c.id === id)
+    const cliente = clientes.find((c) => c.id === id)
     if (cliente) onSelect(cliente)
   }
 
@@ -26,7 +37,7 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
         radius="none"
         labelPlacement="outside"
         className="max-w-full"
-        defaultItems={MOCK_CLIENTES}
+        defaultItems={clientes}
         selectedKey={selectedId || undefined}
         onSelectionChange={onSelectionChange}
         startContent={<Search className="text-slate-600 h-6 w-6 ml-2" />}
