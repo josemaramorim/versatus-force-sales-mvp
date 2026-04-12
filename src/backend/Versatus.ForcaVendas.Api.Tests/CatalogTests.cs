@@ -49,7 +49,7 @@ public class CatalogTests : IClassFixture<WebApplicationFactory<Program>>
 
         var loginResponse = await client.PostAsJsonAsync(
             "/auth/login",
-            new LoginRequest("00000000-0000-0000-0000-000000000001", "admin", "123456"));
+            new LoginRequest("admin", "123456"));
         loginResponse.EnsureSuccessStatusCode();
 
         var token = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();

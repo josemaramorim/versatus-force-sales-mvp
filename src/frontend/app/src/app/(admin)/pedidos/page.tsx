@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { 
   Table, 
   TableHeader, 
@@ -50,20 +50,15 @@ const statusColorMap: Record<string, "primary" | "success" | "warning" | "danger
   rascunho: "default",
 }
 
-import React, { useEffect } from 'react'
-import { listPedidos } from '@/lib/pedidosMock'
-import { MOCK_CLIENTES } from '@/lib/mocks'
+import { listPedidosApi, PedidoSummary } from '@/lib/vendaApi'
 
-const [initialOrders] = [true]
-
-function mapPedidoToRow(p: any) {
-  const cliente = MOCK_CLIENTES.find(c => c.id === p.clienteId)
+function mapPedidoToRow(p: PedidoSummary) {
   return {
-    id: p.id,
-    cliente: cliente?.nome ?? (p.clienteId ?? '---'),
-    total: `R$ ${Number(p.totalFinal).toFixed(2)}`,
-    status: p.status ?? 'pendente',
-    data: new Date(p.criadoEm).toLocaleString(),
+    id: p.pedidoId.substring(0, 8).toUpperCase(),
+    cliente: p.clienteId,
+    total: `R$ ${Number(p.totalLiquido).toFixed(2)}`,
+    status: p.status || 'rascunho',
+    data: new Date(p.criadoEm).toLocaleString('pt-BR'),
   }
 }
 
@@ -73,7 +68,7 @@ export default function PedidosPage() {
 
   useEffect(() => {
     let mounted = true
-    listPedidos().then((list) => {
+    listPedidosApi().then((list) => {
       if (!mounted) return
       setOrders(list.map(mapPedidoToRow))
     }).catch(() => {
