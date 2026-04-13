@@ -22,7 +22,55 @@ This document describes the recommended workflow for this repository.
 - The workflows check for existing open PRs before creating a new one to avoid duplicates.
 - Avoid auto-resolving conflicts without human review.
 - Keep `main` and `develop` protected (required checks, code owners, no forced pushes).
+---
 
+## MVP Feature Branch Strategy (Merge-Friendly PRs)
+
+**Rule**: Each task must fit in <= 1 day of work. Each user story must be deliverable in <= 3 days via incremental PRs.
+
+### Branch naming
+
+```
+feature/001-fluxo-e2e-<slug>   # e.g. feature/001-fluxo-e2e-us1-auth
+bugfix/001-<short-description>
+```
+
+### PR size guidelines
+
+| Concern | Limit |
+|---|---|
+| Production files per PR | <= 5 |
+| Test files per PR | <= 3 |
+| Lines changed | <= 400 (soft limit) |
+| Stories per PR | 1 |
+
+### Merge gates per story
+
+| PR | Required checks before merge |
+|---|---|
+| PR-US1 (Auth+Licenca) | T014-T018 passing; login by email without tenant field; no cross-tenant leak |
+| PR-US2 (Catalogo+Pedidos) | T028-T031 passing; catalog filtered by tenant; order totals correct |
+| PR-US3 (ERP Async) | T042-T044 passing; idempotency confirmed on duplicate and out-of-order returns |
+| PR-US4 (Demo) | T054-T055 passing; demo script runs without code changes |
+
+### Contract change policy
+
+- REST contracts (`contracts/rest-e2e-vendas.openapi.yaml`) and event schemas (`contracts/eventos-integracao-pedidos.schema.json`) must NOT be changed without:
+  1. Bumping the contract version (OpenAPI `info.version` or JSON Schema `$id` path).
+  2. Documenting the transition window in `quickstart.md` and in the OpenAPI `x-contract-migration` extension.
+- Breaking changes require a deprecation period defined before merge.
+
+### Workflow for a feature task
+
+```text
+1. git checkout -b feature/001-fluxo-e2e-<slug> develop
+2. Implement task (code + test)
+3. Run: dotnet test src/backend/Versatus.ForcaVendas.Api.Tests/
+4. Push branch -> CI runs automatically
+5. Open PR to develop with story reference in title
+6. Await CI green + 1 review
+7. Squash merge to develop
+```
 ## YAML snippets (reference)
 
 Feature branch -> develop:

@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://versatus/specs/001-fluxo-e2e-vendas/contracts/eventos-integracao-pedidos.schema.json",
+  "title": "Contratos de Eventos de Integracao de Pedidos",
+  "description": "Contrato versionado para eventos assincronos de envio e retorno de pedido ERP no MVP.",
+  "examples": [
+    {
+      "_comment": "Exemplo 1 — PedidoEnviadoEventV1 (sucesso no despacho)",
+      "eventType": "pedido.enviado",
+      "eventVersion": "v1",
+      "eventId": "a1b2c3d4-0001-0001-0001-000000000001",
+      "occurredAt": "2026-04-13T10:00:00Z",
+      "correlationId": "corr-us3-demo-0001",
+      "tenantId": "tenant-demo",
+      "pedidoId": "550e8400-e29b-41d4-a716-446655440000",
+      "payload": {
+        "clienteId": "cli-001",
+        "itens": [
+          {
+            "produtoId": "prod-001",
+            "quantidade": 2,
+            "precoUnitario": 100.00,
+            "total": 200.00
+          }
+        ],
+        "totalLiquido": 200.00
+      }
+    },
+    {
+      "_comment": "Exemplo 2 — PedidoResultadoEventV1 resultado=processado (retorno de sucesso do ERP)",
+      "eventType": "pedido.resultado",
+      "eventVersion": "v1",
+      "eventId": "a1b2c3d4-0002-0002-0002-000000000002",
+      "occurredAt": "2026-04-13T10:05:00Z",
+      "correlationId": "corr-us3-demo-0001",
+      "tenantId": "tenant-demo",
+      "pedidoId": "550e8400-e29b-41d4-a716-446655440000",
+      "payload": {
+        "resultado": "processado",
+        "documentoVendaId": "NF-2026-00042",
+        "sourceEventId": "a1b2c3d4-0001-0001-0001-000000000001"
+      }
+    },
+    {
+      "_comment": "Exemplo 3 — PedidoResultadoEventV1 resultado=erro (rejeicao pelo ERP)",
+      "eventType": "pedido.resultado",
+      "eventVersion": "v1",
+      "eventId": "a1b2c3d4-0003-0003-0003-000000000003",
+      "occurredAt": "2026-04-13T10:06:00Z",
+      "correlationId": "corr-us3-demo-0002",
+      "tenantId": "tenant-demo",
+      "pedidoId": "660e8400-e29b-41d4-a716-446655440099",
+      "payload": {
+        "resultado": "erro",
+        "motivoRejeicao": "Produto prod-999 sem estoque disponivel no ERP.",
+        "sourceEventId": "a1b2c3d4-0001-0001-0001-000000000010"
+      }
+    },
+    {
+      "_comment": "Exemplo 4 — PedidoResultadoEventV1 duplicado (idempotencia): mesmo sourceEventId do Exemplo 2, deve ser ignorado pelo consumidor",
+      "eventType": "pedido.resultado",
+      "eventVersion": "v1",
+      "eventId": "a1b2c3d4-0004-0004-0004-000000000004",
+      "occurredAt": "2026-04-13T10:07:00Z",
+      "correlationId": "corr-us3-demo-0001",
+      "tenantId": "tenant-demo",
+      "pedidoId": "550e8400-e29b-41d4-a716-446655440000",
+      "payload": {
+        "resultado": "processado",
+        "documentoVendaId": "NF-2026-00042",
+        "sourceEventId": "a1b2c3d4-0001-0001-0001-000000000001"
+      }
+    }
+  ],
+  "oneOf": [
+    { "$ref": "#/$defs/PedidoEnviadoEventV1" },
+    { "$ref": "#/$defs/PedidoResultadoEventV1" }
+  ],
+  "$defs": {
+    "BaseEnvelope": {
+      "type": "object",
+      "required": ["eventType", "eventVersion", "eventId", "occurredAt", "correlationId", "tenantId", "pedidoId"],
+      "properties": {
+        "eventType": { "type": "string" },
+        "eventVersion": { "type": "string", "const": "v1" },
+        "eventId": { "type": "string", "format": "uuid" },
+        "occurredAt": { "type": "string", "format": "date-time" },
+        "correlationId": { "type": "string", "minLength": 8, "maxLength": 128 },
+        "tenantId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "pedidoId": { "type": "string", "format": "uuid" }
+      },
+      "additionalProperties": false
+    },
+    "PedidoEnviadoEventV1": {
+      "allOf": [
+        { "$ref": "#/$defs/BaseEnvelope" },
+        {
+          "type": "object",
+          "required": ["eventType", "payload"],
+          "properties": {
+            "eventType": { "const": "pedido.enviado" },
+            "payload": {
+              "type": "object",
+              "required": ["clienteId", "itens", "totalLiquido"],
+              "properties": {
+                "clienteId": { "type": "string" },
+                "itens": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": ["produtoId", "quantidade", "precoUnitario", "total"],
+                    "properties": {
+                      "produtoId": { "type": "string" },
+                      "quantidade": { "type": "number", "exclusiveMinimum": 0 },
+                      "precoUnitario": { "type": "number", "minimum": 0 },
+                      "total": { "type": "number", "minimum": 0 }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "totalLiquido": { "type": "number", "minimum": 0 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PedidoResultadoEventV1": {
+      "allOf": [
+        { "$ref": "#/$defs/BaseEnvelope" },
+        {
+          "type": "object",
+          "required": ["eventType", "payload"],
+          "properties": {
+            "eventType": { "const": "pedido.resultado" },
+            "payload": {
+              "type": "object",
+              "required": ["resultado", "sourceEventId"],
+              "properties": {
+                "resultado": {
+                  "type": "string",
+                  "enum": ["processado", "erro"]
+                },
+                "documentoVendaId": {
+                  "type": "string",
+                  "description": "Obrigatorio quando resultado=processado"
+                },
+                "motivoRejeicao": {
+                  "type": "string",
+                  "maxLength": 500,
+                  "description": "Obrigatorio quando resultado=erro"
+                },
+                "sourceEventId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Chave de idempotencia enviada pelo integrador ERP"
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": { "resultado": { "const": "processado" } },
+                    "required": ["resultado"]
+                  },
+                  "then": { "required": ["documentoVendaId"] }
+                },
+                {
+                  "if": {
+                    "properties": { "resultado": { "const": "erro" } },
+                    "required": ["resultado"]
+                  },
+                  "then": { "required": ["motivoRejeicao"] }
+                }
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

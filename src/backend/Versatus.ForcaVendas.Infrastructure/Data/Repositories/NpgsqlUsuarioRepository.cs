@@ -22,6 +22,7 @@ public sealed class NpgsqlUsuarioRepository : IUsuarioRepository
                 id AS Id,
                 tenant_id AS TenantId,
                 username AS Username,
+                email AS Email,
                 password_hash AS PasswordHash,
                 role AS Role,
                 ativo AS Ativo,
@@ -45,6 +46,7 @@ public sealed class NpgsqlUsuarioRepository : IUsuarioRepository
             Id = entity.Id,
             TenantId = entity.TenantId,
             Username = entity.Username,
+            Email = entity.Email,
             PasswordHash = entity.PasswordHash,
             Role = entity.Role,
             Ativo = entity.Ativo,
@@ -82,6 +84,46 @@ public sealed class NpgsqlUsuarioRepository : IUsuarioRepository
             Id = entity.Id,
             TenantId = entity.TenantId,
             Username = entity.Username,
+            Email = entity.Email,
+            PasswordHash = entity.PasswordHash,
+            Role = entity.Role,
+            Ativo = entity.Ativo,
+            CriadoEm = entity.CriadoEm
+        };
+    }
+
+    public async Task<Usuario?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT 
+                id AS Id,
+                tenant_id AS TenantId,
+                username AS Username,
+                email AS Email,
+                password_hash AS PasswordHash,
+                role AS Role,
+                ativo AS Ativo,
+                criado_em AS CriadoEm
+            FROM usuarios
+            WHERE email = @Email AND ativo = true
+            LIMIT 1;
+            """;
+
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var entity = await connection.QueryFirstOrDefaultAsync<UsuarioEntity>(
+            new CommandDefinition(sql, new { Email = email }, cancellationToken: cancellationToken));
+
+        if (entity is null)
+            return null;
+
+        return new Usuario
+        {
+            Id = entity.Id,
+            TenantId = entity.TenantId,
+            Username = entity.Username,
+            Email = entity.Email,
             PasswordHash = entity.PasswordHash,
             Role = entity.Role,
             Ativo = entity.Ativo,
