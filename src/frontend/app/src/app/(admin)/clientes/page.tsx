@@ -162,7 +162,7 @@ export default function ClientesPage() {
         <Button 
           color="primary" 
           variant="shadow" 
-          radius="2xl" 
+          radius="full" 
           startContent={<Plus className="h-5 w-5" />}
           className="h-12 px-6 font-black uppercase tracking-widest text-xs"
         >
@@ -170,7 +170,7 @@ export default function ClientesPage() {
         </Button>
       </div>
 
-      <Card className="border-none shadow-2xl bg-white dark:bg-slate-900" radius="3xl">
+      <Card className="border-none shadow-2xl bg-white dark:bg-slate-900" radius="lg">
         <CardHeader className="p-8 pb-2 flex-col items-start gap-4">
           <div className="flex w-full justify-between items-center gap-3">
             <Input
@@ -179,11 +179,11 @@ export default function ClientesPage() {
               placeholder="Pesquisar por nome ou CNPJ..."
               startContent={<Search className="text-slate-400 h-4 w-4" />}
               variant="flat"
-              radius="2xl"
+              radius="full"
               classNames={{ inputWrapper: "h-12 bg-slate-100 dark:bg-slate-950 px-4" }}
             />
             <div className="flex gap-2">
-               <Button isIconOnly variant="flat" radius="xl" className="bg-slate-100 dark:bg-slate-950">
+               <Button isIconOnly variant="flat" radius="lg" className="bg-slate-100 dark:bg-slate-950">
                   <Building className="h-4 w-4 text-slate-500" />
                </Button>
             </div>
@@ -225,7 +225,7 @@ export default function ClientesPage() {
                 color="primary"
                 page={1}
                 total={4}
-                radius="xl"
+                radius="lg"
               />
           </div>
         </CardBody>

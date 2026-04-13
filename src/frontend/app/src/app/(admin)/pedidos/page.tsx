@@ -149,7 +149,7 @@ export default function PedidosPage() {
           href="/vendas/nova"
           color="primary" 
           variant="shadow" 
-          radius="2xl" 
+          radius="full" 
           startContent={<Plus className="h-5 w-5" />}
           className="h-12 px-6 font-black uppercase tracking-widest text-xs"
         >
@@ -157,7 +157,7 @@ export default function PedidosPage() {
         </Button>
       </div>
 
-      <Card className="border-none shadow-2xl bg-white dark:bg-slate-900 p-2" radius="3xl">
+      <Card className="border-none shadow-2xl bg-white dark:bg-slate-900 p-2" radius="lg">
         <CardHeader className="p-6 pb-2 flex-col items-start gap-4">
           <div className="flex w-full justify-between items-center gap-3">
             <Input
@@ -168,7 +168,7 @@ export default function PedidosPage() {
               value={filterValue}
               onValueChange={setFilterValue}
               variant="flat"
-              radius="2xl"
+              radius="full"
               classNames={{
                 inputWrapper: "bg-slate-100 dark:bg-slate-950 px-4",
               }}
@@ -177,7 +177,7 @@ export default function PedidosPage() {
               <Button 
                 variant="flat" 
                 color="secondary" 
-                radius="2xl" 
+                radius="full" 
                 className="font-bold text-xs"
                 endContent={<ChevronDown className="text-small" />}
               >
@@ -186,7 +186,7 @@ export default function PedidosPage() {
               <Button 
                 variant="flat" 
                 color="default" 
-                radius="2xl" 
+                radius="full" 
                 className="font-bold text-xs"
                 startContent={<Download className="h-4 w-4" />}
               >
@@ -235,7 +235,7 @@ export default function PedidosPage() {
                 color="primary"
                 page={1}
                 total={10}
-                radius="xl"
+                radius="lg"
               />
           </div>
         </CardBody>
