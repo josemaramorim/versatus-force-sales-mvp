@@ -81,6 +81,12 @@ operability and supportability are required to run MVP pilots safely.
 - Pull requests MUST be small and reviewable, reference their issue/story, and describe verification
 	evidence (tests, logs, contracts, screenshots when applicable).
 - Story/task decomposition MUST preserve independent testability and incremental delivery.
+- Application composition roots and entrypoints (for example `Program.cs`) MUST remain thin and
+	orchestration-only. Business rules and endpoint bodies MUST be extracted to dedicated modules.
+- Any entrypoint file over 350 lines MUST include a decomposition task in the active plan/tasks
+	before new feature logic is added to that file.
+- Endpoint registration SHOULD be grouped by bounded context (Auth, Catalogo, Pedidos, Admin,
+	Health) using extension methods or dedicated endpoint-mapping files.
 - Branch protection and required CI checks MUST remain enabled on integration branches.
 - Documentation in docs/sdd and Analise MUST be updated whenever architecture, contracts,
 	security assumptions, or workflow rules change.

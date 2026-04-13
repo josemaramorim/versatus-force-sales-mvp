@@ -108,6 +108,15 @@
 - **OB-002**: The feature MUST define metrics/traces needed to operate and debug the flow.
 - **OB-003**: The feature MUST define failure signals and expected alert/diagnostic indicators.
 
+### Maintainability and Modularity Requirements *(mandatory)*
+
+- **MM-001**: Entry-point files (for example `Program.cs`) MUST remain orchestration-only and avoid
+  embedding domain/business logic.
+- **MM-002**: Endpoint and dependency registration MUST be grouped by bounded context in dedicated
+  modules or extension methods.
+- **MM-003**: If any entry-point exceeds 350 lines, the feature MUST include explicit decomposition
+  tasks before adding more behavior.
+
 *Example of marking unclear requirements:*
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]

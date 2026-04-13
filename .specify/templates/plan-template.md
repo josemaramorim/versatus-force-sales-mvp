@@ -25,6 +25,7 @@
 **Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
 **Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
 **Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Composition Boundaries**: [entrypoint and module boundaries, e.g., Program.cs orchestration-only; endpoint mapping split by bounded context]  
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
@@ -40,6 +41,8 @@
 - [ ] Quality gates defined: required unit/integration/contract tests and CI checks are identified.
 - [ ] Observability defined: logs, traces/correlation IDs, and key metrics for new/changed flows.
 - [ ] Workflow traceability present: linked story/issue, task breakdown, and small-PR strategy.
+- [ ] Composition boundaries defined: oversized entrypoints are decomposed and endpoint/DI registration
+  is organized by bounded context.
 
 ## Project Structure
 

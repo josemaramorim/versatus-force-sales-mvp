@@ -68,6 +68,8 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T007 [P] Implement tenant isolation guards and data-access boundaries
 - [ ] T008 [P] Implement Redis session/license concurrency controls
 - [ ] T009 [P] Setup API routing and middleware structure
+- [ ] T009A Decompose oversized composition root/entrypoint files (e.g., Program.cs > 350 lines)
+  into bounded-context endpoint and DI registration modules
 - [ ] T010 Create base models/entities that all stories depend on
 - [ ] T011 Configure error handling, structured logging, and correlation IDs
 - [ ] T012 Setup environment configuration management
@@ -254,4 +256,6 @@ With multiple developers:
 - Verify tests fail before implementing
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
+- Keep entrypoints thin: avoid adding new feature logic to oversized Program.cs-style files without
+  first creating decomposition tasks
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

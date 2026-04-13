@@ -162,6 +162,9 @@
 
 - [ ] T059 [P] Executar e estabilizar suite backend `dotnet test` ajustando `src/backend/Versatus.ForcaVendas.Api.Tests/AuthTests.cs`, `src/backend/Versatus.ForcaVendas.Api.Tests/CatalogTests.cs` e `src/backend/Versatus.ForcaVendas.Api.Tests/PedidosTests.cs` quando necessario
 - [ ] T060 [P] Revisar telemetria e healthcheck em `src/backend/Versatus.ForcaVendas.Api/Health/RedisHealthCheck.cs` e `src/backend/Versatus.ForcaVendas.Api/Program.cs`
+- [x] T070 [US2] Extrair mapeamentos de endpoints de auth/sessao de `src/backend/Versatus.ForcaVendas.Api/Program.cs` para arquivos dedicados em `src/backend/Versatus.ForcaVendas.Api/Auth/` (ex.: `AuthEndpoints.cs`)
+- [x] T071 [US2] Extrair mapeamentos de catalogo/pedidos de `src/backend/Versatus.ForcaVendas.Api/Program.cs` para arquivos dedicados em `src/backend/Versatus.ForcaVendas.Api/Pedidos/` e `src/backend/Versatus.ForcaVendas.Api/` (ex.: `CatalogoEndpoints.cs`, `PedidosEndpoints.cs`)
+- [ ] T072 [P] Consolidar composicao de DI em `src/backend/Versatus.ForcaVendas.Api/Program.Partial.cs` e reduzir `src/backend/Versatus.ForcaVendas.Api/Program.cs` para papel de bootstrap/orquestracao
 - [ ] T061 [P] Remover divida tecnica obvia de stubs em `src/backend/Versatus.ForcaVendas.Application/Class1.cs`, `src/backend/Versatus.ForcaVendas.Domain/Class1.cs` e `src/backend/Versatus.ForcaVendas.Infrastructure/Class1.cs`
 - [ ] T062 Atualizar documentacao principal em `README.md` e `specs/001-fluxo-e2e-vendas/spec.md` com status final da entrega
 - [ ] T066 [P] Criar benchmark de catalogo (SC-003) e publicar evidencias de p95 em `src/backend/Versatus.ForcaVendas.Api.Tests/CatalogPerformanceTests.cs` e `specs/001-fluxo-e2e-vendas/quickstart.md`
