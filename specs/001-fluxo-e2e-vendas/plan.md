@@ -172,4 +172,6 @@ Sem violacoes de constituicao que exijam excecao formal.
 - Cada PR contem alteracoes em <= 5 arquivos de producao e <= 3 arquivos de teste.
 - Toda mudanca de dominio ou infraestrutura e acompanhada de teste correspondente no mesmo PR.
 - Contratos REST e de eventos nao sao alterados sem bumpar versao ou adicionar janela de transicao documentada.
+- **Criacao de branch e obrigatoria antes de iniciar qualquer tarefa**: nao desenvolver diretamente em `develop`/`main`.
 - Branches de historia sao criadas a partir de `feature/001-fluxo-e2e`; merge via PR para `develop` com CI obrigatorio.
+- Padrao por historia: `feature/001-fluxo-e2e-us1-auth`, `feature/001-fluxo-e2e-us2-pedidos`, `feature/001-fluxo-e2e-us3-integracao`, `feature/001-fluxo-e2e-us4-demo`.

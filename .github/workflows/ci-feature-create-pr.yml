@@ -18,13 +18,13 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore
-        run: dotnet restore || true
+        run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore || true
+        run: dotnet build --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test --no-build --verbosity normal || true
+        run: dotnet test --no-build --verbosity normal
 
       - name: Create PR to develop if tests pass
         if: github.event_name == 'push'
