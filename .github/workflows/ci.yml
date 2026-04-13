@@ -43,11 +43,11 @@ jobs:
 
       - name: Restore
         if: steps.detect-dotnet.outputs.has_dotnet == 'true'
-        run: dotnet restore || true
+        run: dotnet restore
 
       - name: Build
         if: steps.detect-dotnet.outputs.has_dotnet == 'true'
-        run: dotnet build --configuration Release --no-restore || true
+        run: dotnet build --configuration Release --no-restore
 
       - name: Skip .NET build
         if: steps.detect-dotnet.outputs.has_dotnet != 'true'
@@ -103,7 +103,7 @@ jobs:
             | sort -u \
             | while read -r pkgdir; do
               echo "--- Building in $pkgdir ---"
-              (cd "$pkgdir" && npm run build --if-present) || true
+              (cd "$pkgdir" && npm run build --if-present)
             done
 
       - name: Test (per package)
@@ -116,7 +116,7 @@ jobs:
             | sort -u \
             | while read -r pkgdir; do
               echo "--- Testing in $pkgdir ---"
-              (cd "$pkgdir" && npm test --if-present) || true
+              (cd "$pkgdir" && npm test --if-present)
             done
 
       - name: Skip Node build
@@ -175,7 +175,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          dotnet test src/backend/Versatus.ForcaVendas.Backend.slnx -c Release --no-build --verbosity normal
+          dotnet test src/backend/Versatus.ForcaVendas.Backend.slnx -c Release --verbosity normal
 
       - name: Tear down docker-compose
         if: always()
