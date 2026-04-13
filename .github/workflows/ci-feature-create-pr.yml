@@ -5,6 +5,14 @@ on:
     # run on all branches except main/develop
     branches-ignore: [main, develop]
 
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ci-feature-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -32,7 +40,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           # Use a repository PAT stored in secrets.REPO_BOT_TOKEN with minimal scopes (repo, workflow)
-          github-token: ${{ secrets.REPO_BOT_TOKEN }}
+          github-token: ${{ secrets.REPO_BOT_TOKEN || github.token }}
           script: |
             const owner = context.repo.owner
             const repo = context.repo.repo
