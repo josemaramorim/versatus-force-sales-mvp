@@ -23,6 +23,7 @@ public sealed class PedidosDbContext : DbContext
     public DbSet<TenantSubscriptionEntity> TenantSubscriptions => Set<TenantSubscriptionEntity>();
     public DbSet<UsuarioEntity> Usuarios => Set<UsuarioEntity>();
     public DbSet<SessionAuditEventEntity> AuditEvents => Set<SessionAuditEventEntity>();
+    public DbSet<EventoIntegracaoPedidoEntity> EventosIntegracao => Set<EventoIntegracaoPedidoEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -137,12 +138,16 @@ public sealed class PedidosDbContext : DbContext
             entity.Property(x => x.Id).HasColumnName("id");
             entity.Property(x => x.TenantId).HasColumnName("tenant_id").IsRequired();
             entity.Property(x => x.Username).HasColumnName("username").HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Email).HasColumnName("email").HasMaxLength(256).IsRequired();
             entity.Property(x => x.PasswordHash).HasColumnName("password_hash").HasMaxLength(256).IsRequired();
             entity.Property(x => x.Role).HasColumnName("role").HasMaxLength(32).IsRequired();
             entity.Property(x => x.Ativo).HasColumnName("ativo").IsRequired();
             entity.Property(x => x.CriadoEm).HasColumnName("criado_em").IsRequired();
 
+            // Índice composto por tenant+username (unicidade dentro do tenant)
             entity.HasIndex(x => new { x.TenantId, x.Username }).IsUnique();
+            // Índice único global em email (sem escopo de tenant) – login por email
+            entity.HasIndex(x => x.Email).IsUnique().HasDatabaseName("ix_usuarios_email_global");
 
             // Seed initial data
             entity.HasData(
@@ -151,6 +156,7 @@ public sealed class PedidosDbContext : DbContext
                     Id = AdminUserId,
                     TenantId = AdminTenantId,
                     Username = "admin",
+                    Email = "admin@demo1.versatus.com",
                     PasswordHash = SeedPasswordHash,
                     Role = "admin",
                     Ativo = true,
@@ -161,12 +167,32 @@ public sealed class PedidosDbContext : DbContext
                     Id = GestorUserId,
                     TenantId = GestorTenantId,
                     Username = "gestor",
+                    Email = "gestor@demo2.versatus.com",
                     PasswordHash = SeedPasswordHash,
                     Role = "gestor",
                     Ativo = true,
                     CriadoEm = SeedCreatedAt.AddTicks(10)
                 }
             );
+        });
+
+        modelBuilder.Entity<EventoIntegracaoPedidoEntity>(entity =>
+        {
+            entity.ToTable("eventos_integracao_pedidos");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.PedidoId).IsRequired();
+            entity.Property(x => x.SourceEventId).HasMaxLength(128).IsRequired();
+            entity.Property(x => x.Tipo).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Payload).HasColumnType("text");
+            entity.Property(x => x.CriadoEm).IsRequired();
+            entity.Property(x => x.ProcessadoEm);
+            entity.Property(x => x.Sucesso);
+
+            // Índice de idempotência: impede reprocessamento do mesmo evento
+            entity.HasIndex(x => new { x.TenantId, x.PedidoId, x.SourceEventId })
+                .IsUnique()
+                .HasDatabaseName("ix_eventos_integracao_idempotencia");
         });
     }
 }

@@ -11,7 +11,11 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
     [
         "/auth/login",
         "/auth/refresh",
-        "/swagger"
+        "/swagger",
+        "/health/live",
+        "/health/ready",
+        "/metrics",
+        "/.well-known"
     ];
 
     public async Task InvokeAsync(
@@ -34,7 +38,7 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
         }
 
         var token = authHeader["Bearer ".Length..].Trim();
-        if (!TryValidateAndReadClaims(token, authOptions.Value.Jwt, out var tenantId, out var sessionId, out var userId))
+        if (!TryValidateAndReadClaims(token, authOptions.Value.Jwt, out var tenantId, out var sessionId, out var userId, out var email))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             await context.Response.WriteAsJsonAsync(new { message = "Invalid token." });
@@ -43,14 +47,15 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
 
         if (string.IsNullOrWhiteSpace(tenantId))
         {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(new { message = "Token does not contain tenant_id claim." });
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { message = "Token does not contain a valid tenant claim." });
             return;
         }
 
         tenantContext.TenantId = tenantId;
         tenantContext.SessionId = sessionId;
         tenantContext.UserId = userId;
+        tenantContext.Email = email;
         await next(context);
     }
 
@@ -69,11 +74,13 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
         JwtOptions jwtOptions,
         out string? tenantId,
         out string? sessionId,
-        out string? userId)
+        out string? userId,
+        out string? email)
     {
         tenantId = null;
         sessionId = null;
         userId = null;
+        email = null;
         try
         {
             var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
@@ -93,6 +100,7 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
             tenantId = principal.FindFirst("tenant_id")?.Value;
             sessionId = principal.FindFirst("jti")?.Value;
             userId = principal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            email = principal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email)?.Value;
             return true;
         }
         catch
