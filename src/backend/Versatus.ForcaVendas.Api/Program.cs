@@ -154,7 +154,7 @@ app.MapPost("/auth/login", async (
             statusCode: StatusCodes.Status500InternalServerError);
     }
 
-    var usuarioBanco = await usuarioRepository.GetByUsernameAsync(request.Username, cancellationToken);
+    var usuarioBanco = await usuarioRepository.GetByEmailAsync(request.Email, cancellationToken);
     if (usuarioBanco is null)
     {
          return Results.Unauthorized();

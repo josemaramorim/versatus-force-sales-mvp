@@ -1,13 +1,19 @@
+﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Versatus.ForcaVendas.Api.Auth;
 using Versatus.ForcaVendas.Api.Tests.Stubs;
-using Versatus.ForcaVendas.Application.Sessao;
 using Versatus.ForcaVendas.Application.Licenca;
+using Versatus.ForcaVendas.Application.Sessao;
+using Versatus.ForcaVendas.Domain.Auth;
+using Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 using Xunit;
 
 namespace Versatus.ForcaVendas.Api.Tests;
@@ -22,13 +28,36 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
         {
             builder.ConfigureServices(services =>
             {
-                // replace ISessionStore with in-memory stub
-                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(ISessionStore));
-                if (descriptor is not null) services.Remove(descriptor);
+                services.RemoveAll<ISessionStore>();
                 services.AddSingleton<ISessionStore, InMemorySessionStore>();
-                    var subDesc = services.SingleOrDefault(d => d.ServiceType == typeof(ITenantSubscriptionRepository));
-                    if (subDesc is not null) services.Remove(subDesc);
-                    services.AddSingleton<ITenantSubscriptionRepository, InMemoryTenantSubscriptionRepository>();
+
+                services.RemoveAll<ITenantSubscriptionRepository>();
+                services.AddSingleton<ITenantSubscriptionRepository, InMemoryTenantSubscriptionRepository>();
+
+                services.RemoveAll<IUsuarioRepository>();
+                services.AddSingleton<IUsuarioRepository, InMemoryUsuarioRepository>();
+
+                services.RemoveAll<ISessionAuditEventRepository>();
+                services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
+
+                var authOptions = new AuthOptions
+                {
+                    Tenants = new List<string>
+                    {
+                        "00000000-0000-0000-0000-000000000001",
+                        "00000000-0000-0000-0000-000000000002"
+                    },
+                    Jwt = new JwtOptions
+                    {
+                        Issuer = "versatus-force-sales",
+                        Audience = "versatus-force-sales-clients",
+                        SecretKey = "VersatusForceSalesDevSecretKey2026!",
+                        AccessTokenMinutes = 60,
+                        RefreshTokenDays = 7
+                    }
+                };
+
+                services.AddSingleton(Options.Create(authOptions));
             });
         });
     }
@@ -38,7 +67,7 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var client = _factory.CreateClient();
 
-        var loginReq = new LoginRequest("admin", "123456");
+        var loginReq = new LoginRequest("admin@demo1.versatus.com", "Mudar@!123");
         var loginResp = await client.PostAsJsonAsync("/auth/login", loginReq);
         loginResp.EnsureSuccessStatusCode();
 
@@ -55,4 +84,106 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
         var logoutResp = await client.PostAsJsonAsync("/auth/logout", new LogoutRequest { RefreshToken = loginBody.RefreshToken });
         logoutResp.EnsureSuccessStatusCode();
     }
+
+    [Fact]
+    public async Task Login_WithInvalidCredentials_Returns401()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "senha_errada"));
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Login_WithUnknownUsername_Returns401()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/auth/login", new LoginRequest("usuario_inexistente@email.com", "qualquer"));
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public void InMemoryUsuarioRepository_EmailUnicidadeGlobal_NaoPermiteDuplicata()
+    {
+        var email = "duplicado@empresa.com";
+
+        var usuarios = new[]
+        {
+            new Usuario
+            {
+                Id = Guid.NewGuid(),
+                TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                Username = "user1",
+                Email = email,
+                PasswordHash = "hash",
+                Role = "vendedor",
+                Ativo = true,
+                CriadoEm = DateTimeOffset.UtcNow
+            }
+        };
+
+        var repo = InMemoryUsuarioRepository.FromUsers(usuarios);
+
+        var resultado = repo.GetByEmailAsync(email).GetAwaiter().GetResult();
+        resultado.Should().NotBeNull();
+        resultado!.Email.Should().Be(email);
+
+        var outro = repo.GetByEmailAsync("outro@empresa.com").GetAwaiter().GetResult();
+        outro.Should().BeNull();
+    }
+
+    [Fact]
+    public void InMemoryUsuarioRepository_GetByEmail_RetornaNullQuandoNaoExiste()
+    {
+        var repo = new InMemoryUsuarioRepository();
+
+        var resultado = repo.GetByEmailAsync("naoexiste@x.com").GetAwaiter().GetResult();
+
+        resultado.Should().BeNull();
+    }
+
+    [Fact]
+    public void InMemoryUsuarioRepository_GetByEmail_RetornaUsuarioCorreto()
+    {
+        var repo = new InMemoryUsuarioRepository();
+
+        var admin = repo.GetByEmailAsync("admin@demo1.versatus.com").GetAwaiter().GetResult();
+
+        admin.Should().NotBeNull();
+        admin!.Username.Should().Be("admin");
+        admin.TenantId.Should().Be(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+    }
+
+    [Fact]
+    public async Task Login_SemCamposTenant_TenantResolvidoInternamente()
+    {
+        var client = _factory.CreateClient();
+
+        var loginResp = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "Mudar@!123"));
+        loginResp.EnsureSuccessStatusCode();
+
+        var body = await loginResp.Content.ReadFromJsonAsync<LoginResponse>();
+        body.Should().NotBeNull();
+        body!.TokenType.Should().Be("Bearer");
+
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(body.AccessToken);
+        jwt.Claims.Should().Contain(c => c.Type == "tenant_id");
+        var tenantClaim = jwt.Claims.First(c => c.Type == "tenant_id").Value;
+        tenantClaim.Should().Be("00000000-0000-0000-0000-000000000001");
+    }
+
+    [Fact]
+    public async Task Request_SemToken_EhBloqueadoComStatus401()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/tenant/ping");
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
 }
