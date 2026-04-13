@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using Versatus.ForcaVendas.Application.Sessao;
 
@@ -13,9 +14,9 @@ namespace Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 /// The sorted set lets us count/list active sessions in O(log N) and prune
 /// expired entries without a separate background job.
 /// </summary>
-public sealed class RedisSessionStore(IConnectionMultiplexer redis) : ISessionStore
+public sealed class RedisSessionStore(IConnectionMultiplexer redis, IOptions<SessionStoreOptions> sessionOptions) : ISessionStore
 {
-    private const int SessionTtlSeconds = 120;
+    private int SessionTtlSeconds => sessionOptions.Value.TimeoutMinutes * 60;
 
     public async Task AddAsync(string sessionId, string userId, string tenantId, CancellationToken cancellationToken)
     {

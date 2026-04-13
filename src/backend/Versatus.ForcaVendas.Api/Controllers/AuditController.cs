@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 using Versatus.ForcaVendas.Domain.Auditoria;
 
 namespace Versatus.ForcaVendas.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("admin/audit")]
 public class AuditController(ISessionAuditEventRepository repository) : ControllerBase

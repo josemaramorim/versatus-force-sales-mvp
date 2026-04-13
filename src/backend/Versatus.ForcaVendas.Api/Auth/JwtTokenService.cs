@@ -25,8 +25,10 @@ public sealed class JwtTokenService(IOptions<AuthOptions> options) : IJwtTokenSe
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.UserId),
+            new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.UniqueName, user.Username),
             new("tenant_id", user.TenantId),
+            new(System.Security.Claims.ClaimTypes.Role, user.Role),
             new(JwtRegisteredClaimNames.Jti, sessionId)
         };
 

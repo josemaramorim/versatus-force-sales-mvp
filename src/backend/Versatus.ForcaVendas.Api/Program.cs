@@ -57,6 +57,10 @@ builder.Services.AddScoped<Versatus.ForcaVendas.Domain.Auth.IUsuarioRepository, 
 builder.Services.AddSingleton<IConnectionMultiplexer>(
     _ => ConnectionMultiplexer.Connect(
         builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
+builder.Services.Configure<Versatus.ForcaVendas.Application.Sessao.SessionStoreOptions>(opts =>
+{
+    opts.TimeoutMinutes = builder.Configuration.GetValue<int>("Auth:Jwt:SessionTimeoutMinutes", 20);
+});
 builder.Services.AddSingleton<ISessionStore, RedisSessionStore>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
@@ -170,7 +174,9 @@ app.MapPost("/auth/login", async (
         UserId = usuarioBanco.Id.ToString(),
         TenantId = usuarioBanco.TenantId.ToString(),
         Username = usuarioBanco.Username,
-        Password = "" 
+        Email = usuarioBanco.Email,
+        Role = usuarioBanco.Role,
+        Password = ""
     };
 
     var tenantExists = authOptions.Tenants
@@ -188,7 +194,7 @@ app.MapPost("/auth/login", async (
     }
 
     var activeSessions = await sessionStore.CountActiveAsync(user.TenantId, cancellationToken);
-    if (activeSessions >= subscription.MaxConcurrentUsers)
+    if (!subscription.HasAvailableSeats(activeSessions))
     {
         return Results.Problem(
             detail: "Limite de usuarios simultaneos atingido para este tenant.",
@@ -258,7 +264,9 @@ app.MapPost("/auth/refresh", async (
         UserId = usuarioBanco.Id.ToString(),
         TenantId = usuarioBanco.TenantId.ToString(),
         Username = usuarioBanco.Username,
-        Password = "" 
+        Email = usuarioBanco.Email,
+        Role = usuarioBanco.Role,
+        Password = ""
     };
 
     var tokenPair = tokenService.Generate(user);
@@ -603,6 +611,7 @@ app.MapPost("/admin/sessions/evict", async (
     ITenantContext tenantContext,
     ISessionStore sessionStore,
     IRefreshTokenStore refreshTokenStore,
+    ISessionAuditEventRepository auditRepo,
     EvictRequest request,
     CancellationToken cancellationToken) =>
 {
@@ -622,11 +631,25 @@ app.MapPost("/admin/sessions/evict", async (
     // Remove session from store
     await sessionStore.RemoveAsync(request.SessionId, tenantContext.TenantId!, cancellationToken);
 
-    // Optionally revoke provided refresh token for the session
-    if (!string.IsNullOrWhiteSpace(request.RefreshToken))
+    // Revoke all refresh tokens for the evicted user and optionally the one provided
+    if (!string.IsNullOrWhiteSpace(request.UserId))
+    {
+        refreshTokenStore.RevokeAllForUser(request.UserId);
+    }
+    else if (!string.IsNullOrWhiteSpace(request.RefreshToken))
     {
         refreshTokenStore.Revoke(request.RefreshToken);
     }
+
+    // Audit eviction event
+    var evictAudit = new Versatus.ForcaVendas.Domain.Auditoria.SessionAuditEvent(
+        Id: Guid.NewGuid().ToString(),
+        UserId: request.UserId ?? tenantContext.UserId ?? string.Empty,
+        TenantId: tenantContext.TenantId!,
+        EventType: Versatus.ForcaVendas.Domain.Auditoria.SessionAuditEventType.Eviction,
+        Timestamp: DateTimeOffset.UtcNow
+    );
+    await auditRepo.AddAsync(evictAudit, cancellationToken);
 
     return Results.Ok(new { message = "Session evicted", sessionId = request.SessionId });
 })

@@ -9,6 +9,7 @@ public interface IRefreshTokenStore
     void Save(string refreshToken, string userId, string tenantId, DateTime expiresAtUtc);
     bool TryGetActive(string refreshToken, out RefreshTokenInfo tokenInfo);
     void Revoke(string refreshToken);
+    void RevokeAllForUser(string userId);
 }
 
 public sealed class InMemoryRefreshTokenStore : IRefreshTokenStore
@@ -44,4 +45,16 @@ public sealed class InMemoryRefreshTokenStore : IRefreshTokenStore
         _tokens.TryRemove(refreshToken, out _);
     }
 
+    public void RevokeAllForUser(string userId)
+    {
+        var keys = _tokens
+            .Where(kv => string.Equals(kv.Value.UserId, userId, StringComparison.OrdinalIgnoreCase))
+            .Select(kv => kv.Key)
+            .ToList();
+
+        foreach (var key in keys)
+        {
+            _tokens.TryRemove(key, out _);
+        }
+    }
 }

@@ -10,6 +10,10 @@ public sealed record LoginRequest(string Email, string Password)
         {
             errors["email"] = ["email is required."];
         }
+        else if (!Email.Contains('@') || Email.Length > 254)
+        {
+            errors["email"] = ["email format is invalid."];
+        }
 
         if (string.IsNullOrWhiteSpace(Password))
         {

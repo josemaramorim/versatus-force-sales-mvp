@@ -3,7 +3,8 @@ namespace Versatus.ForcaVendas.Domain.Auditoria;
 public enum SessionAuditEventType
 {
     Login,
-    Logout
+    Logout,
+    Eviction
 }
 
 public sealed record SessionAuditEvent(
