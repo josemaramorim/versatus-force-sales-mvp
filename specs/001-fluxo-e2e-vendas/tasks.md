@@ -21,6 +21,7 @@
 - [x] T003 [P] Revisar `specs/001-fluxo-e2e-vendas/contracts/rest-e2e-vendas.openapi.yaml` para manter aderencia aos endpoints implementados
 - [x] T004 [P] Revisar `specs/001-fluxo-e2e-vendas/contracts/eventos-integracao-pedidos.schema.json` com exemplos de payload de sucesso/erro/idempotencia
 - [x] T005 [P] Atualizar `docs/WORKFLOWS.md` com estrategia de PRs merge-friendly (tarefas <= 1 dia)
+- [x] T069 [P] Definir no SDD a politica obrigatoria de criacao de branch por historia antes de qualquer implementacao (`plan.md`, `tasks.md` e `docs/WORKFLOWS.md`)
 - [x] T063 [P] Definir estrategia de compatibilidade de contrato de login (versao/janela de transicao) em `specs/001-fluxo-e2e-vendas/contracts/rest-e2e-vendas.openapi.yaml` e `specs/001-fluxo-e2e-vendas/quickstart.md`
 
 ---
@@ -54,11 +55,11 @@
 
 ### Tests US1
 
-- [ ] T014 [P] [US1] Criar testes de integracao de login (email/senha valido e invalido, tenant resolvido internamente), heartbeat e logout em `src/backend/Versatus.ForcaVendas.Api.Tests/AuthTests.cs`
-- [ ] T015 [P] [US1] Criar testes de concorrencia de seat em `src/backend/Versatus.ForcaVendas.Api.Tests/AuthTests.cs`
-- [ ] T016 [P] [US1] Criar testes de contrato de auth conforme OpenAPI em `src/backend/Versatus.ForcaVendas.Api.Tests/AuthContractTests.cs`
-- [ ] T017 [P] [US1] Ajustar dublers de sessao para expiracao/eviccao em `src/backend/Versatus.ForcaVendas.Api.Tests/Stubs/InMemorySessionStore.cs`
-- [ ] T018 [P] [US1] Ajustar dublers de licenca por tenant em `src/backend/Versatus.ForcaVendas.Api.Tests/Stubs/InMemoryTenantSubscriptionRepository.cs`
+- [x] T014 [P] [US1] Criar testes de integracao de login (email/senha valido e invalido, tenant resolvido internamente), heartbeat e logout em `src/backend/Versatus.ForcaVendas.Api.Tests/AuthTests.cs`
+- [x] T015 [P] [US1] Criar testes de concorrencia de seat em `src/backend/Versatus.ForcaVendas.Api.Tests/AuthTests.cs`
+- [x] T016 [P] [US1] Criar testes de contrato de auth conforme OpenAPI em `src/backend/Versatus.ForcaVendas.Api.Tests/AuthContractTests.cs`
+- [x] T017 [P] [US1] Ajustar dublers de sessao para expiracao/eviccao em `src/backend/Versatus.ForcaVendas.Api.Tests/Stubs/InMemorySessionStore.cs`
+- [x] T018 [P] [US1] Ajustar dublers de licenca por tenant em `src/backend/Versatus.ForcaVendas.Api.Tests/Stubs/InMemoryTenantSubscriptionRepository.cs`
 
 ### Implementacao US1
 
@@ -190,7 +191,13 @@
 
 ### Ordem critica sugerida
 
-ok podemos continuar.- T006 -> T010 -> T011 -> T064 -> T014 -> T021 -> T028 -> T036 -> T039 -> T045 -> T047 -> T049 -> T050 -> T052 -> T054 -> T059 -> T066 -> T067 -> T068 -> T062
+T006 -> T010 -> T011 -> T064 -> T014 -> T021 -> T028 -> T036 -> T039 -> T045 -> T047 -> T049 -> T050 -> T052 -> T054 -> T059 -> T066 -> T067 -> T068 -> T062
+
+### Gate obrigatorio de branch (antes de codar)
+
+- Antes de iniciar qualquer tarefa (T014+), criar branch da historia correspondente a partir de `develop`.
+- Padrao: `feature/001-fluxo-e2e-usX-<slug-curta>`.
+- Commits diretos em `develop`/`main` para tarefas da feature sao proibidos.
 
 ---
 

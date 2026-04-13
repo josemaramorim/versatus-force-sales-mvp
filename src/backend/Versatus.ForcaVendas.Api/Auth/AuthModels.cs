@@ -23,7 +23,7 @@ public sealed record LoginRequest(string Email, string Password)
 public sealed record LoginResponse(
     string AccessToken,
     string RefreshToken,
-    long ExpiresIn,
+    long ExpiresInSeconds,
     string TokenType);
 
 public sealed record RefreshTokenRequest(string RefreshToken)

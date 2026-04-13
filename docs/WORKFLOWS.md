@@ -71,6 +71,18 @@ bugfix/001-<short-description>
 6. Await CI green + 1 review
 7. Squash merge to develop
 ```
+
+### Mandatory SDD branch gate
+
+- For every SDD user story (US1-US4), branch creation is mandatory before writing code.
+- Never implement feature tasks directly on `develop` or `main`.
+- Suggested story branches:
+	- `feature/001-fluxo-e2e-us1-auth`
+	- `feature/001-fluxo-e2e-us2-pedidos`
+	- `feature/001-fluxo-e2e-us3-integracao`
+	- `feature/001-fluxo-e2e-us4-demo`
+- If a story requires multiple PRs, use suffixes: `-part1`, `-part2`, etc.
+
 ## YAML snippets (reference)
 
 Feature branch -> develop:

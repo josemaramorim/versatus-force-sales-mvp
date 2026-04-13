@@ -21,6 +21,8 @@ namespace Versatus.ForcaVendas.Api.Tests;
 public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
+    private readonly InMemorySessionStore _sessionStore = new();
+    private readonly InMemoryTenantSubscriptionRepository _tenantSubscriptionRepository = new();
 
     public AuthTests(WebApplicationFactory<Program> factory)
     {
@@ -29,10 +31,10 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<ISessionStore>();
-                services.AddSingleton<ISessionStore, InMemorySessionStore>();
+                services.AddSingleton<ISessionStore>(_sessionStore);
 
                 services.RemoveAll<ITenantSubscriptionRepository>();
-                services.AddSingleton<ITenantSubscriptionRepository, InMemoryTenantSubscriptionRepository>();
+                services.AddSingleton<ITenantSubscriptionRepository>(_tenantSubscriptionRepository);
 
                 services.RemoveAll<IUsuarioRepository>();
                 services.AddSingleton<IUsuarioRepository, InMemoryUsuarioRepository>();
@@ -65,6 +67,7 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task Login_Heartbeat_Logout_flow()
     {
+        _tenantSubscriptionRepository.ConfigureTenant("00000000-0000-0000-0000-000000000001", 4, true, "Demo Corp");
         var client = _factory.CreateClient();
 
         var loginReq = new LoginRequest("admin@demo1.versatus.com", "Mudar@!123");
@@ -88,6 +91,7 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task Login_WithInvalidCredentials_Returns401()
     {
+        _tenantSubscriptionRepository.ConfigureTenant("00000000-0000-0000-0000-000000000001", 4, true, "Demo Corp");
         var client = _factory.CreateClient();
 
         var response = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "senha_errada"));
@@ -98,6 +102,7 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task Login_WithUnknownUsername_Returns401()
     {
+        _tenantSubscriptionRepository.ConfigureTenant("00000000-0000-0000-0000-000000000001", 4, true, "Demo Corp");
         var client = _factory.CreateClient();
 
         var response = await client.PostAsJsonAsync("/auth/login", new LoginRequest("usuario_inexistente@email.com", "qualquer"));
@@ -160,6 +165,7 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task Login_SemCamposTenant_TenantResolvidoInternamente()
     {
+        _tenantSubscriptionRepository.ConfigureTenant("00000000-0000-0000-0000-000000000001", 4, true, "Demo Corp");
         var client = _factory.CreateClient();
 
         var loginResp = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "Mudar@!123"));
@@ -184,6 +190,39 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await client.GetAsync("/tenant/ping");
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Login_QuandoSeatLimitAtingido_DeveRetornar403()
+    {
+        _tenantSubscriptionRepository.ConfigureTenant("00000000-0000-0000-0000-000000000001", 1, true, "Demo Corp");
+        var client = _factory.CreateClient();
+
+        var first = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "Mudar@!123"));
+        first.EnsureSuccessStatusCode();
+
+        var second = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "Mudar@!123"));
+        second.StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Login_AposEviccaoDaSessao_DevePermitirNovoAcesso()
+    {
+        _tenantSubscriptionRepository.ConfigureTenant("00000000-0000-0000-0000-000000000001", 1, true, "Demo Corp");
+        var client = _factory.CreateClient();
+
+        var firstLogin = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "Mudar@!123"));
+        firstLogin.EnsureSuccessStatusCode();
+
+        var firstBody = await firstLogin.Content.ReadFromJsonAsync<LoginResponse>();
+        firstBody.Should().NotBeNull();
+        var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(firstBody!.AccessToken);
+        var sessionId = jwt.Claims.First(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti).Value;
+
+        _sessionStore.ForceExpire(sessionId);
+
+        var secondLogin = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "Mudar@!123"));
+        secondLogin.EnsureSuccessStatusCode();
     }
 
 }
