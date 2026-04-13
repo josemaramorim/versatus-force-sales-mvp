@@ -43,11 +43,11 @@ jobs:
 
       - name: Restore
         if: steps.detect-dotnet.outputs.has_dotnet == 'true'
-        run: dotnet restore
+        run: dotnet restore src/backend/Versatus.ForcaVendas.Backend.slnx
 
       - name: Build
         if: steps.detect-dotnet.outputs.has_dotnet == 'true'
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build src/backend/Versatus.ForcaVendas.Backend.slnx --configuration Release --no-restore
 
       - name: Skip .NET build
         if: steps.detect-dotnet.outputs.has_dotnet != 'true'
