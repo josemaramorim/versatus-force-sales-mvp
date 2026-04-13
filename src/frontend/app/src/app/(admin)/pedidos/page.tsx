@@ -116,9 +116,9 @@ export default function PedidosPage() {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu aria-label="Ações de Pedido">
-                <DropdownItem startContent={<Eye className="h-4 w-4" />}>Visualizar</DropdownItem>
-                <DropdownItem startContent={<Download className="h-4 w-4" />}>Exportar PDF</DropdownItem>
-                <DropdownItem color="danger" className="text-danger" startContent={<Trash2 className="h-4 w-4" />}>
+                <DropdownItem key="visualizar" startContent={<Eye className="h-4 w-4" />}>Visualizar</DropdownItem>
+                <DropdownItem key="exportar" startContent={<Download className="h-4 w-4" />}>Exportar PDF</DropdownItem>
+                <DropdownItem key="excluir" color="danger" className="text-danger" startContent={<Trash2 className="h-4 w-4" />}>
                   Excluir Rascunho
                 </DropdownItem>
               </DropdownMenu>
