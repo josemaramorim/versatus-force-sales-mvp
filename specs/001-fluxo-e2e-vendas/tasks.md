@@ -63,15 +63,15 @@
 
 ### Implementacao US1
 
-- [ ] T019 [P] [US1] Ajustar modelos de auth em `src/backend/Versatus.ForcaVendas.Api/Auth/AuthModels.cs` para receber `email` + `senha` no login (sem campo tenant); incluir claims `sub=userId`, `email`, `tenantId` e `role` no JWT
-- [ ] T020 [P] [US1] Ajustar opcoes JWT em `src/backend/Versatus.ForcaVendas.Api/Auth/AuthOptions.cs` para expiracao e renovacao coerentes
-- [ ] T021 [US1] Implementar reforco de emissao de token em `src/backend/Versatus.ForcaVendas.Api/Auth/JwtTokenService.cs`
-- [ ] T022 [US1] Implementar controle de refresh token e revogacao em `src/backend/Versatus.ForcaVendas.Api/Auth/InMemoryRefreshTokenStore.cs`
-- [ ] T023 [US1] Ajustar fluxo de logout em `src/backend/Versatus.ForcaVendas.Api/Auth/LogoutRequest.cs`
-- [ ] T024 [US1] Ajustar fluxo de eviccao administrativa em `src/backend/Versatus.ForcaVendas.Api/Auth/EvictRequest.cs`
-- [ ] T025 [P] [US1] Consolidar contratos de sessao em `src/backend/Versatus.ForcaVendas.Application/Sessao/ISessionStore.cs` e `src/backend/Versatus.ForcaVendas.Application/Sessao/SessionInfo.cs`
-- [ ] T026 [P] [US1] Ajustar contrato de assinatura/licenca em `src/backend/Versatus.ForcaVendas.Application/Licenca/ITenantSubscriptionRepository.cs` e `src/backend/Versatus.ForcaVendas.Application/Licenca/TenantSubscription.cs`
-- [ ] T027 [US1] Persistir auditoria de sessao em `src/backend/Versatus.ForcaVendas.Infrastructure/Data/SessionAuditEventEntity.cs` e expor consulta em `src/backend/Versatus.ForcaVendas.Api/Controllers/AuditController.cs`
+- [x] T019 [P] [US1] Ajustar modelos de auth em `src/backend/Versatus.ForcaVendas.Api/Auth/AuthModels.cs` para receber `email` + `senha` no login (sem campo tenant); incluir claims `sub=userId`, `email`, `tenantId` e `role` no JWT
+- [x] T020 [P] [US1] Ajustar opcoes JWT em `src/backend/Versatus.ForcaVendas.Api/Auth/AuthOptions.cs` para expiracao e renovacao coerentes
+- [x] T021 [US1] Implementar reforco de emissao de token em `src/backend/Versatus.ForcaVendas.Api/Auth/JwtTokenService.cs`
+- [x] T022 [US1] Implementar controle de refresh token e revogacao em `src/backend/Versatus.ForcaVendas.Api/Auth/InMemoryRefreshTokenStore.cs`
+- [x] T023 [US1] Ajustar fluxo de logout em `src/backend/Versatus.ForcaVendas.Api/Auth/LogoutRequest.cs`
+- [x] T024 [US1] Ajustar fluxo de eviccao administrativa em `src/backend/Versatus.ForcaVendas.Api/Auth/EvictRequest.cs`
+- [x] T025 [P] [US1] Consolidar contratos de sessao em `src/backend/Versatus.ForcaVendas.Application/Sessao/ISessionStore.cs` e `src/backend/Versatus.ForcaVendas.Application/Sessao/SessionInfo.cs`
+- [x] T026 [P] [US1] Ajustar contrato de assinatura/licenca em `src/backend/Versatus.ForcaVendas.Application/Licenca/ITenantSubscriptionRepository.cs` e `src/backend/Versatus.ForcaVendas.Application/Licenca/TenantSubscription.cs`
+- [x] T027 [US1] Persistir auditoria de sessao em `src/backend/Versatus.ForcaVendas.Infrastructure/Data/SessionAuditEventEntity.cs` e expor consulta em `src/backend/Versatus.ForcaVendas.Api/Controllers/AuditController.cs`
 
 **Checkpoint**: US1 funcional e validada isoladamente.
 
@@ -164,7 +164,7 @@
 - [ ] T060 [P] Revisar telemetria e healthcheck em `src/backend/Versatus.ForcaVendas.Api/Health/RedisHealthCheck.cs` e `src/backend/Versatus.ForcaVendas.Api/Program.cs`
 - [x] T070 [US2] Extrair mapeamentos de endpoints de auth/sessao de `src/backend/Versatus.ForcaVendas.Api/Program.cs` para arquivos dedicados em `src/backend/Versatus.ForcaVendas.Api/Auth/` (ex.: `AuthEndpoints.cs`)
 - [x] T071 [US2] Extrair mapeamentos de catalogo/pedidos de `src/backend/Versatus.ForcaVendas.Api/Program.cs` para arquivos dedicados em `src/backend/Versatus.ForcaVendas.Api/Pedidos/` e `src/backend/Versatus.ForcaVendas.Api/` (ex.: `CatalogoEndpoints.cs`, `PedidosEndpoints.cs`)
-- [ ] T072 [P] Consolidar composicao de DI em `src/backend/Versatus.ForcaVendas.Api/Program.Partial.cs` e reduzir `src/backend/Versatus.ForcaVendas.Api/Program.cs` para papel de bootstrap/orquestracao
+- [x] T072 [P] Consolidar composicao de DI em `src/backend/Versatus.ForcaVendas.Api/Program.Partial.cs` e reduzir `src/backend/Versatus.ForcaVendas.Api/Program.cs` para papel de bootstrap/orquestracao
 - [ ] T061 [P] Remover divida tecnica obvia de stubs em `src/backend/Versatus.ForcaVendas.Application/Class1.cs`, `src/backend/Versatus.ForcaVendas.Domain/Class1.cs` e `src/backend/Versatus.ForcaVendas.Infrastructure/Class1.cs`
 - [ ] T062 Atualizar documentacao principal em `README.md` e `specs/001-fluxo-e2e-vendas/spec.md` com status final da entrega
 - [ ] T066 [P] Criar benchmark de catalogo (SC-003) e publicar evidencias de p95 em `src/backend/Versatus.ForcaVendas.Api.Tests/CatalogPerformanceTests.cs` e `specs/001-fluxo-e2e-vendas/quickstart.md`
