@@ -33,16 +33,14 @@ public static class PedidosEndpoints
                 request.CondicaoPagamento,
                 request.Observacao), cancellationToken);
 
-            return Results.Created($"/pedidos/{result.PedidoId}", new
-            {
-                pedidoId = result.PedidoId,
-                status = result.Status,
-                itensCount = result.ItensCount,
-                parcelasCount = result.ParcelasCount,
-                totalBruto = result.TotalBruto,
-                totalDesconto = result.TotalDesconto,
-                totalLiquido = result.TotalLiquido
-            });
+            return Results.Created($"/pedidos/{result.PedidoId}", new CriarPedidoResponse(
+                result.PedidoId,
+                result.Status,
+                result.ItensCount,
+                result.ParcelasCount,
+                result.TotalBruto,
+                result.TotalDesconto,
+                result.TotalLiquido));
         })
         .WithName("CreatePedido")
         .WithOpenApi();
@@ -176,19 +174,17 @@ public static class PedidosEndpoints
                     .ToList();
             }
 
-            var result = pedidos.Select(p => new
-            {
-                pedidoId = p.Id,
-                tenantId = p.TenantId,
-                clienteId = p.ClienteId,
-                criadoEm = p.CriadoEm,
-                status = p.Status?.Codigo ?? string.Empty,
-                itensCount = p.Itens.Count,
-                parcelasCount = p.Parcelas.Count,
-                totalBruto = p.TotalBruto,
-                totalDesconto = p.TotalDesconto,
-                totalLiquido = p.TotalLiquido
-            });
+            var result = pedidos.Select(p => new PedidoSummaryResponse(
+                p.Id,
+                p.TenantId,
+                p.ClienteId,
+                p.CriadoEm,
+                p.Status?.Codigo ?? string.Empty,
+                p.Itens.Count,
+                p.Parcelas.Count,
+                p.TotalBruto,
+                p.TotalDesconto,
+                p.TotalLiquido));
 
             return Results.Ok(result);
         })

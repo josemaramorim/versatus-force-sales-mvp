@@ -14,19 +14,17 @@ public sealed class InMemoryClientCatalogRepository : IClientCatalogRepository
     ];
 
     public Task<IReadOnlyList<ClientSummary>> SearchClientsAsync(
-        string tenantId,
-        string? query,
-        int limit,
+        CatalogSearchRequest request,
         CancellationToken cancellationToken = default)
     {
-        var normalizedQuery = query?.Trim() ?? string.Empty;
+        var normalizedQuery = request.Query?.Trim() ?? string.Empty;
 
         var filtered = Clients
-            .Where(c => string.Equals(c.TenantId, tenantId, StringComparison.OrdinalIgnoreCase))
+            .Where(c => string.Equals(c.TenantId, request.TenantId, StringComparison.OrdinalIgnoreCase))
             .Where(c => string.IsNullOrWhiteSpace(normalizedQuery)
                 || c.Nome.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
                 || c.Documento.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase))
-            .Take(limit)
+            .Take(request.Limit)
             .Select(c => new ClientSummary(c.ClientId, c.Nome, c.Documento, c.AreaVenda))
             .ToList();
 

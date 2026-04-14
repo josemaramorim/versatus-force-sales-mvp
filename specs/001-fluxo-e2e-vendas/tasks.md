@@ -92,10 +92,10 @@
 
 ### Implementacao US2
 
-- [ ] T032 [P] [US2] Ajustar contratos de catalogo em `src/backend/Versatus.ForcaVendas.Application/Catalogo/IClientCatalogRepository.cs`, `src/backend/Versatus.ForcaVendas.Application/Catalogo/IProductCatalogRepository.cs`, `src/backend/Versatus.ForcaVendas.Application/Catalogo/ClientSummary.cs` e `src/backend/Versatus.ForcaVendas.Application/Catalogo/ProductSummary.cs`
+- [x] T032 [P] [US2] Ajustar contratos de catalogo em `src/backend/Versatus.ForcaVendas.Application/Catalogo/IClientCatalogRepository.cs`, `src/backend/Versatus.ForcaVendas.Application/Catalogo/IProductCatalogRepository.cs`, `src/backend/Versatus.ForcaVendas.Application/Catalogo/ClientSummary.cs` e `src/backend/Versatus.ForcaVendas.Application/Catalogo/ProductSummary.cs`
 - [x] T033 [P] [US2] Endurecer validacoes de pedido em `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoRequestValidator.cs`
-- [ ] T034 [P] [US2] Ajustar DTOs e comando de criacao em `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoRequest.cs` e `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoCommand.cs`
-- [ ] T035 [P] [US2] Ajustar resposta de pedido em `src/backend/Versatus.ForcaVendas.Api/Pedidos/PedidoResponse.cs`
+- [x] T034 [P] [US2] Ajustar DTOs e comando de criacao em `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoRequest.cs` e `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoCommand.cs`
+- [x] T035 [P] [US2] Ajustar resposta de pedido em `src/backend/Versatus.ForcaVendas.Api/Pedidos/PedidoResponse.cs`
 - [ ] T036 [US2] Atualizar agregados de dominio em `src/backend/Versatus.ForcaVendas.Domain/Pedidos/Pedido.cs`, `src/backend/Versatus.ForcaVendas.Domain/Pedidos/PedidoItem.cs` e `src/backend/Versatus.ForcaVendas.Domain/Pedidos/PedidoParcela.cs`
 - [ ] T037 [US2] Atualizar servico de regra de pagamento em `src/backend/Versatus.ForcaVendas.Domain/Pedidos/Services/IPaymentConditionService.cs` e `src/backend/Versatus.ForcaVendas.Infrastructure/Data/Services/MockPaymentConditionService.cs`
 - [ ] T038 [US2] Ajustar mapeamento/persistencia de pedido em `src/backend/Versatus.ForcaVendas.Infrastructure/Data/PedidosDbContext.cs`

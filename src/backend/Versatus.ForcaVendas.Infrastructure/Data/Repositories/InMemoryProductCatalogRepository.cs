@@ -18,13 +18,11 @@ public sealed class InMemoryProductCatalogRepository(IConnectionMultiplexer redi
     ];
 
     public Task<IReadOnlyList<ProductSummary>> SearchProductsAsync(
-        string tenantId,
-        string? query,
-        int limit,
+        CatalogSearchRequest request,
         CancellationToken cancellationToken = default)
     {
-        var normalizedQuery = query?.Trim() ?? string.Empty;
-        var cacheKey = BuildCacheKey(tenantId, normalizedQuery, limit);
+        var normalizedQuery = request.Query?.Trim() ?? string.Empty;
+        var cacheKey = BuildCacheKey(request.TenantId, normalizedQuery, request.Limit);
         var db = redis.GetDatabase();
 
         try
@@ -49,11 +47,11 @@ public sealed class InMemoryProductCatalogRepository(IConnectionMultiplexer redi
         }
 
         var filtered = Products
-            .Where(product => string.Equals(product.TenantId, tenantId, StringComparison.OrdinalIgnoreCase))
+            .Where(product => string.Equals(product.TenantId, request.TenantId, StringComparison.OrdinalIgnoreCase))
             .Where(product => string.IsNullOrWhiteSpace(normalizedQuery)
                 || product.Sku.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
                 || product.Name.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase))
-            .Take(limit)
+            .Take(request.Limit)
             .Select(product => new ProductSummary(
                 product.ProductId,
                 product.Sku,

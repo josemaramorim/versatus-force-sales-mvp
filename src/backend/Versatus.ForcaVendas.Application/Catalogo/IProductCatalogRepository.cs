@@ -3,8 +3,6 @@ namespace Versatus.ForcaVendas.Application.Catalogo;
 public interface IProductCatalogRepository
 {
     Task<IReadOnlyList<ProductSummary>> SearchProductsAsync(
-        string tenantId,
-        string? query,
-        int limit,
+    CatalogSearchRequest request,
         CancellationToken cancellationToken = default);
 }

@@ -58,7 +58,7 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
         var parcelas = await _paymentService.CalcularParcelamentoAsync(
             pedidoId,
             totalLiquido,
-            request.CondicaoPagamento.CondicaoPagamentoId,
+            request.CondicaoPagamento.ResolveCondicaoPagamentoId(),
             request.CondicaoPagamento.PrimeiroVencimento,
             cancellationToken);
 
