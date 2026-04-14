@@ -129,14 +129,12 @@ public class CatalogTests : IClassFixture<WebApplicationFactory<Program>>
         ];
 
         public Task<IReadOnlyList<ProductSummary>> SearchProductsAsync(
-            string tenantId,
-            string? query,
-            int limit,
+            CatalogSearchRequest request,
             CancellationToken cancellationToken = default)
         {
-            var normalized = query?.Trim() ?? string.Empty;
+            var normalized = request.Query?.Trim() ?? string.Empty;
             var result = Products
-                .Where(p => tenantId switch
+                .Where(p => request.TenantId switch
                 {
                     "00000000-0000-0000-0000-000000000001" => p.ProductId.StartsWith("prod-00", StringComparison.OrdinalIgnoreCase),
                     "00000000-0000-0000-0000-000000000002" => p.ProductId.StartsWith("prod-10", StringComparison.OrdinalIgnoreCase),
@@ -145,7 +143,7 @@ public class CatalogTests : IClassFixture<WebApplicationFactory<Program>>
                 .Where(p => string.IsNullOrWhiteSpace(normalized)
                     || p.Sku.Contains(normalized, StringComparison.OrdinalIgnoreCase)
                     || p.Name.Contains(normalized, StringComparison.OrdinalIgnoreCase))
-                .Take(limit)
+                .Take(request.Limit)
                 .ToList();
 
             return Task.FromResult((IReadOnlyList<ProductSummary>)result);

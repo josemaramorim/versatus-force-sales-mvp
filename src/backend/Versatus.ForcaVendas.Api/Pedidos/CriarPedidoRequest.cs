@@ -70,7 +70,7 @@ public sealed record CriarPedidoRequest(
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(CondicaoPagamento.CondicaoPagamentoId))
+            if (string.IsNullOrWhiteSpace(CondicaoPagamento.ResolveCondicaoPagamentoId()))
             {
                 errors["condicaoPagamento.condicaoPagamentoId"] = ["condicaoPagamentoId is required."];
             }
@@ -86,6 +86,11 @@ public sealed record CriarPedidoRequest(
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(Observacao) && Observacao.Length > 1000)
+        {
+            errors["observacao"] = ["observacao must contain at most 1000 characters."];
+        }
+
         return errors;
     }
 }
@@ -99,6 +104,18 @@ public sealed record CriarPedidoItemRequest(
     decimal Desconto);
 
 public sealed record CriarPedidoCondicaoPagamentoRequest(
-    string CondicaoPagamentoId,
+    string? CondicaoPagamentoId,
     DateTime PrimeiroVencimento,
-    string FormaPagamento);
+    string FormaPagamento,
+    string? QuantidadeParcelas = null)
+{
+    public string ResolveCondicaoPagamentoId()
+    {
+        if (!string.IsNullOrWhiteSpace(CondicaoPagamentoId))
+        {
+            return CondicaoPagamentoId;
+        }
+
+        return QuantidadeParcelas?.Trim() ?? string.Empty;
+    }
+}

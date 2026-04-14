@@ -40,3 +40,24 @@ public sealed record PedidoSummaryDto(
     decimal TotalBruto,
     decimal TotalDesconto,
     decimal TotalLiquido);
+
+public sealed record CriarPedidoResponse(
+    Guid PedidoId,
+    string Status,
+    int ItensCount,
+    int ParcelasCount,
+    decimal TotalBruto,
+    decimal TotalDesconto,
+    decimal TotalLiquido);
+
+public sealed record PedidoSummaryResponse(
+    Guid PedidoId,
+    string TenantId,
+    string ClienteId,
+    DateTimeOffset CriadoEm,
+    string Status,
+    int ItensCount,
+    int ParcelasCount,
+    decimal TotalBruto,
+    decimal TotalDesconto,
+    decimal TotalLiquido);

@@ -29,9 +29,7 @@ public static class CatalogoEndpoints
             }
 
             var products = await repository.SearchProductsAsync(
-                tenantContext.TenantId,
-                q,
-                effectiveLimit,
+                new CatalogSearchRequest(tenantContext.TenantId, q, effectiveLimit),
                 cancellationToken);
 
             return Results.Ok(products);
@@ -61,9 +59,7 @@ public static class CatalogoEndpoints
             }
 
             var clients = await repository.SearchClientsAsync(
-                tenantContext.TenantId,
-                q,
-                effectiveLimit,
+                new CatalogSearchRequest(tenantContext.TenantId, q, effectiveLimit),
                 cancellationToken);
 
             return Results.Ok(clients);
