@@ -85,15 +85,15 @@
 
 ### Tests US2
 
-- [ ] T028 [P] [US2] Expandir cenarios de catalogo por tenant em `src/backend/Versatus.ForcaVendas.Api.Tests/CatalogTests.cs`
-- [ ] T029 [P] [US2] Expandir cenarios de criacao/listagem/detalhe em `src/backend/Versatus.ForcaVendas.Api.Tests/PedidosTests.cs`
-- [ ] T030 [P] [US2] Criar testes de contrato de pedidos (OpenAPI) em `src/backend/Versatus.ForcaVendas.Api.Tests/PedidosContractTests.cs`
-- [ ] T031 [P] [US2] Criar testes unitarios de regra de totais/desconto em `src/backend/Versatus.ForcaVendas.Api.Tests/PedidoDomainRulesTests.cs`
+- [x] T028 [P] [US2] Expandir cenarios de catalogo por tenant em `src/backend/Versatus.ForcaVendas.Api.Tests/CatalogTests.cs`
+- [x] T029 [P] [US2] Expandir cenarios de criacao/listagem/detalhe em `src/backend/Versatus.ForcaVendas.Api.Tests/PedidosTests.cs`
+- [x] T030 [P] [US2] Criar testes de contrato de pedidos (OpenAPI) em `src/backend/Versatus.ForcaVendas.Api.Tests/PedidosContractTests.cs`
+- [x] T031 [P] [US2] Criar testes unitarios de regra de totais/desconto em `src/backend/Versatus.ForcaVendas.Api.Tests/PedidoDomainRulesTests.cs`
 
 ### Implementacao US2
 
 - [ ] T032 [P] [US2] Ajustar contratos de catalogo em `src/backend/Versatus.ForcaVendas.Application/Catalogo/IClientCatalogRepository.cs`, `src/backend/Versatus.ForcaVendas.Application/Catalogo/IProductCatalogRepository.cs`, `src/backend/Versatus.ForcaVendas.Application/Catalogo/ClientSummary.cs` e `src/backend/Versatus.ForcaVendas.Application/Catalogo/ProductSummary.cs`
-- [ ] T033 [P] [US2] Endurecer validacoes de pedido em `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoRequestValidator.cs`
+- [x] T033 [P] [US2] Endurecer validacoes de pedido em `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoRequestValidator.cs`
 - [ ] T034 [P] [US2] Ajustar DTOs e comando de criacao em `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoRequest.cs` e `src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoCommand.cs`
 - [ ] T035 [P] [US2] Ajustar resposta de pedido em `src/backend/Versatus.ForcaVendas.Api/Pedidos/PedidoResponse.cs`
 - [ ] T036 [US2] Atualizar agregados de dominio em `src/backend/Versatus.ForcaVendas.Domain/Pedidos/Pedido.cs`, `src/backend/Versatus.ForcaVendas.Domain/Pedidos/PedidoItem.cs` e `src/backend/Versatus.ForcaVendas.Domain/Pedidos/PedidoParcela.cs`

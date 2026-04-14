@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -8,12 +9,15 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Versatus.ForcaVendas.Api.Auth;
 using Versatus.ForcaVendas.Api.Pedidos;
 using Versatus.ForcaVendas.Api.Tests.Stubs;
 using Versatus.ForcaVendas.Application.Licenca;
 using Versatus.ForcaVendas.Application.Sessao;
+using Versatus.ForcaVendas.Domain.Auth;
 using Versatus.ForcaVendas.Infrastructure.Data;
+using Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 using Xunit;
 
 namespace Versatus.ForcaVendas.Api.Tests;
@@ -28,13 +32,17 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
         {
             builder.ConfigureServices(services =>
             {
-                var sessionDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(ISessionStore));
-                if (sessionDescriptor is not null) services.Remove(sessionDescriptor);
+                services.RemoveAll<ISessionStore>();
                 services.AddSingleton<ISessionStore, InMemorySessionStore>();
 
-                var subscriptionDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(ITenantSubscriptionRepository));
-                if (subscriptionDescriptor is not null) services.Remove(subscriptionDescriptor);
+                services.RemoveAll<ITenantSubscriptionRepository>();
                 services.AddSingleton<ITenantSubscriptionRepository, InMemoryTenantSubscriptionRepository>();
+
+                services.RemoveAll<IUsuarioRepository>();
+                services.AddSingleton<IUsuarioRepository, InMemoryUsuarioRepository>();
+
+                services.RemoveAll<ISessionAuditEventRepository>();
+                services.AddSingleton<ISessionAuditEventRepository, InMemorySessionAuditEventRepository>();
 
                 var dbOptionsDescriptors = services.Where(d => d.ServiceType == typeof(DbContextOptions<PedidosDbContext>)).ToList();
                 foreach (var desc in dbOptionsDescriptors) services.Remove(desc);
@@ -53,12 +61,7 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var client = _factory.CreateClient();
 
-        var loginResponse = await client.PostAsJsonAsync(
-            "/auth/login",
-            new LoginRequest("admin", "123456"));
-        loginResponse.EnsureSuccessStatusCode();
-
-        var token = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        var token = await LoginAsync(client, "admin@demo1.versatus.com", "Mudar@!123");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
 
         var request = new CriarPedidoRequest(
@@ -91,12 +94,7 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var client = _factory.CreateClient();
 
-        var loginResponse = await client.PostAsJsonAsync(
-            "/auth/login",
-            new LoginRequest("admin", "123456"));
-        loginResponse.EnsureSuccessStatusCode();
-
-        var token = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        var token = await LoginAsync(client, "admin@demo1.versatus.com", "Mudar@!123");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
 
         var request = new CriarPedidoRequest(
@@ -135,12 +133,7 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var client = _factory.CreateClient();
 
-        var loginResponse = await client.PostAsJsonAsync(
-            "/auth/login",
-            new LoginRequest("admin", "123456"));
-        loginResponse.EnsureSuccessStatusCode();
-
-        var token = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        var token = await LoginAsync(client, "admin@demo1.versatus.com", "Mudar@!123");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
 
         var request = new CriarPedidoRequest(
@@ -161,6 +154,33 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
             && p.TotalBruto == 100m
             && p.TotalDesconto == 10m
             && p.TotalLiquido == 90m);
+    }
+
+    [Fact]
+    public async Task Post_pedidos_invalid_item_discount_returns_bad_request()
+    {
+        var client = _factory.CreateClient();
+        var token = await LoginAsync(client, "admin@demo1.versatus.com", "Mudar@!123");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+
+        var request = new CriarPedidoRequest(
+            ClienteId: "cli-003",
+            Itens:
+            [
+                new CriarPedidoItemRequest("prod-001", "SKU-001", "Produto 1", 1, 10m, 11m)
+            ],
+            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("1", DateTime.UtcNow.Date.AddDays(7), "boleto"));
+
+        var response = await client.PostAsJsonAsync("/pedidos", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    private static async Task<LoginResponse> LoginAsync(HttpClient client, string email, string password)
+    {
+        var loginResponse = await client.PostAsJsonAsync("/auth/login", new LoginRequest(email, password));
+        loginResponse.EnsureSuccessStatusCode();
+        return (await loginResponse.Content.ReadFromJsonAsync<LoginResponse>())!;
     }
 
     private sealed record GetPedidoResponse(string PedidoId, string TenantId, string ClienteId, DateTimeOffset CriadoEm, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido, PedidoItemDto[] Itens, PedidoParcelaDto[] Parcelas, string? Observacao);

@@ -48,6 +48,19 @@ public sealed record CriarPedidoRequest(
                 {
                     errors[$"itens[{i}].precoUnitario"] = ["precoUnitario must be greater than zero."];
                 }
+
+                if (item.Desconto < 0)
+                {
+                    errors[$"itens[{i}].desconto"] = ["desconto must be greater than or equal to zero."];
+                }
+                else
+                {
+                    var totalBrutoItem = item.Quantidade * item.PrecoUnitario;
+                    if (item.Desconto > totalBrutoItem)
+                    {
+                        errors[$"itens[{i}].desconto"] = ["desconto cannot exceed bruto total for item."];
+                    }
+                }
             }
         }
 
