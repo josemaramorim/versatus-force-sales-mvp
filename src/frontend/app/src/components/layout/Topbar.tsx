@@ -28,15 +28,47 @@ import {
 import { useAuthStore } from '@/store/authStore'
 import { logout } from '@/lib/auth'
 import { useTheme } from 'next-themes'
+import { db } from '@/lib/offlineDb'
 
 export function Topbar() {
   const user = useAuthStore((s) => s.user)
   const { theme, setTheme, resolvedTheme } = useTheme()
   const { toggleMobileMenu } = useUIStore()
   const [mounted, setMounted] = React.useState(false)
+  const [isOnline, setIsOnline] = React.useState(true)
+  const [pendingCount, setPendingCount] = React.useState(0)
 
   React.useEffect(() => {
     setMounted(true)
+    setIsOnline(navigator.onLine)
+
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    const checkPending = async () => {
+      if (typeof window !== 'undefined' && db) {
+        try {
+          const count = await db.pedidos
+            .filter((p) => p.status === 'pendente_sync' || p.status === 'erro_sync')
+            .count()
+          setPendingCount(count)
+        } catch (err) {
+          console.error('[Topbar] Erro ao contar pedidos pendentes:', err)
+        }
+      }
+    }
+
+    checkPending()
+    const interval = setInterval(checkPending, 3000)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+      clearInterval(interval)
+    }
   }, [])
 
   const toggleTheme = () => {
@@ -65,9 +97,35 @@ export function Topbar() {
           <div className="min-w-0">
             <h2 className="text-sm lg:text-xl font-black italic tracking-tighter leading-none truncate pr-2">Módulo de Venda</h2>
             <div className="hidden xs:flex items-center gap-2 mt-2">
-                <span className="text-[8px] font-black uppercase tracking-[0.4em] text-emerald-500 leading-none">Online</span>
-                <span className="w-1 h-1 rounded-full bg-slate-700" />
-                <span className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-500 leading-none truncate">Filial: São Paulo</span>
+              {isOnline ? (
+                <>
+                  <span className="relative flex h-1.5 w-1.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-[8px] font-black uppercase tracking-[0.4em] text-emerald-500 leading-none">Online</span>
+                </>
+              ) : (
+                <>
+                  <span className="relative flex h-1.5 w-1.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                  </span>
+                  <span className="text-[8px] font-black uppercase tracking-[0.4em] text-amber-500 leading-none">Offline</span>
+                </>
+              )}
+
+              {pendingCount > 0 && (
+                <>
+                  <span className="w-1 h-1 rounded-full bg-slate-700" />
+                  <span className="text-[8px] font-black uppercase tracking-wider text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
+                    {pendingCount} Pendente{pendingCount > 1 ? 's' : ''}
+                  </span>
+                </>
+              )}
+
+              <span className="w-1 h-1 rounded-full bg-slate-700" />
+              <span className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-500 leading-none truncate">Filial: São Paulo</span>
             </div>
           </div>
         </div>

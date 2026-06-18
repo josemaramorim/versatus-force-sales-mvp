@@ -68,6 +68,7 @@ public partial class Program
         AddRedisServices(builder);
         AddDataServices(builder);
         AddMessagingServices(builder);
+        builder.Services.AddIntegrationTransport(builder.Configuration);
 
         builder.Services.Configure<SessionStoreOptions>(opts =>
         {

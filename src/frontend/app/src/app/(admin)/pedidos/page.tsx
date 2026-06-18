@@ -30,7 +30,8 @@ import {
   Eye, 
   Trash2, 
   Download,
-  ClipboardList
+  ClipboardList,
+  RefreshCw
 } from 'lucide-react'
 
 const columns = [
@@ -48,23 +49,63 @@ const statusColorMap: Record<string, "primary" | "success" | "warning" | "danger
   erro: "danger",
   enviado: "primary",
   rascunho: "default",
+  pendente_sync: "warning",
+  erro_sync: "danger",
+  offline: "warning",
+}
+
+const statusLabelMap: Record<string, string> = {
+  processado: "Processado",
+  pendente: "Pendente",
+  erro: "Rejeitado ERP",
+  enviado: "Enviado",
+  rascunho: "Rascunho",
+  pendente_sync: "Aguardando Rede",
+  erro_sync: "Erro de Estoque",
+  offline: "Offline",
 }
 
 import { listPedidosApi, PedidoSummary } from '@/lib/vendaApi'
+import { db } from '@/lib/offlineDb'
 
 function mapPedidoToRow(p: PedidoSummary) {
   return {
     id: p.pedidoId.substring(0, 8).toUpperCase(),
+    pedidoId: p.pedidoId,
     cliente: p.clienteId,
     total: `R$ ${Number(p.totalLiquido).toFixed(2)}`,
     status: p.status || 'rascunho',
     data: new Date(p.criadoEm).toLocaleString('pt-BR'),
+    erroDetail: p.erroDetail
   }
 }
 
 export default function PedidosPage() {
   const [filterValue, setFilterValue] = React.useState("")
   const [orders, setOrders] = React.useState<any[]>([])
+
+  const handleAction = React.useCallback(async (actionKey: React.Key, order: any) => {
+    if (actionKey === 'excluir') {
+      const isLocal = order.status === 'erro_sync' || order.status === 'pendente_sync' || order.pedidoId.startsWith('off_')
+      if (isLocal && db) {
+        try {
+          console.log('[Offline Action] Removendo pedido local:', order.pedidoId)
+          await db.pedidos.delete(order.pedidoId)
+          const list = await listPedidosApi()
+          setOrders(list.map(mapPedidoToRow))
+        } catch (err) {
+          console.error('Erro ao excluir pedido local:', err)
+        }
+      } else {
+        alert('Pedidos já integrados com o servidor não podem ser excluídos pelo vendedor.')
+      }
+    } else if (actionKey === 'retentar') {
+      const { syncPendingOrders } = await import('@/lib/syncQueue')
+      await syncPendingOrders()
+      const list = await listPedidosApi()
+      setOrders(list.map(mapPedidoToRow))
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -90,6 +131,9 @@ export default function PedidosPage() {
           <div className="flex flex-col">
             <p className="text-sm font-bold text-slate-900 dark:text-white leading-none">{cellValue}</p>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Vendedor: Principal</p>
+            {order.status === 'erro_sync' && order.erroDetail && (
+              <p className="text-[10px] font-semibold text-red-500 mt-1.5 leading-tight max-w-xs">{order.erroDetail}</p>
+            )}
           </div>
         )
       case "total":
@@ -99,14 +143,21 @@ export default function PedidosPage() {
       case "status":
         return (
           <Chip className="capitalize font-black text-[9px] tracking-widest px-2" color={statusColorMap[order.status]} size="sm" variant="flat">
-            {cellValue}
+            {statusLabelMap[order.status] || cellValue}
           </Chip>
         )
       case "data":
         return (
           <p className="text-xs font-bold text-slate-500">{cellValue}</p>
         )
-      case "actions":
+      case "actions": {
+        const dropdownItems = [
+          { key: 'visualizar', label: 'Visualizar', icon: <Eye className="h-4 w-4" />, color: 'default' },
+          ...(order.status === 'erro_sync' ? [{ key: 'retentar', label: 'Tentar Enviar Novamente', icon: <RefreshCw className="h-4 w-4 text-blue-500" />, color: 'default' }] : []),
+          { key: 'exportar', label: 'Exportar PDF', icon: <Download className="h-4 w-4" />, color: 'default' },
+          ...(order.status === 'rascunho' || order.status === 'erro_sync' || order.status === 'pendente_sync' ? [{ key: 'excluir', label: 'Excluir Rascunho', icon: <Trash2 className="h-4 w-4" />, color: 'danger' }] : [])
+        ]
+
         return (
           <div className="relative flex justify-end items-center gap-2">
             <Dropdown placement="bottom-end" backdrop="blur">
@@ -115,20 +166,30 @@ export default function PedidosPage() {
                   <MoreVertical className="text-slate-400 h-4 w-4" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu aria-label="Ações de Pedido">
-                <DropdownItem key="visualizar" startContent={<Eye className="h-4 w-4" />}>Visualizar</DropdownItem>
-                <DropdownItem key="exportar" startContent={<Download className="h-4 w-4" />}>Exportar PDF</DropdownItem>
-                <DropdownItem key="excluir" color="danger" className="text-danger" startContent={<Trash2 className="h-4 w-4" />}>
-                  Excluir Rascunho
-                </DropdownItem>
+              <DropdownMenu 
+                aria-label="Ações de Pedido" 
+                onAction={(key) => handleAction(key, order)}
+                items={dropdownItems}
+              >
+                {(item: any) => (
+                  <DropdownItem 
+                    key={item.key} 
+                    color={item.color === 'danger' ? 'danger' : 'default'} 
+                    className={item.color === 'danger' ? 'text-danger' : ''}
+                    startContent={item.icon}
+                  >
+                    {item.label}
+                  </DropdownItem>
+                )}
               </DropdownMenu>
             </Dropdown>
           </div>
         )
+      }
       default:
         return cellValue
     }
-  }, [])
+  }, [handleAction])
 
   return (
     <div className="space-y-8 pb-10">
