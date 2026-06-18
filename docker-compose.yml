@@ -25,11 +25,30 @@ services:
       - "21:21"
       - "21000-21010:21000-21010"
     environment:
-      - FTP_USER=test
-      - FTP_PASS=test
+      - USERS=test|test
       - PASV_ADDRESS=127.0.0.1
       - PASV_MIN_PORT=21000
       - PASV_MAX_PORT=21010
 
+  postgres:
+    image: postgres:15
+    container_name: fvs-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=forca_vendas_dev
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Mudar@!123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:7
+    container_name: fvs-redis
+    ports:
+      - "6379:6379"
+
 volumes:
   rabbitmq_data:
+  postgres_data:
