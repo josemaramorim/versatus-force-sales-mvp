@@ -1,6 +1,7 @@
 import api from './api'
 import { Cliente, Produto } from '@/types/vendas'
 import { db, type OfflinePedido } from './offlineDb'
+import { useAuthStore } from '@/store/authStore'
 
 // ─── Response shapes matching backend serialization ───────────────────────
 
@@ -57,9 +58,10 @@ interface ClientApiResponse {
 export async function searchClientes(q?: string): Promise<Cliente[]> {
   const localDb = db
   const isOffline = typeof window !== 'undefined' && !navigator.onLine
+  const isDemo = typeof window !== 'undefined' && useAuthStore.getState().accessToken === 'demo_token'
 
-  if (isOffline && localDb) {
-    console.log('[Offline] Buscando clientes do banco local...')
+  if ((isOffline || isDemo) && localDb) {
+    console.log('[Offline/Demo] Buscando clientes do banco local...')
     const query = q?.toLowerCase() || ''
     const all = await localDb.clientes.toArray()
     if (!query) return all
@@ -117,9 +119,10 @@ interface ProductApiResponse {
 export async function searchProdutos(q?: string): Promise<Produto[]> {
   const localDb = db
   const isOffline = typeof window !== 'undefined' && !navigator.onLine
+  const isDemo = typeof window !== 'undefined' && useAuthStore.getState().accessToken === 'demo_token'
 
-  if (isOffline && localDb) {
-    console.log('[Offline] Buscando produtos do banco local...')
+  if ((isOffline || isDemo) && localDb) {
+    console.log('[Offline/Demo] Buscando produtos do banco local...')
     const query = q?.toLowerCase() || ''
     const all = await localDb.produtos.toArray()
     if (!query) return all
@@ -168,10 +171,11 @@ export async function searchProdutos(q?: string): Promise<Produto[]> {
 export async function listPedidosApi(params?: { clienteId?: string; status?: string; page?: number; pageSize?: number }): Promise<PedidoSummary[]> {
   const localDb = db
   const isOffline = typeof window !== 'undefined' && !navigator.onLine
+  const isDemo = typeof window !== 'undefined' && useAuthStore.getState().accessToken === 'demo_token'
 
-  // Se estiver offline, serve tudo do IndexedDB local
-  if (isOffline && localDb) {
-    console.log('[Offline] Listando pedidos do IndexedDB local...')
+  // Se estiver offline ou em modo demo, serve tudo do IndexedDB local
+  if ((isOffline || isDemo) && localDb) {
+    console.log('[Offline/Demo] Listando pedidos do IndexedDB local...')
     const localPedidos = await localDb.pedidos.toArray()
     
     // Filtrar de forma simples localmente se params forem passados
@@ -211,7 +215,7 @@ export async function listPedidosApi(params?: { clienteId?: string; status?: str
 
       // 2. Cachear os pedidos recebidos da API (com status 'sincronizado')
       const localIds = apiPedidos.map(p => p.pedidoId)
-      await localDb.transaction('rw', localDb.pedidos, async () => {
+      await localDb.transaction('rw', [localDb.pedidos, localDb.clientes], async () => {
         // Remove os que agora estão vindo do servidor para atualizar
         await localDb.pedidos.bulkDelete(localIds)
         
@@ -298,9 +302,10 @@ export async function listPedidosApi(params?: { clienteId?: string; status?: str
 export async function criarPedidoApi(payload: CriarPedidoPayload): Promise<PedidoCriado> {
   const localDb = db
   const isOffline = typeof window !== 'undefined' && !navigator.onLine
+  const isDemo = typeof window !== 'undefined' && useAuthStore.getState().accessToken === 'demo_token'
 
-  if (isOffline && localDb) {
-    console.log('[Offline] Detectado offline. Gravando pedido localmente no IndexedDB...')
+  if ((isOffline || isDemo) && localDb) {
+    console.log('[Offline/Demo] Gravando pedido localmente no IndexedDB...')
     const pedidoId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `off_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     
     const totalBruto = payload.itens.reduce((acc, item) => acc + (item.quantidade * item.precoUnitario), 0)

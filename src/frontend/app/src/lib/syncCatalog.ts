@@ -1,5 +1,6 @@
 import { db } from './offlineDb';
 import { searchClientes, searchProdutos } from './vendaApi';
+import { useAuthStore } from '@/store/authStore';
 
 export interface SyncStatus {
   lastSyncedAt: string | null;
@@ -11,6 +12,13 @@ export async function syncCatalogLocal(): Promise<boolean> {
   const localDb = db;
   if (typeof window === 'undefined' || !localDb) {
     return false;
+  }
+
+  // Se for modo demonstração, não sincroniza com a API
+  const token = useAuthStore.getState().accessToken;
+  if (token === 'demo_token') {
+    console.log('[Offline Sync] Modo demonstração ativo. Ignorando sincronização com a API.');
+    return true;
   }
 
   // Se estiver offline, não tenta fazer o download

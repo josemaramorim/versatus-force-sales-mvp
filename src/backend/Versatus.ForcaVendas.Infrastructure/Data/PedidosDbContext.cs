@@ -10,7 +10,7 @@ public sealed class PedidosDbContext : DbContext
     private static readonly Guid AdminTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     private static readonly Guid GestorTenantId = Guid.Parse("00000000-0000-0000-0000-000000000002");
     private static readonly DateTimeOffset SeedCreatedAt = new(new DateTime(2026, 4, 12, 16, 7, 19, 627, DateTimeKind.Unspecified), TimeSpan.Zero);
-    private const string SeedPasswordHash = "$2a$11$ciSTyOS/P1XmbUlSxGlhaeKggvqND4mOTYTakRxHtm52LS/kJclmO";
+    private const string SeedPasswordHash = "$2a$11$yCty/Ja8ozIT5XncSFjkW..pXSdhG0Q//CfLXhmoYL6Ok4NmF1LhC";
 
     public PedidosDbContext(DbContextOptions<PedidosDbContext> options) : base(options)
     {

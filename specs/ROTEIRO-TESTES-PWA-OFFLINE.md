@@ -88,6 +88,16 @@ npm run dev
 ```
 * **URL do App**: `http://localhost:3000`
 
+> [!IMPORTANT]
+> **Aviso sobre o teste Offline em modo de Desenvolvimento (`npm run dev`)**:
+> Em modo de desenvolvimento (`npm run dev`), o Next.js (Turbopack) compila os arquivos e componentes dinamicamente sob demanda. Se você colocar o navegador em modo **Offline** sem antes ter carregado todos os elementos, o navegador não conseguirá baixar as partes do código pendentes, gerando o erro de carregamento de bloco (`ChunkLoadError`).
+> Para validar o funcionamento offline real do PWA de forma robusta, recomenda-se rodar a aplicação em **modo de produção**:
+> ```powershell
+> npm run build
+> npm run start
+> ```
+> *(Caso queira testar em modo `npm run dev`, clique em todos os menus e abra os dropdowns **antes** de mudar a conexão para Offline no DevTools).*
+
 ---
 
 ## 5. Roteiro de Teste Manual da Experiência Offline (PWA)

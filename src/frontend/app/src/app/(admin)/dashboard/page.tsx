@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import {
   ShoppingCart,
@@ -102,7 +103,7 @@ export default function DashboardPage() {
         </div>
         
         <Button
-          as="a"
+          as={Link}
           href="/vendas/nova"
           color="primary"
           radius="full"
@@ -146,7 +147,7 @@ export default function DashboardPage() {
                   <span className="w-1.5 h-8 bg-blue-600 rounded-full" />
                   Listagem de Pedidos
                </h3>
-               <Button as="a" href="/pedidos" variant="light" color="primary" size="sm" className="font-black uppercase tracking-widest text-[10px] bg-slate-950/20 px-4 h-10 rounded-2xl">
+               <Button as={Link} href="/pedidos" variant="light" color="primary" size="sm" className="font-black uppercase tracking-widest text-[10px] bg-slate-950/20 px-4 h-10 rounded-2xl">
                  Ver Histórico <ChevronRight className="h-4 w-4" />
                </Button>
           </div>

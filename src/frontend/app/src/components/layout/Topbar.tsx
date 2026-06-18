@@ -96,7 +96,7 @@ export function Topbar() {
           </div>
           <div className="min-w-0">
             <h2 className="text-sm lg:text-xl font-black italic tracking-tighter leading-none truncate pr-2">Módulo de Venda</h2>
-            <div className="hidden xs:flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2">
               {isOnline ? (
                 <>
                   <span className="relative flex h-1.5 w-1.5 shrink-0">

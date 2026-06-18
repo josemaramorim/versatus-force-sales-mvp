@@ -27,6 +27,12 @@ export async function syncPendingOrders(): Promise<void> {
     return;
   }
 
+  // Se for modo demonstração, aborta a sincronização
+  if (token === 'demo_token') {
+    console.log('[Sync Queue] Modo demonstração ativo. Sincronização de pedidos abortada.');
+    return;
+  }
+
   try {
     isSyncing = true;
     console.log('[Sync Queue] Iniciando varredura de pedidos offline pendentes...');

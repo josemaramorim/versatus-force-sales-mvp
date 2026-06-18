@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
+import Link from 'next/link'
 import { 
   Table, 
   TableHeader, 
@@ -206,7 +207,7 @@ export default function PedidosPage() {
           </div>
         </div>
         <Button 
-          as="a" 
+          as={Link} 
           href="/vendas/nova"
           color="primary" 
           variant="shadow" 
