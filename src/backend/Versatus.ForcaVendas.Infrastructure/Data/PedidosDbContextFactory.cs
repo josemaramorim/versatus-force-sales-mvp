@@ -17,9 +17,12 @@ public sealed class PedidosDbContextFactory : IDesignTimeDbContextFactory<Pedido
             apiPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "backend", "Versatus.ForcaVendas.Api");
         }
 
+        string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+
         var configuration = new ConfigurationBuilder()
             .SetBasePath(apiPath)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true)
             .Build();
 
         var optionsBuilder = new DbContextOptionsBuilder<PedidosDbContext>();
