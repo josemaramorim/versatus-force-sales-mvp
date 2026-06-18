@@ -13,7 +13,10 @@ export interface LoginResponse {
 }
 
 export async function login(payload: LoginPayload): Promise<LoginResponse> {
-  const { data } = await api.post<LoginResponse>('/auth/login', payload)
+  const { data } = await api.post<LoginResponse>('/auth/login', {
+    email: payload.username,
+    password: payload.password
+  })
   useAuthStore.getState().setSession(data.accessToken, data.refreshToken)
   return data
 }
