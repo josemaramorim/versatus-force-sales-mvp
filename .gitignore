@@ -37,3 +37,6 @@ TestResults/
 
 # Allow example env file to be committed
 !.env.example
+
+# Local sync data
+/integration-sync/

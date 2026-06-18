@@ -1,4 +1,4 @@
-# Script de inicialização do banco de dados
+-- Script de inicialização do banco de dados
 
 -- Criar schema de infraestrutura
 CREATE SCHEMA IF NOT EXISTS infra;

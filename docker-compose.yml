@@ -29,6 +29,8 @@ services:
       - PASV_ADDRESS=127.0.0.1
       - PASV_MIN_PORT=21000
       - PASV_MAX_PORT=21010
+    volumes:
+      - ./integration-sync:/integration-sync
 
   postgres:
     image: postgres:15
