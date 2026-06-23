@@ -16,8 +16,15 @@ export default function AdminLayout({
 }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const router = useRouter()
+  const [isHydrated, setIsHydrated] = React.useState(false)
 
   useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isHydrated) return
+
     if (!isAuthenticated) {
       router.push('/login')
     } else {
@@ -30,9 +37,9 @@ export default function AdminLayout({
         console.error('[AdminLayout] Erro ao sincronizar pedidos pendentes:', err)
       })
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isHydrated, router])
 
-  if (!isAuthenticated) {
+  if (!isHydrated || !isAuthenticated) {
     return null
   }
 
