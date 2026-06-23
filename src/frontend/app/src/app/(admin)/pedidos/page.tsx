@@ -77,13 +77,39 @@ function mapPedidoToRow(p: PedidoSummary) {
     total: `R$ ${Number(p.totalLiquido).toFixed(2)}`,
     status: p.status || 'rascunho',
     data: new Date(p.criadoEm).toLocaleString('pt-BR'),
+    rawCriadoEm: p.criadoEm,
     erroDetail: p.erroDetail
   }
+}
+
+const dateFilterLabels: Record<string, string> = {
+  hoje: "Hoje",
+  ontem: "Ontem",
+  "7dias": "Últimos 7 dias",
+  "este-mes": "Este Mês",
+  todos: "Todos os Pedidos",
+  custom: "Personalizado..."
+}
+
+const statusFilterLabels: Record<string, string> = {
+  todos: "Todos os Status",
+  processado: "Processado",
+  pendente: "Pendente",
+  enviado: "Enviado",
+  rascunho: "Rascunho",
+  pendente_sync: "Aguardando Rede",
+  erro_sync: "Erro de Estoque"
 }
 
 export default function PedidosPage() {
   const [filterValue, setFilterValue] = React.useState("")
   const [orders, setOrders] = React.useState<any[]>([])
+  const [dateFilter, setDateFilter] = React.useState<'hoje' | 'ontem' | '7dias' | 'este-mes' | 'todos' | 'custom'>('hoje')
+  const [startDate, setStartDate] = React.useState("")
+  const [endDate, setEndDate] = React.useState("")
+  const [statusFilter, setStatusFilter] = React.useState<string>('todos')
+  const [page, setPage] = React.useState(1)
+  const itemsPerPage = 10
 
   const handleAction = React.useCallback(async (actionKey: React.Key, order: any) => {
     if (actionKey === 'excluir') {
@@ -118,6 +144,103 @@ export default function PedidosPage() {
     })
     return () => { mounted = false }
   }, [])
+
+  // Filtered Orders logic
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter(order => {
+      // A. Text Search Query
+      const matchesSearch = filterValue === "" || 
+         order.id.toLowerCase().includes(filterValue.toLowerCase()) ||
+         order.pedidoId.toLowerCase().includes(filterValue.toLowerCase()) ||
+         order.cliente.toLowerCase().includes(filterValue.toLowerCase())
+         
+      if (!matchesSearch) return false
+      
+      // B. Status Filter
+      const matchesStatus = statusFilter === "todos" || order.status === statusFilter
+      if (!matchesStatus) return false
+      
+      // C. Date Filter
+      if (dateFilter === "todos") return true
+      
+      const orderDate = new Date(order.rawCriadoEm)
+      if (isNaN(orderDate.getTime())) return false
+      
+      const today = new Date()
+      
+      if (dateFilter === "hoje") {
+         return orderDate.getFullYear() === today.getFullYear() &&
+                orderDate.getMonth() === today.getMonth() &&
+                orderDate.getDate() === today.getDate()
+      }
+      if (dateFilter === "ontem") {
+         const yesterday = new Date()
+         yesterday.setDate(today.getDate() - 1)
+         return orderDate.getFullYear() === yesterday.getFullYear() &&
+                orderDate.getMonth() === yesterday.getMonth() &&
+                orderDate.getDate() === yesterday.getDate()
+      }
+      if (dateFilter === "7dias") {
+         const sevenDaysAgo = new Date()
+         sevenDaysAgo.setDate(today.getDate() - 7)
+         sevenDaysAgo.setHours(0, 0, 0, 0)
+         return orderDate >= sevenDaysAgo && orderDate <= today
+      }
+      if (dateFilter === "este-mes") {
+         return orderDate.getFullYear() === today.getFullYear() &&
+                orderDate.getMonth() === today.getMonth()
+      }
+      if (dateFilter === "custom") {
+         const start = startDate ? new Date(startDate + 'T00:00:00') : null
+         const end = endDate ? new Date(endDate + 'T23:59:59') : null
+         return (!start || orderDate >= start) && (!end || orderDate <= end)
+      }
+      
+      return true
+    })
+  }, [orders, filterValue, statusFilter, dateFilter, startDate, endDate])
+
+  // Pagination Calculations
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage) || 1
+
+  // Adjust page if it exceeds total pages after filtering
+  React.useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [totalPages, page])
+
+  // Slice for current page
+  const paginatedOrders = React.useMemo(() => {
+    const startIdx = (page - 1) * itemsPerPage
+    return filteredOrders.slice(startIdx, startIdx + itemsPerPage)
+  }, [filteredOrders, page, itemsPerPage])
+
+  // Export to CSV Action
+  const handleExportCSV = React.useCallback(() => {
+    if (filteredOrders.length === 0) {
+      alert("Nenhum pedido para exportar.")
+      return
+    }
+    const headers = ["ID Pedido", "Cliente", "Valor", "Status", "Data de Criacao"]
+    const rows = filteredOrders.map(o => [
+      o.pedidoId,
+      o.cliente,
+      o.total,
+      statusLabelMap[o.status] || o.status,
+      o.data
+    ])
+    
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+      + [headers.join(";"), ...rows.map(e => e.join(";"))].join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `pedidos_filtrados_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }, [filteredOrders])
 
   const renderCell = React.useCallback((order: any, columnKey: React.Key) => {
     const cellValue = order[columnKey as keyof typeof order]
@@ -221,41 +344,156 @@ export default function PedidosPage() {
 
       <Card className="border-none shadow-2xl bg-white dark:bg-slate-900 p-2" radius="lg">
         <CardHeader className="p-6 pb-2 flex-col items-start gap-4">
-          <div className="flex w-full justify-between items-center gap-3">
+          <div className="flex flex-col md:flex-row w-full justify-between items-stretch md:items-center gap-4">
             <Input
               isClearable
-              className="w-full sm:max-w-[44%]"
+              className="w-full md:max-w-[40%]"
               placeholder="Pesquisar por pedido ou cliente..."
               startContent={<Search className="text-slate-400 h-4 w-4" />}
               value={filterValue}
-              onValueChange={setFilterValue}
+              onValueChange={(val) => {
+                setFilterValue(val)
+                setPage(1)
+              }}
+              onClear={() => {
+                setFilterValue("")
+                setPage(1)
+              }}
               variant="flat"
               radius="full"
               classNames={{
                 inputWrapper: "bg-slate-100 dark:bg-slate-950 px-4",
               }}
             />
-            <div className="flex gap-3">
-              <Button 
-                variant="flat" 
-                color="secondary" 
-                radius="full" 
-                className="font-bold text-xs"
-                endContent={<ChevronDown className="text-small" />}
-              >
-                Data
-              </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Status Filter */}
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button 
+                    variant="flat" 
+                    color="primary" 
+                    radius="full" 
+                    className="font-bold text-xs capitalize"
+                    endContent={<ChevronDown className="text-small" />}
+                  >
+                    {statusFilterLabels[statusFilter]}
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu 
+                  aria-label="Filtro de Status"
+                  variant="flat"
+                  disallowEmptySelection
+                  selectionMode="single"
+                  selectedKeys={new Set([statusFilter])}
+                  onSelectionChange={(keys) => {
+                    const key = Array.from(keys)[0] as string
+                    setStatusFilter(key)
+                    setPage(1)
+                  }}
+                >
+                  <DropdownItem key="todos">Todos os Status</DropdownItem>
+                  <DropdownItem key="processado">Processado</DropdownItem>
+                  <DropdownItem key="pendente">Pendente</DropdownItem>
+                  <DropdownItem key="enviado">Enviado</DropdownItem>
+                  <DropdownItem key="rascunho">Rascunho</DropdownItem>
+                  <DropdownItem key="pendente_sync">Aguardando Rede</DropdownItem>
+                  <DropdownItem key="erro_sync">Erro de Estoque</DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+
+              {/* Date Period Filter */}
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button 
+                    variant="flat" 
+                    color="secondary" 
+                    radius="full" 
+                    className="font-bold text-xs capitalize"
+                    endContent={<ChevronDown className="text-small" />}
+                  >
+                    Data: {dateFilterLabels[dateFilter]}
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu 
+                  aria-label="Filtro de Data"
+                  variant="flat"
+                  disallowEmptySelection
+                  selectionMode="single"
+                  selectedKeys={new Set([dateFilter])}
+                  onSelectionChange={(keys) => {
+                    const key = Array.from(keys)[0] as string
+                    setDateFilter(key as any)
+                    setPage(1)
+                  }}
+                >
+                  <DropdownItem key="hoje">Hoje</DropdownItem>
+                  <DropdownItem key="ontem">Ontem</DropdownItem>
+                  <DropdownItem key="7dias">Últimos 7 dias</DropdownItem>
+                  <DropdownItem key="este-mes">Este Mês</DropdownItem>
+                  <DropdownItem key="todos">Todos os Pedidos</DropdownItem>
+                  <DropdownItem key="custom">Personalizado...</DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+
+              {/* Export CSV Button */}
               <Button 
                 variant="flat" 
                 color="default" 
                 radius="full" 
                 className="font-bold text-xs"
                 startContent={<Download className="h-4 w-4" />}
+                onClick={handleExportCSV}
               >
                 Exportar
               </Button>
             </div>
           </div>
+
+          {/* Custom Date Selection */}
+          {dateFilter === 'custom' && (
+            <div className="flex flex-wrap gap-4 items-center mt-2 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl w-full border border-slate-100 dark:border-slate-800/50">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">De:</span>
+                <input 
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value)
+                    setPage(1)
+                  }}
+                  className="px-3 py-1.5 text-xs font-bold rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Até:</span>
+                <input 
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value)
+                    setPage(1)
+                  }}
+                  className="px-3 py-1.5 text-xs font-bold rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <Button 
+                  size="sm" 
+                  variant="light" 
+                  color="danger" 
+                  radius="full" 
+                  className="text-xs font-bold"
+                  onClick={() => {
+                    setStartDate("")
+                    setEndDate("")
+                    setPage(1)
+                  }}
+                >
+                  Limpar Datas
+                </Button>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardBody className="p-0">
           <Table 
@@ -279,7 +517,10 @@ export default function PedidosPage() {
                 </TableColumn>
               )}
             </TableHeader>
-            <TableBody items={orders}>
+            <TableBody 
+              items={paginatedOrders}
+              emptyContent="Nenhum pedido encontrado para os filtros aplicados."
+            >
               {(item) => (
                 <TableRow key={item.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                   {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
@@ -289,14 +530,17 @@ export default function PedidosPage() {
           </Table>
           
           <div className="py-6 px-6 flex justify-between items-center border-t border-slate-50 dark:border-slate-800">
-             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Página 1 de 5</span>
+             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+               Página {page} de {totalPages}
+             </span>
              <Pagination
                 isCompact
                 showControls
                 showShadow
                 color="primary"
-                page={1}
-                total={10}
+                page={page}
+                total={totalPages}
+                onChange={setPage}
                 radius="lg"
               />
           </div>
