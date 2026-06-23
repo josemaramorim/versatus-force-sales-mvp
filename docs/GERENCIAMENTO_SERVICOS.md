@@ -76,3 +76,150 @@ Se você deseja iniciar os serviços em segundo plano no PowerShell sem precisar
 
 *   **Para listar os jobs ativos:** `Get-Job`
 *   **Para parar os jobs ativos:** `Get-Job | Stop-Job`
+
+---
+
+## 4. Guia do Docker para Leigos
+
+### 4.1. O que é o Docker e por que usamos?
+Imagine que cada banco de dados ou serviço que o sistema precisa é como um eletrodoméstico que precisa de uma tomada e voltagem específicas. Se tentarmos instalar todos diretamente no seu Windows (como PostgreSQL, Redis, RabbitMQ e um Servidor FTP), isso pode gerar conflitos com outros programas já instalados, exigir configurações manuais complexas e deixar o computador lento.
+
+O **Docker** funciona criando "caixas virtuais isoladas" (chamadas de **Contêineres**) para cada um desses serviços. Tudo já vem configurado e pronto para uso dentro dessas caixas. 
+Toda a infraestrutura necessária para o **Versatus Force Sales** rodar localmente é descrita em um único arquivo de receitas na raiz do projeto chamado `docker-compose.yml`.
+
+---
+
+### 4.2. Pré-requisito Fundamental: Docker Desktop
+Para que qualquer comando ou serviço do Docker funcione, o aplicativo **Docker Desktop** deve estar instalado no seu computador e **em execução**.
+
+*   **Como saber se está rodando?** 
+    *   Verifique se há um ícone de baleia na barra de tarefas do Windows (perto do relógio).
+    *   Abra o programa **Docker Desktop**. No canto inferior esquerdo, deve haver uma barra verde indicando **"Engine running"** (Motor em execução).
+*   **Erro comum se não estiver rodando:** Ao tentar usar o Docker no terminal, você verá uma mensagem de erro longa contendo termos como *"error during connect"* ou *"daemon is not running"*. Para corrigir, basta abrir o Docker Desktop e aguardar ele inicializar.
+
+---
+
+### 4.3. Os 4 Serviços Rodando no Docker e suas Credenciais
+Quando você inicia o Docker do projeto, quatro servidores independentes sobem automaticamente na sua máquina. Abaixo estão os detalhes de acesso para cada um, caso precise conectar ferramentas externas (como DBeaver, pgAdmin, ou clientes FTP):
+
+#### 1. Banco de Dados: `fvs-postgres` (PostgreSQL)
+*   **O que faz:** Guarda todas as informações persistentes do sistema (usuários, sessões, pedidos e tabelas de configuração).
+*   **Como conectar por fora (ex: DBeaver / pgAdmin):**
+    *   **Host (Servidor):** `localhost` (ou `127.0.0.1`)
+    *   **Porta:** `5432`
+    *   **Banco de Dados (Database):** `forca_vendas_dev`
+    *   **Usuário (Username):** `postgres`
+    *   **Senha (Password):** `Mudar@!123`
+
+#### 2. Cache em Memória: `fvs-redis` (Redis)
+*   **O que faz:** Armazena temporariamente os catálogos de produtos, preços e clientes organizados por Tenant (Cliente/Empresa) para que o aplicativo abra os dados instantaneamente.
+*   **Como conectar:**
+    *   **Host:** `localhost`
+    *   **Porta:** `6379`
+    *   *Sem senha padrão no ambiente local.*
+
+#### 3. Servidor de Arquivos: `fvs-ftp` (Servidor FTP)
+*   **O que faz:** Simula o servidor FTP da empresa. É a pasta de integração onde os arquivos JSON de sincronização (carga de produtos e retorno de pedidos) são depositados.
+*   **Como conectar (ex: FileZilla):**
+    *   **Host:** `localhost`
+    *   **Porta:** `21`
+    *   **Usuário:** `test`
+    *   **Senha:** `test`
+*   **Pasta no seu computador:** O Docker espelha esse servidor diretamente na pasta `integration-sync` localizada na raiz do projeto. Tudo o que você colocar lá aparecerá no FTP e vice-versa.
+
+#### 4. Fila de Mensagens: `fvs-rabbitmq` (RabbitMQ)
+*   **O que faz:** Recebe e distribui tarefas em background, garantindo que o sistema processe dados sem travar a interface.
+*   **Painel Visual Web de Controle:** Você pode abrir o navegador e acessar `http://localhost:15672` para ver as filas rodando.
+    *   **Usuário:** `fvs`
+    *   **Senha:** `fvs_dev_pass`
+*   **Porta interna de comunicação:** `5672`
+
+---
+
+### 4.4. Gerenciando Pelo Docker Desktop (Modo Visual - Recomendado para Leigos)
+Se você prefere não usar o terminal, pode controlar os servidores visualmente pelo aplicativo **Docker Desktop**:
+
+1.  Abra o **Docker Desktop** e vá na aba **Containers**.
+2.  Você verá um grupo chamado `versatus-force-sales-mvp`. Clique nele para expandir.
+3.  Lá você verá os quatro contêineres (`fvs-postgres`, `fvs-redis`, `fvs-ftp`, `fvs-rabbitmq`) com uma luz verde ao lado de cada um (indicando que estão ligados).
+4.  **Botões rápidos de controle (passar o mouse por cima do contêiner):**
+    *   **Play/Pause (Triângulo/Duas Barras):** Liga/Pausa o contêiner.
+    *   **Stop (Quadrado):** Desliga o contêiner.
+    *   **Restart (Seta circular):** Reinicia o contêiner (ótimo se algum travar).
+    *   **Lixeira:** Exclui o contêiner (ele será recriado no próximo início).
+5.  **Ver Logs:** Clique no nome de qualquer contêiner (ex: `fvs-postgres`) para ver as linhas de logs em tempo real na tela. Isso ajuda a ver se o banco está recebendo conexões ou acusando erros.
+
+---
+
+### 4.5. Gerenciando Pelo Terminal (PowerShell ou CMD na raiz do projeto)
+Caso prefira usar comandos de texto, abra o terminal na pasta raiz do projeto e use os comandos abaixo:
+
+*   **Ligar toda a infraestrutura (Iniciar tudo):**
+    ```bash
+    docker-compose up -d
+    ```
+    *(O `-d` serve para "desacoplar", rodando os contêineres silenciosamente em segundo plano, deixando o terminal livre para outros comandos).*
+
+*   **Desligar toda a infraestrutura:**
+    ```bash
+    docker-compose down
+    ```
+    *(Desliga os servidores, mas mantém todas as tabelas e dados gravados no banco intactos).*
+
+*   **Reiniciar os contêineres:**
+    ```bash
+    docker-compose restart
+    ```
+
+*   **Verificar se estão ativos e quais as portas ocupadas:**
+    ```bash
+    docker-compose ps
+    ```
+
+*   **Verificar logs em tempo real de todos os contêineres juntos:**
+    ```bash
+    docker-compose logs -f
+    ```
+    *(Pressione `Ctrl + C` para sair visualização de logs).*
+
+---
+
+### 4.6. Comandos de Limpeza e Manutenção do Sistema
+
+*   **Zerar o Banco de Dados e Logs (Limpeza Pesada / Começar do Zero):**
+    ```bash
+    docker-compose down -v
+    ```
+    > [!WARNING]
+    > O parâmetro `-v` (volumes) apaga permanentemente os dados do PostgreSQL e RabbitMQ. Use isso apenas se quiser limpar todos os dados de teste e iniciar um banco totalmente limpo. Os dados do FTP na pasta `integration-sync` **não** são apagados.
+
+*   **Limpar TODO o cache do Redis (Forçar recarregamento do catálogo):**
+    ```bash
+    docker exec fvs-redis redis-cli FLUSHALL
+    ```
+
+*   **Limpar o cache do Redis de apenas um Tenant específico:**
+    ```bash
+    docker exec fvs-redis redis-cli DEL catalogo:{tenantId}:clientes catalogo:{tenantId}:produtos catalogo:{tenantId}:precos tenant:{tenantId}:sessions
+    ```
+    *(Substitua `{tenantId}` pelo ID do tenant desejado, ex: `00000000-0000-0000-0000-000000000001`).*
+
+---
+
+### 4.7. Solução de Problemas Comuns (Troubleshooting)
+
+#### 1. Erro: "Port 5432 (ou 6379) is already allocated" (Porta já alocada)
+*   **Causa:** Você já possui o PostgreSQL ou o Redis instalado diretamente no Windows de forma nativa e ele está usando a porta. O Docker não consegue usar a mesma porta ao mesmo tempo.
+*   **Solução:** 
+    1.  Abra o menu Iniciar do Windows, digite **Serviços** e abra o aplicativo.
+    2.  Procure na lista por `postgresql-x64-...` (ou o nome do serviço de banco local).
+    3.  Clique com o botão direito nele e escolha **Parar**.
+    4.  Tente executar `docker-compose up -d` novamente no terminal.
+
+#### 2. Erro: "Cannot connect to the Docker daemon" (Não conecta ao Docker)
+*   **Causa:** O aplicativo Docker Desktop está fechado ou ainda está inicializando.
+*   **Solução:** Abra o Docker Desktop e espere até que o ícone de baleia no canto inferior esquerdo fique verde.
+
+#### 3. Os contêineres subiram, mas os serviços em C# (.NET) dão erro de conexão
+*   **Causa:** Se você zerou os dados do banco Docker usando `docker-compose down -v`, a estrutura de tabelas sumiu. Os microsserviços em execução (.NET) podem se perder.
+*   **Solução:** Sempre que apagar os volumes do Docker, pare os serviços rodando em C# (.NET) e inicie-os novamente para que eles refaçam as migrações automáticas de banco de dados (`database migrations`) durante a inicialização.
