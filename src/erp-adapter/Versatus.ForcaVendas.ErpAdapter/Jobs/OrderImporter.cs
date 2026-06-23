@@ -299,7 +299,7 @@ public sealed class OrderImporter : BackgroundService
 
             // 3. Obter nome do cliente do banco do ERP para preencher NOMEPRECLIENTE
             string clienteNome = "FORCA VENDAS";
-            using (var nameCmd = new SqlCommand("SELECT NOME FROM GLOCLIENTE WHERE IDGLOCLIENTE = @ClienteId", conn, transaction))
+            using (var nameCmd = new SqlCommand("SELECT TOP 1 NOME FROM VWCLIENTE WHERE IDGLOCLIENTE = @ClienteId", conn, transaction))
             {
                 nameCmd.Parameters.AddWithValue("@ClienteId", order.Payload.ClienteIdERP);
                 var obj = await nameCmd.ExecuteScalarAsync();
