@@ -302,21 +302,6 @@ export default function DashboardPage() {
               </Button>
             </div>
           </div>
-
-          <div className="premium-card-inner p-10 space-y-6">
-             <div className="flex items-center gap-3">
-               <div className="h-10 w-10 bg-indigo-600/10 text-indigo-500 rounded-xl flex items-center justify-center border border-indigo-500/20">
-                  <TrendingUp className="h-5 w-5" />
-               </div>
-               <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Meta Mensal (Outub)</h5>
-             </div>
-             <div className="space-y-2">
-               <h2 className="text-4xl premium-title tracking-tighter">R$ 48.2K</h2>
-               <p className="text-[10px] font-black text-emerald-500 uppercase italic tracking-widest">+ R$ 12.4K Faltantes</p>
-             </div>
-             <Progress value={75} radius="full" size="md" color="secondary" className="shadow-lg shadow-indigo-600/10" />
-          </div>
-
         </div>
 
       </div>
