@@ -56,7 +56,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
   const [productInputValue, setProductInputValue] = useState('')
 
   useEffect(() => {
-    searchProdutos()
+    searchProdutos(undefined, 100000)
       .then(setProdutos)
       .catch(() => {
         // keep mock fallback on network error

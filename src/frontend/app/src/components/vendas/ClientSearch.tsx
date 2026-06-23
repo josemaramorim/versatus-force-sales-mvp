@@ -18,7 +18,7 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
   const [inputValue, setInputValue] = useState('')
 
   useEffect(() => {
-    searchClientes()
+    searchClientes(undefined, 100000)
       .then(setClientes)
       .catch(() => {
         // keep mock fallback on network error
@@ -70,7 +70,7 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
     try {
       const success = await syncCatalogLocal()
       if (success) {
-        const updatedClientes = await searchClientes()
+        const updatedClientes = await searchClientes(undefined, 100000)
         setClientes(updatedClientes)
       }
     } catch (err) {
