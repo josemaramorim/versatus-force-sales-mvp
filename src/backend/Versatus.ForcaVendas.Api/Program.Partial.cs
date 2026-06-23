@@ -147,8 +147,8 @@ public partial class Program
         builder.Services.AddDbContext<PedidosDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        builder.Services.AddSingleton<IProductCatalogRepository, InMemoryProductCatalogRepository>();
-        builder.Services.AddSingleton<IClientCatalogRepository, InMemoryClientCatalogRepository>();
+        builder.Services.AddSingleton<IProductCatalogRepository, RedisProductCatalogRepository>();
+        builder.Services.AddSingleton<IClientCatalogRepository, RedisClientCatalogRepository>();
         builder.Services.AddSingleton<Versatus.ForcaVendas.Domain.Pedidos.Services.IPaymentConditionService,
             Versatus.ForcaVendas.Infrastructure.Data.Services.MockPaymentConditionService>();
         builder.Services.AddSingleton<IPedidoCache, InMemoryPedidoCache>();

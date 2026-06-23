@@ -78,7 +78,7 @@ public class CatalogTests : IClassFixture<WebApplicationFactory<Program>>
         var token = await LoginAsync(client, "admin@demo1.versatus.com", "Mudar@!123");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
 
-        var response = await client.GetAsync("/catalogo/produtos?limit=101");
+        var response = await client.GetAsync("/catalogo/produtos?limit=100001");
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }

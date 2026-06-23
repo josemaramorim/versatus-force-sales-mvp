@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ClientSearch } from '@/components/vendas/ClientSearch'
 import { OrderTable } from '@/components/vendas/OrderTable'
 import { ItemModal } from '@/components/vendas/ItemModal'
-import { ItemPedido, Cliente } from '@/types/vendas'
-import { criarPedidoApi } from '@/lib/vendaApi'
+import { ItemPedido, Cliente, CondicaoPagamento } from '@/types/vendas'
+import { criarPedidoApi, getCondicoesPagamento } from '@/lib/vendaApi'
 import { 
   Plus, 
   ShoppingCart, 
@@ -47,6 +47,31 @@ export default function NovaVendaPage() {
   const [acrescimoGlobal, setAcrescimoGlobal] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isOnline, setIsOnline] = useState(true)
+  const [condicoes, setCondicoes] = useState<CondicaoPagamento[]>([])
+
+  useEffect(() => {
+    getCondicoesPagamento()
+      .then((data) => {
+        setCondicoes(data)
+        if (data.length > 0) {
+          setCondicaoPagamento(data[0].condicaoPagtoIdERP.toString())
+        }
+      })
+      .catch(console.error)
+  }, [])
+
+  React.useEffect(() => {
+    setIsOnline(navigator.onLine)
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   const subtotal = useMemo(() => items.reduce((acc, item) => acc + item.total, 0), [items])
   const totalFinal = useMemo(() => subtotal - descontoGlobal + acrescimoGlobal, [subtotal, descontoGlobal, acrescimoGlobal])
@@ -72,15 +97,12 @@ export default function NovaVendaPage() {
     setSubmitError(null)
     setIsSubmitting(true)
 
-    const condicaoMap: Record<string, { condicaoPagamentoId: string; formaPagamento: string }> = {
-      avento: { condicaoPagamentoId: 'avista', formaPagamento: 'dinheiro' },
-      '30_60': { condicaoPagamentoId: '30_60', formaPagamento: 'boleto' },
-    }
-    const cond = condicaoMap[condicaoPagamento] ?? condicaoMap['avento']
+    const selectedCond = condicoes.find(c => c.condicaoPagtoIdERP.toString() === condicaoPagamento)
 
-    // First vencimento = today + 30 days
+    // First vencimento = today + diasParcelamento
     const primeiroVencimento = new Date()
-    primeiroVencimento.setDate(primeiroVencimento.getDate() + 30)
+    const dias = selectedCond?.diasParcelamento ?? 30
+    primeiroVencimento.setDate(primeiroVencimento.getDate() + (dias > 0 ? dias : 30))
 
     try {
       await criarPedidoApi({
@@ -94,9 +116,9 @@ export default function NovaVendaPage() {
           desconto: i.valorDesconto,
         })),
         condicaoPagamento: {
-          condicaoPagamentoId: cond.condicaoPagamentoId,
+          condicaoPagamentoId: selectedCond ? `cond-${selectedCond.condicaoPagtoIdERP}` : 'cond-1',
           primeiroVencimento: primeiroVencimento.toISOString(),
-          formaPagamento: cond.formaPagamento,
+          formaPagamento: selectedCond ? selectedCond.formaCobrancaIdERP.toString() : '1',
         },
         observacao: observacoes || undefined,
       })
@@ -123,7 +145,7 @@ export default function NovaVendaPage() {
               </div>
           </div>
           <div className="flex items-center space-x-4 shrink-0">
-              <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest italic">Sync: <span className="text-blue-500 font-black font-mono tracking-tighter uppercase">DEMO-OFFLINE</span></span>
+              <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest italic">Sync: <span className={clsx("font-black font-mono tracking-tighter uppercase", isOnline ? "text-emerald-500" : "text-amber-500")}>{isOnline ? 'Online' : 'Offline'}</span></span>
               <Avatar isBordered radius="full" size="sm" className="bg-slate-800 border-slate-700" />
           </div>
       </header>
@@ -212,8 +234,11 @@ export default function NovaVendaPage() {
                           trigger: "h-16 px-8 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 italic font-black text-slate-500",
                         }}
                       >
-                        <SelectItem key="avento" value="avento" className="font-bold italic">Dinheiro A Vista (3%)</SelectItem>
-                        <SelectItem key="30_60" value="30_60" className="font-bold italic">Boleto 30/60 Dias</SelectItem>
+                        {condicoes.map((cond) => (
+                          <SelectItem key={cond.condicaoPagtoIdERP.toString()} value={cond.condicaoPagtoIdERP.toString()} className="font-bold italic">
+                            {cond.descricao}
+                          </SelectItem>
+                        ))}
                       </Select>
                   </div>
 

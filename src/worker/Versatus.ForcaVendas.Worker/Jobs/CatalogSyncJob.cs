@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Versatus.ForcaVendas.Infrastructure.Data;
 using Versatus.ForcaVendas.Infrastructure.Integration;
+using Versatus.ForcaVendas.Infrastructure.Integration.Models;
 
 namespace Versatus.ForcaVendas.Worker.Jobs;
 
@@ -90,19 +93,48 @@ public sealed class CatalogSyncJob : BackgroundService
                 {
                     var redisDb = _redis.GetDatabase();
 
+                    List<ClienteCatalogDto> mergedClientes;
+                    List<ProdutoCatalogDto> mergedProdutos;
+                    List<TabelaPrecoCatalogDto> mergedPrecos;
+                    List<CondicaoPagamentoCatalogDto> mergedCondicoes;
+
+                    if (snapshot.IsFullSync)
+                    {
+                        mergedClientes = snapshot.Clientes.ToList();
+                        mergedProdutos = snapshot.Produtos.ToList();
+                        mergedPrecos = snapshot.TabelasPreco.ToList();
+                        mergedCondicoes = snapshot.CondicoesPagamento.ToList();
+                    }
+                    else
+                    {
+                        var existingClientes = await GetExistingListAsync<ClienteCatalogDto>(redisDb, $"catalogo:{tenantId}:clientes");
+                        var existingProdutos = await GetExistingListAsync<ProdutoCatalogDto>(redisDb, $"catalogo:{tenantId}:produtos");
+                        var existingPrecos = await GetExistingListAsync<TabelaPrecoCatalogDto>(redisDb, $"catalogo:{tenantId}:precos");
+                        var existingCondicoes = await GetExistingListAsync<CondicaoPagamentoCatalogDto>(redisDb, $"catalogo:{tenantId}:condicoes-pagamento");
+
+                        mergedClientes = MergeDelta(existingClientes, snapshot.Clientes, c => c.ClienteIdERP);
+                        mergedProdutos = MergeDelta(existingProdutos, snapshot.Produtos, p => p.ProdutoIdERP);
+                        mergedPrecos = MergeDelta(existingPrecos, snapshot.TabelasPreco, tp => tp.TabelaPrecoEstoqueIdERP);
+                        mergedCondicoes = MergeDelta(existingCondicoes, snapshot.CondicoesPagamento, cp => cp.CondicaoPagtoIdERP);
+                    }
+
                     // Persiste cada segmento do catálogo no Redis
-                    var clientesJson = JsonSerializer.Serialize(snapshot.Clientes, _jsonOptions);
-                    var produtosJson = JsonSerializer.Serialize(snapshot.Produtos, _jsonOptions);
-                    var precosJson = JsonSerializer.Serialize(snapshot.TabelasPreco, _jsonOptions);
-                    var condicoesJson = JsonSerializer.Serialize(snapshot.CondicoesPagamento, _jsonOptions);
+                    var clientesJson = JsonSerializer.Serialize(mergedClientes, _jsonOptions);
+                    var produtosJson = JsonSerializer.Serialize(mergedProdutos, _jsonOptions);
+                    var precosJson = JsonSerializer.Serialize(mergedPrecos, _jsonOptions);
+                    var condicoesJson = JsonSerializer.Serialize(mergedCondicoes, _jsonOptions);
 
                     await redisDb.StringSetAsync($"catalogo:{tenantId}:clientes", clientesJson);
                     await redisDb.StringSetAsync($"catalogo:{tenantId}:produtos", produtosJson);
                     await redisDb.StringSetAsync($"catalogo:{tenantId}:precos", precosJson);
                     await redisDb.StringSetAsync($"catalogo:{tenantId}:condicoes-pagamento", condicoesJson);
 
-                    _logger.LogInformation("Catálogo sincronizado com sucesso para tenant {TenantId}. Clientes: {Clientes}, Produtos: {Produtos}, Preços: {Precos}, Condições: {Condicoes}",
-                        tenantId, snapshot.Clientes.Count, snapshot.Produtos.Count, snapshot.TabelasPreco.Count, snapshot.CondicoesPagamento.Count);
+                    _logger.LogInformation("Catálogo sincronizado com sucesso para tenant {TenantId}. IsFullSync: {IsFullSync}. Clientes: {Clientes} (Delta: {DeltaClientes}), Produtos: {Produtos} (Delta: {DeltaProdutos}), Preços: {Precos} (Delta: {DeltaPrecos}), Condições: {Condicoes} (Delta: {DeltaCondicoes})",
+                        tenantId, snapshot.IsFullSync, 
+                        mergedClientes.Count, snapshot.Clientes.Count, 
+                        mergedProdutos.Count, snapshot.Produtos.Count, 
+                        mergedPrecos.Count, snapshot.TabelasPreco.Count, 
+                        mergedCondicoes.Count, snapshot.CondicoesPagamento.Count);
 
                     // Opcional: Invalida o cache de buscas de catálogo na API para forçar releitura dos dados novos
                     await InvalidateApiSearchCacheAsync(tenantId);
@@ -117,6 +149,35 @@ public sealed class CatalogSyncJob : BackgroundService
                 _logger.LogError(ex, "Erro ao processar sincronização do catálogo para tenant {TenantId}.", tenantId);
             }
         }
+    }
+
+    private async Task<List<T>> GetExistingListAsync<T>(IDatabase redisDb, string key)
+    {
+        var json = await redisDb.StringGetAsync(key);
+        if (json.IsNullOrEmpty)
+        {
+            return new List<T>();
+        }
+        try
+        {
+            return JsonSerializer.Deserialize<List<T>>(json!, _jsonOptions) ?? new List<T>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Erro ao desserializar dados existentes do Redis para chave {Key}. Iniciando nova lista.", key);
+            return new List<T>();
+        }
+    }
+
+    private List<T> MergeDelta<T, TId>(List<T> existingList, IReadOnlyList<T> deltaList, Func<T, TId> idSelector) where TId : notnull
+    {
+        var existingDict = existingList.ToDictionary(idSelector);
+        foreach (var item in deltaList)
+        {
+            var id = idSelector(item);
+            existingDict[id] = item;
+        }
+        return existingDict.Values.ToList();
     }
 
     private async Task InvalidateApiSearchCacheAsync(string tenantId)

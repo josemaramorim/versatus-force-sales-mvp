@@ -21,12 +21,6 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
   return data
 }
 
-export async function loginDemo() {
-  // Mock login for UI preview
-  useAuthStore.getState().setDemoSession()
-  return true
-}
-
 export function logout() {
   useAuthStore.getState().logout()
   window.location.href = '/login'

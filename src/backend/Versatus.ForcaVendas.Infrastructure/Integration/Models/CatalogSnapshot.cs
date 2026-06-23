@@ -5,6 +5,7 @@ namespace Versatus.ForcaVendas.Infrastructure.Integration.Models;
 
 public sealed class CatalogSnapshot
 {
+    public bool IsFullSync { get; set; } = true;
     public IReadOnlyList<ClienteCatalogDto> Clientes { get; set; } = Array.Empty<ClienteCatalogDto>();
     public IReadOnlyList<ProdutoCatalogDto> Produtos { get; set; } = Array.Empty<ProdutoCatalogDto>();
     public IReadOnlyList<TabelaPrecoCatalogDto> TabelasPreco { get; set; } = Array.Empty<TabelaPrecoCatalogDto>();
@@ -13,6 +14,7 @@ public sealed class CatalogSnapshot
 
 public sealed class CatalogFileWrapper<T>
 {
+    public bool IsFullSync { get; set; } = true;
     public DateTimeOffset ExportedAt { get; set; }
     public string TenantId { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
@@ -51,6 +53,7 @@ public sealed class TabelaPrecoCatalogDto
     public decimal ValorUnitario { get; set; }
     public decimal PercentualDescontoMaximo { get; set; }
     public bool ControlaDescontoMaximo { get; set; }
+    public string Descricao { get; set; } = string.Empty;
 }
 
 public sealed class CondicaoPagamentoCatalogDto

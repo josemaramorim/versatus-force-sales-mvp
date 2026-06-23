@@ -27,7 +27,9 @@ import {
   Filter,
   Eye
 } from 'lucide-react'
-import { MOCK_PRODUTOS } from '@/lib/mocks'
+import { searchProdutos } from '@/lib/vendaApi'
+import { Produto } from '@/types/vendas'
+import { Spinner } from '@nextui-org/react'
 
 const columns = [
   { name: "PRODUTO", uid: "nome" },
@@ -38,6 +40,21 @@ const columns = [
 ]
 
 export default function ProdutosPage() {
+  const [produtos, setProdutos] = React.useState<Produto[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    searchProdutos(undefined, 1000)
+      .then((data) => {
+        setProdutos(data)
+        setIsLoading(false)
+      })
+      .catch((err) => {
+        console.error('[ProdutosPage] Error fetching products:', err)
+        setIsLoading(false)
+      })
+  }, [])
+
   const renderCell = React.useCallback((produto: any, columnKey: React.Key) => {
     switch (columnKey) {
       case "nome":
@@ -160,7 +177,10 @@ export default function ProdutosPage() {
                 </TableColumn>
               )}
             </TableHeader>
-            <TableBody items={MOCK_PRODUTOS}>
+            <TableBody 
+              items={produtos}
+              emptyContent={isLoading ? <div className="flex justify-center p-8"><Spinner label="Carregando produtos..." /></div> : "Nenhum produto cadastrado."}
+            >
               {(item) => (
                 <TableRow key={item.id}>
                   {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}

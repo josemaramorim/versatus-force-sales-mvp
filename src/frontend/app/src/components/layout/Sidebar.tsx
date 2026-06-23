@@ -11,7 +11,8 @@ import {
   Package, 
   Settings,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  RefreshCw
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Tooltip, Button, Drawer, DrawerContent, DrawerBody, Modal, ModalContent, ModalBody } from '@nextui-org/react'
@@ -23,6 +24,7 @@ const menuItems = [
   { icon: ClipboardList, label: 'Pedidos', href: '/pedidos', color: 'text-emerald-500' },
   { icon: Users, label: 'Clientes', href: '/clientes', color: 'text-purple-500' },
   { icon: Package, label: 'Produtos', href: '/produtos', color: 'text-amber-500' },
+  { icon: RefreshCw, label: 'Sincronismo', href: '/sincronismo', color: 'text-sky-500' },
   { icon: Settings, label: 'Configurações', href: '/configuracoes', color: 'text-slate-500' },
 ]
 

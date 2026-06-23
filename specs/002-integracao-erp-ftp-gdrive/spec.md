@@ -741,8 +741,58 @@ Fase 8 (5-7 dias):  PWA-02 — Controle Híbrido de Estoque (P2)
 
   Subtotal fase posterior: 22-28 dias (4.5-5.5 semanas)
 
-Total geral: 35-44 dias (7-8.5 semanas)
+Fase 9 (3-4 dias):  INT-07 — Sincronização Incremental Híbrida e Controle Manual sob Demanda 🟢
+                     ├── T-INT07-01: Configurar intervalo do Delta Sync no appsettings.json
+                     ├── T-INT07-02: Filtro por data de alteração (@UltimoSync) no CatalogExporter
+                     ├── T-INT07-03: Agendamento do Full Sync diário às 03:00h no CatalogExporter
+                     ├── T-INT07-04: Adaptação do CatalogSyncJob no Worker para upserts de delta no Redis
+                     ├── T-INT07-05: Tela de status e controle de sincronismo unificado no frontend
+                     ├── T-INT07-06: Atalho 🔄 Sincronizar catálogo na tela de vendas do frontend
+                     └── T-INT07-07: Testes unitários e validação funcional
+
+Total geral: 38-48 dias (7.5-9.5 semanas)
 ```
+
+---
+
+## Story INT-07 — Sincronização Incremental Híbrida e Controle Manual sob Demanda
+
+**Título**: `[INT][Incremental] Implementar Delta Sync híbrido no ERP e controle manual de catálogo no frontend`
+
+**Análise de Volumetria e Limites de Escala**:
+- **Capacidade do Redis (Nuvem)**: Catálogo estimado para 10.000 produtos, 5.000 clientes e tabelas de preço ocupará ~8.5 MB de memória RAM por tenant. Em escala de produção (ex: 100 tenants corporativos ativos), isso equivale a ~850 MB. Uma instância básica do Redis gerencia gigabytes de dados com facilidade e responde em sub-milissegundos.
+- **Capacidade do IndexedDB (Navegador/Celular)**: Os navegadores modernos liberam até 50% do espaço livre em disco para IndexedDB por aplicação (múltiplos gigabytes em aparelhos comuns). O catálogo completo do tenant ocupará apenas ~8.5 MB. O Dexie.js realiza buscas indexadas offline em menos de 5ms no dispositivo móvel. O pacote de dados compactados transmitido via API trafega na rede com ~1.5 MB, levando menos de 3s em conexões 4G para atualizar o IndexedDB local.
+
+**Critérios de aceite**:
+1. O `CatalogExporter` roda em modo Delta com base em intervalo configurável (ex: a cada 1h) e envia apenas registros cuja `DATAATUALIZACAO` ou `DATACADASTRO` seja maior que a data do último sincronismo (`@UltimoSync`).
+2. O `CatalogExporter` roda em modo Full (Carga Total) automaticamente todos os dias às 03:00h da madrugada para expurgar exclusões físicas e restaurar a integridade absoluta dos dados.
+3. O `CatalogSyncJob` no Worker aplica os deltas no Redis via `HSET` de forma incremental, sem remover registros inalterados.
+4. O app possui uma tela `/vendedor/sincronismo` exibindo o status de cada tabela do catálogo no navegador e botão de sincronismo total.
+5. A tela de Nova Venda possui o atalho rápido `🔄 Sincronizar catálogo` que dispara a atualização unificada de todas as tabelas em background e atualiza o estado local das listas de vendas.
+
+**Tarefas**:
+
+### T-INT07-01: Configurar intervalo do Delta Sync no appsettings.json (0.5 dia)
+- Adicionar chaves e leitura no bootstrap do adaptador do ERP.
+
+### T-INT07-02: Filtro por data de alteração (@UltimoSync) no CatalogExporter (1 dia)
+- Persistir localmente a data da última execução bem-sucedida.
+- Adicionar parâmetros `@UltimoSync` nas queries SQL do catálogo do ERP.
+
+### T-INT07-03: Agendamento do Full Sync diário às 03:00h (0.5 dia)
+- Implementar verificação de horário para forçar a carga completa diária.
+
+### T-INT07-04: Adaptação do CatalogSyncJob no Worker para upserts (0.5 dia)
+- Substituir a deleção de hashes inteiros pela inserção em bloco dos registros do patch recebido.
+
+### T-INT07-05: Tela de status e controle de sincronismo unificado no frontend (0.5 dia)
+- Implementar a página de status local com botões de sync manual.
+
+### T-INT07-06: Atalho 🔄 Sincronizar catálogo na tela de vendas (0.5 dia)
+- Implementar o componente flutuante/link de sync unificado em background em `ClientSearch.tsx`.
+
+### T-INT07-07: Testes unitários e validação funcional (0.5 dia)
+- Validar se novos registros inseridos durante o dia no SQL Server aparecem no autocomplete do vendedor após o acionamento do atalho de atualização.
 
 ---
 
@@ -757,3 +807,4 @@ Total geral: 35-44 dias (7-8.5 semanas)
 7. **Isolamento multi-tenant**: Todo endpoint/job DEVE filtrar por tenant
 8. **Contratos versionados**: Não alterar JSONs sem bumpar versão
 9. **Documentação**: Atualizar `docs/sdd/04-interfaces-integracao.md` ao finalizar
+

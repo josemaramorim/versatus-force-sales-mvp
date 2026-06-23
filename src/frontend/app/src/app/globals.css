@@ -1,12 +1,13 @@
 @import "tailwindcss";
 @source "../../node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}";
 
+@variant dark (&:is(.dark *));
+
 @theme {
   --font-sans: 'Inter', sans-serif;
   --radius-3xl: 1.5rem;
   --radius-4xl: 2.5rem;
   --radius-5xl: 3rem;
-  --dark-mode: class;
 }
 
 @layer components {

@@ -200,6 +200,7 @@ public sealed class FtpIntegrationTransport : IIntegrationTransport
 
             return new CatalogSnapshot
             {
+                IsFullSync = clientes.IsFullSync,
                 Clientes = clientes.Data,
                 Produtos = produtos.Data,
                 TabelasPreco = precos.Data,
@@ -375,6 +376,7 @@ public sealed class FtpIntegrationTransport : IIntegrationTransport
 
             return new CatalogSnapshot
             {
+                IsFullSync = clientes.IsFullSync,
                 Clientes = clientes.Data,
                 Produtos = produtos.Data,
                 TabelasPreco = precos.Data,

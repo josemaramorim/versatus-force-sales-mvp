@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { MOCK_PRODUTOS, MOCK_NATUREZAS } from '@/lib/mocks'
+import { MOCK_NATUREZAS } from '@/lib/mocks'
 import { searchProdutos } from '@/lib/vendaApi'
 import { ItemPedido, Produto } from '@/types/vendas'
 import { 
@@ -52,7 +52,8 @@ interface ItemModalProps {
 
 export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null)
-  const [produtos, setProdutos] = useState<Produto[]>(MOCK_PRODUTOS)
+  const [produtos, setProdutos] = useState<Produto[]>([])
+  const [productInputValue, setProductInputValue] = useState('')
 
   useEffect(() => {
     searchProdutos()
@@ -61,6 +62,24 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
         // keep mock fallback on network error
       })
   }, [])
+
+  const filteredProdutos = useMemo(() => {
+    const clean = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.\-\/]/g, "")
+    const cleanedInput = clean(productInputValue)
+
+    if (!cleanedInput) return produtos
+
+    // If selected product matches current productInputValue, do not filter so user can see all when they click the dropdown
+    if (selectedProduto && selectedProduto.nome === productInputValue) {
+      return produtos
+    }
+
+    return produtos.filter((p) => {
+      const cleanedNome = clean(p.nome)
+      const cleanedSku = clean(p.sku)
+      return cleanedNome.includes(cleanedInput) || cleanedSku.includes(cleanedInput)
+    })
+  }, [produtos, productInputValue, selectedProduto])
 
   const {
     handleSubmit,
@@ -96,6 +115,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
         naturezaOperacao: '5102',
       })
       setSelectedProduto(null)
+      setProductInputValue('')
     }
   }, [isOpen, reset])
 
@@ -105,9 +125,11 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
       setSelectedProduto(produto)
       setValue('produtoId', produto.id)
       setValue('valorUnitario', produto.precoBase)
+      setProductInputValue(produto.nome)
     } else {
       setSelectedProduto(null)
       setValue('produtoId', '')
+      setProductInputValue('')
     }
   }
 
@@ -139,21 +161,21 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
       size="2xl"
       radius="none"
       backdrop="blur"
-      className="bg-slate-900 border border-slate-800 rounded-[3rem] p-2 dark shadow-2xl"
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] p-2 shadow-2xl text-slate-900 dark:text-slate-100"
       scrollBehavior="outside"
       hideCloseButton
     >
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader className="p-8 border-b border-slate-800 flex items-center justify-between">
+            <ModalHeader className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20">
                          <Package className="h-6 w-6 text-white" />
                     </div>
-                    <h2 className="text-2xl font-black italic tracking-tighter">Gerenciar Item</h2>
+                    <h2 className="text-2xl font-black italic tracking-tighter text-slate-900 dark:text-white">Gerenciar Item</h2>
                 </div>
-                <Button isIconOnly variant="flat" radius="full" onPress={onClose} className="bg-slate-800 text-slate-500 hover:bg-slate-700">
+                <Button isIconOnly variant="flat" radius="full" onPress={onClose} className="bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700">
                     <X size={24} />
                 </Button>
             </ModalHeader>
@@ -171,7 +193,10 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                       radius="lg"
                       labelPlacement="outside"
                       className="max-w-full"
-                      defaultItems={produtos}
+                      items={filteredProdutos}
+                      inputValue={productInputValue}
+                      onInputChange={setProductInputValue}
+                      selectedKey={selectedProduto?.id || undefined}
                       onSelectionChange={handleProductChange}
                       startContent={<Search className="text-slate-600 h-6 w-6 ml-2" />}
                       inputProps={{
@@ -182,15 +207,15 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                       }}
                       popoverProps={{
                         radius: "lg",
-                        className: "p-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999]",
+                        className: "p-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999]",
                       }}
                     >
                       {(produto) => (
-                        <AutocompleteItem key={produto.id} textValue={produto.nome} className="p-4 rounded-2xl">
+                        <AutocompleteItem key={produto.id} textValue={`${produto.nome} ${produto.sku}`} className="p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80">
                           <div className="flex gap-4 items-center">
-                            <Avatar src={produto.imagemUrl} radius="lg" size="md" isBordered className="bg-slate-800 border-slate-700" />
+                            <Avatar src={produto.imagemUrl} radius="lg" size="md" isBordered className="bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" />
                             <div className="flex flex-col gap-1">
-                              <span className="text-base font-black italic text-slate-200 leading-none">{produto.nome}</span>
+                              <span className="text-base font-black italic text-slate-900 dark:text-slate-200 leading-none">{produto.nome}</span>
                               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">SKU: {produto.sku} • R$ {produto.precoBase.toFixed(2)}</span>
                             </div>
                           </div>
@@ -214,7 +239,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                             radius="lg"
                             onChange={(e) => field.onChange(Number(e.target.value))}
                             classNames={{
-                              inputWrapper: "h-20 bg-slate-950 border border-slate-800 px-6",
+                              inputWrapper: "h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-6",
                               input: "text-2xl font-black italic tracking-tighter text-blue-500 font-mono"
                             }}
                           />
@@ -235,8 +260,8 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                             radius="lg"
                             onChange={(e) => field.onChange(Number(e.target.value))}
                             classNames={{
-                              inputWrapper: "h-20 bg-slate-950 border border-slate-800 px-6",
-                              input: "text-2xl font-black italic tracking-tighter text-slate-400 font-mono"
+                              inputWrapper: "h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-6",
+                              input: "text-2xl font-black italic tracking-tighter text-slate-600 dark:text-slate-400 font-mono"
                             }}
                           />
                         </div>
@@ -259,7 +284,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                         startContent={<BadgePercent className="h-6 w-6 text-amber-500" />}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                         classNames={{
-                          inputWrapper: "h-20 bg-slate-950 border border-slate-800 px-6",
+                          inputWrapper: "h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-6",
                           input: "text-2xl font-black italic tracking-tighter text-amber-500 font-mono"
                         }}
                       />
@@ -268,10 +293,10 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                 </div>
 
                 {/* Styled Total Row from V3 */}
-                <div className="pt-8 border-t border-slate-800 flex items-center justify-between">
+                <div className="pt-8 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div className="space-y-2">
                         <p className="premium-label italic opacity-50">Subtotal Bruto</p>
-                        <p className="text-xl font-bold font-mono text-slate-600 italic">R$ {subtotalItem.toFixed(2)}</p>
+                        <p className="text-xl font-bold font-mono text-slate-500 dark:text-slate-400 italic">R$ {subtotalItem.toFixed(2)}</p>
                     </div>
                     <div className="text-right space-y-2">
                         <p className="premium-label tracking-[0.4em] text-blue-500">Valor Final Item</p>
@@ -282,7 +307,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                 <Button 
                     type="submit" 
                     form="add-item-form"
-                    className="w-full py-10 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl shadow-2xl shadow-blue-900/40 transition-all uppercase tracking-[0.2em] text-xs italic tracking-tighter transform active:scale-95 shadow-inner"
+                    className="w-full py-10 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl shadow-2xl shadow-blue-500/20 dark:shadow-blue-900/40 transition-all uppercase tracking-[0.2em] text-xs italic tracking-tighter transform active:scale-95 shadow-inner"
                 >
                     Confirmar e Salvar Item
                 </Button>

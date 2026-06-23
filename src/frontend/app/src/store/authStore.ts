@@ -13,7 +13,6 @@ interface AuthState {
   user: AuthUser | null
   isAuthenticated: boolean
   setSession: (accessToken: string, refreshToken: string) => void
-  setDemoSession: () => void
   logout: () => void
 }
 
@@ -41,15 +40,6 @@ export const useAuthStore = create<AuthState>()(
       setSession: (accessToken, refreshToken) => {
         const user = parseJwt(accessToken)
         set({ accessToken, refreshToken, user, isAuthenticated: true })
-      },
-
-      setDemoSession: () => {
-        set({ 
-          accessToken: 'demo_token', 
-          refreshToken: 'demo_refresh', 
-          user: { userId: '1', username: 'Vendedor Demo', tenantId: 'versatus-demo' }, 
-          isAuthenticated: true 
-        })
       },
 
       logout: () => {

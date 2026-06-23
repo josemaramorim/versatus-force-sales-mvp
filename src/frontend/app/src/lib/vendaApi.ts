@@ -1,7 +1,6 @@
 import api from './api'
-import { Cliente, Produto } from '@/types/vendas'
+import { Cliente, Produto, TabelaPreco, CondicaoPagamento } from '@/types/vendas'
 import { db, type OfflinePedido } from './offlineDb'
-import { useAuthStore } from '@/store/authStore'
 
 // ─── Response shapes matching backend serialization ───────────────────────
 
@@ -55,15 +54,15 @@ interface ClientApiResponse {
   areaVenda?: string
 }
 
-export async function searchClientes(q?: string): Promise<Cliente[]> {
+export async function searchClientes(q?: string, limit?: number): Promise<Cliente[]> {
   const localDb = db
   const isOffline = typeof window !== 'undefined' && !navigator.onLine
-  const isDemo = typeof window !== 'undefined' && useAuthStore.getState().accessToken === 'demo_token'
 
-  if ((isOffline || isDemo) && localDb) {
-    console.log('[Offline/Demo] Buscando clientes do banco local...')
+  if (isOffline && localDb) {
+    console.log('[Offline] Buscando clientes do banco local...')
     const query = q?.toLowerCase() || ''
     const all = await localDb.clientes.toArray()
+    all.sort((a, b) => a.nome.localeCompare(b.nome))
     if (!query) return all
     return all.filter((c) => 
       c.nome.toLowerCase().includes(query) || 
@@ -72,8 +71,9 @@ export async function searchClientes(q?: string): Promise<Cliente[]> {
   }
 
   try {
-    const params: Record<string, string> = {}
+    const params: Record<string, string | number> = {}
     if (q) params.q = q
+    if (limit) params.limit = limit
     const { data } = await api.get<ClientApiResponse[]>('/catalogo/clientes', { params })
     const results = data.map((c) => ({
       id: c.clientId,
@@ -82,12 +82,7 @@ export async function searchClientes(q?: string): Promise<Cliente[]> {
       areaVenda: c.areaVenda,
     }))
 
-    // Mantém o cache atualizado se for busca completa
-    if (typeof window !== 'undefined' && localDb && !q) {
-      localDb.clientes.clear()
-        .then(() => localDb.clientes.bulkPut(results))
-        .catch((err) => console.error('[IndexedDB] Erro ao cachear clientes:', err))
-    }
+    results.sort((a, b) => a.nome.localeCompare(b.nome))
 
     return results
   } catch (error) {
@@ -95,6 +90,7 @@ export async function searchClientes(q?: string): Promise<Cliente[]> {
     if (localDb) {
       const query = q?.toLowerCase() || ''
       const all = await localDb.clientes.toArray()
+      all.sort((a, b) => a.nome.localeCompare(b.nome))
       if (!query) return all
       return all.filter((c) => 
         c.nome.toLowerCase().includes(query) || 
@@ -116,15 +112,15 @@ interface ProductApiResponse {
   availableStock: number
 }
 
-export async function searchProdutos(q?: string): Promise<Produto[]> {
+export async function searchProdutos(q?: string, limit?: number): Promise<Produto[]> {
   const localDb = db
   const isOffline = typeof window !== 'undefined' && !navigator.onLine
-  const isDemo = typeof window !== 'undefined' && useAuthStore.getState().accessToken === 'demo_token'
 
-  if ((isOffline || isDemo) && localDb) {
-    console.log('[Offline/Demo] Buscando produtos do banco local...')
+  if (isOffline && localDb) {
+    console.log('[Offline] Buscando produtos do banco local...')
     const query = q?.toLowerCase() || ''
     const all = await localDb.produtos.toArray()
+    all.sort((a, b) => a.nome.localeCompare(b.nome))
     if (!query) return all
     return all.filter((p) => 
       p.nome.toLowerCase().includes(query) || 
@@ -133,8 +129,9 @@ export async function searchProdutos(q?: string): Promise<Produto[]> {
   }
 
   try {
-    const params: Record<string, string> = {}
+    const params: Record<string, string | number> = {}
     if (q) params.q = q
+    if (limit) params.limit = limit
     const { data } = await api.get<ProductApiResponse[]>('/catalogo/produtos', { params })
     const results = data.map((p) => ({
       id: p.productId,
@@ -143,12 +140,7 @@ export async function searchProdutos(q?: string): Promise<Produto[]> {
       precoBase: p.price,
     }))
 
-    // Mantém o cache atualizado se for busca completa
-    if (typeof window !== 'undefined' && localDb && !q) {
-      localDb.produtos.clear()
-        .then(() => localDb.produtos.bulkPut(results))
-        .catch((err) => console.error('[IndexedDB] Erro ao cachear produtos:', err))
-    }
+    results.sort((a, b) => a.nome.localeCompare(b.nome))
 
     return results
   } catch (error) {
@@ -156,6 +148,7 @@ export async function searchProdutos(q?: string): Promise<Produto[]> {
     if (localDb) {
       const query = q?.toLowerCase() || ''
       const all = await localDb.produtos.toArray()
+      all.sort((a, b) => a.nome.localeCompare(b.nome))
       if (!query) return all
       return all.filter((p) => 
         p.nome.toLowerCase().includes(query) || 
@@ -166,16 +159,63 @@ export async function searchProdutos(q?: string): Promise<Produto[]> {
   }
 }
 
+export async function getTabelasPreco(): Promise<TabelaPreco[]> {
+  const localDb = db
+  const isOffline = typeof window !== 'undefined' && !navigator.onLine
+
+  if (isOffline && localDb) {
+    return localDb.tabelasPreco.toArray()
+  }
+
+  try {
+    const { data } = await api.get<TabelaPreco[]>('/catalogo/tabelas-preco')
+    if (typeof window !== 'undefined' && localDb) {
+      await localDb.tabelasPreco.clear()
+      await localDb.tabelasPreco.bulkPut(data)
+    }
+    return data
+  } catch (error) {
+    console.warn('[Offline Fallback] Falha ao consultar API de tabelas de preco, buscando no local...', error)
+    if (localDb) {
+      return localDb.tabelasPreco.toArray()
+    }
+    throw error
+  }
+}
+
+export async function getCondicoesPagamento(): Promise<CondicaoPagamento[]> {
+  const localDb = db
+  const isOffline = typeof window !== 'undefined' && !navigator.onLine
+
+  if (isOffline && localDb) {
+    return localDb.condicoesPagamento.toArray()
+  }
+
+  try {
+    const { data } = await api.get<CondicaoPagamento[]>('/catalogo/condicoes-pagamento')
+    if (typeof window !== 'undefined' && localDb) {
+      await localDb.condicoesPagamento.clear()
+      await localDb.condicoesPagamento.bulkPut(data)
+    }
+    return data
+  } catch (error) {
+    console.warn('[Offline Fallback] Falha ao consultar API de condicoes de pagamento, buscando no local...', error)
+    if (localDb) {
+      return localDb.condicoesPagamento.toArray()
+    }
+    throw error
+  }
+}
+
 // ─── Orders ───────────────────────────────────────────────────────────────
 
 export async function listPedidosApi(params?: { clienteId?: string; status?: string; page?: number; pageSize?: number }): Promise<PedidoSummary[]> {
   const localDb = db
   const isOffline = typeof window !== 'undefined' && !navigator.onLine
-  const isDemo = typeof window !== 'undefined' && useAuthStore.getState().accessToken === 'demo_token'
 
-  // Se estiver offline ou em modo demo, serve tudo do IndexedDB local
-  if ((isOffline || isDemo) && localDb) {
-    console.log('[Offline/Demo] Listando pedidos do IndexedDB local...')
+  // Se estiver offline, serve tudo do IndexedDB local
+  if (isOffline && localDb) {
+    console.log('[Offline] Listando pedidos do IndexedDB local...')
     const localPedidos = await localDb.pedidos.toArray()
     
     // Filtrar de forma simples localmente se params forem passados
@@ -302,10 +342,9 @@ export async function listPedidosApi(params?: { clienteId?: string; status?: str
 export async function criarPedidoApi(payload: CriarPedidoPayload): Promise<PedidoCriado> {
   const localDb = db
   const isOffline = typeof window !== 'undefined' && !navigator.onLine
-  const isDemo = typeof window !== 'undefined' && useAuthStore.getState().accessToken === 'demo_token'
 
-  if ((isOffline || isDemo) && localDb) {
-    console.log('[Offline/Demo] Gravando pedido localmente no IndexedDB...')
+  if (isOffline && localDb) {
+    console.log('[Offline] Gravando pedido localmente no IndexedDB...')
     const pedidoId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `off_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     
     const totalBruto = payload.itens.reduce((acc, item) => acc + (item.quantidade * item.precoUnitario), 0)

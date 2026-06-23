@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,8 +6,8 @@ import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { login, loginDemo } from '@/lib/auth'
-import { Loader2, AlertCircle, Moon, Sun, Eye, EyeOff, Zap, MonitorPlay } from 'lucide-react'
+import { login } from '@/lib/auth'
+import { Loader2, AlertCircle, Moon, Sun, Eye, EyeOff, Zap } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
 const schema = z.object({
@@ -41,11 +41,7 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
-  async function handleDemoLogin() {
-    setServerError(null)
-    await loginDemo()
-    router.push('/dashboard')
-  }
+
 
   async function onSubmit(values: FormValues) {
     setServerError(null)
@@ -190,18 +186,7 @@ export default function LoginPage() {
               </button>
             </motion.div>
 
-            {/* Botão Demo */}
-            <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible">
-              <button
-                id="login-demo-btn"
-                type="button"
-                onClick={handleDemoLogin}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/[0.1] text-xs font-semibold uppercase tracking-[0.15em] text-slate-500 hover:text-slate-300 hover:border-white/20 hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98]"
-              >
-                <MonitorPlay className="h-3.5 w-3.5" />
-                Modo Demonstração
-              </button>
-            </motion.div>
+
           </form>
 
           <motion.p custom={6} variants={fadeUp} initial="hidden" animate="visible" className="text-center text-[11px] text-slate-600 mt-7">

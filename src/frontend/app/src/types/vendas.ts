@@ -37,3 +37,24 @@ export interface PedidoDraft {
   subtotal: number;
   totalFinal: number;
 }
+
+export interface TabelaPreco {
+  tabelaPrecoEstoqueIdERP: number;
+  produtoIdERP: number;
+  tabelaPrecoIdERP: number;
+  valorUnitario: number;
+  percentualDescontoMaximo: number;
+  controlaDescontoMaximo: boolean;
+  descricao: string;
+}
+
+export interface CondicaoPagamento {
+  condicaoPagtoIdERP: number;
+  descricao: string;
+  quantidadeParcela: number;
+  diasParcelamento: number;
+  acrescimo: number;
+  desconto: number;
+  formaCobrancaIdERP: number;
+  usarMesComercial: boolean;
+}

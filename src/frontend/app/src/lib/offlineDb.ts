@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { Cliente, Produto } from '@/types/vendas';
+import { Cliente, Produto, TabelaPreco, CondicaoPagamento } from '@/types/vendas';
 
 export interface OfflinePedido {
   id: string; // UUID gerado no frontend
@@ -28,13 +28,17 @@ export interface OfflinePedido {
 class VersatusOfflineDatabase extends Dexie {
   clientes!: Table<Cliente, string>;
   produtos!: Table<Produto, string>;
+  tabelasPreco!: Table<TabelaPreco, number>;
+  condicoesPagamento!: Table<CondicaoPagamento, number>;
   pedidos!: Table<OfflinePedido, string>;
 
   constructor() {
     super('VersatusOfflineDB');
-    this.version(1).stores({
+    this.version(2).stores({
       clientes: 'id, nome, documento',
       produtos: 'id, sku, nome, precoBase',
+      tabelasPreco: 'tabelaPrecoEstoqueIdERP, produtoIdERP, tabelaPrecoIdERP',
+      condicoesPagamento: 'condicaoPagtoIdERP, descricao',
       pedidos: 'id, clienteId, status, criadoEm',
     });
   }

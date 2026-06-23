@@ -1,6 +1,5 @@
 import { db } from './offlineDb';
-import { searchClientes, searchProdutos } from './vendaApi';
-import { useAuthStore } from '@/store/authStore';
+import { searchClientes, searchProdutos, getTabelasPreco, getCondicoesPagamento } from './vendaApi';
 
 export interface SyncStatus {
   lastSyncedAt: string | null;
@@ -14,13 +13,6 @@ export async function syncCatalogLocal(): Promise<boolean> {
     return false;
   }
 
-  // Se for modo demonstração, não sincroniza com a API
-  const token = useAuthStore.getState().accessToken;
-  if (token === 'demo_token') {
-    console.log('[Offline Sync] Modo demonstração ativo. Ignorando sincronização com a API.');
-    return true;
-  }
-
   // Se estiver offline, não tenta fazer o download
   if (!navigator.onLine) {
     console.warn('[Offline Sync] Dispositivo offline. Sincronização do catálogo abortada.');
@@ -30,26 +22,36 @@ export async function syncCatalogLocal(): Promise<boolean> {
   try {
     console.log('[Offline Sync] Iniciando sincronização do catálogo local...');
     
-    // 1. Buscar dados atualizados da API
-    // Chamamos sem filtro de busca para trazer a listagem completa
-    const [clientes, produtos] = await Promise.all([
-      searchClientes(),
-      searchProdutos(),
+    // 1. Buscar dados atualizados da API em paralelo
+    // Chamamos com limit de 100000 para trazer a listagem completa
+    const [clientes, produtos, tabelasPreco, condicoes] = await Promise.all([
+      searchClientes(undefined, 100000),
+      searchProdutos(undefined, 100000),
+      getTabelasPreco(),
+      getCondicoesPagamento()
     ]);
 
-    console.log(`[Offline Sync] Dados baixados. Clientes: ${clientes.length}, Produtos: ${produtos.length}`);
+    console.log(`[Offline Sync] Dados baixados. Clientes: ${clientes.length}, Produtos: ${produtos.length}, Tabelas Preço: ${tabelasPreco.length}, Condições Pagto: ${condicoes.length}`);
 
     // 2. Persistir no IndexedDB usando transação do Dexie para consistência
-    await localDb.transaction('rw', [localDb.clientes, localDb.produtos], async () => {
+    await localDb.transaction('rw', [localDb.clientes, localDb.produtos, localDb.tabelasPreco, localDb.condicoesPagamento], async () => {
       // Limpa as tabelas antes de repopular para evitar lixo acumulado
       await localDb.clientes.clear();
       await localDb.produtos.clear();
+      await localDb.tabelasPreco.clear();
+      await localDb.condicoesPagamento.clear();
 
       if (clientes.length > 0) {
         await localDb.clientes.bulkPut(clientes);
       }
       if (produtos.length > 0) {
         await localDb.produtos.bulkPut(produtos);
+      }
+      if (tabelasPreco.length > 0) {
+        await localDb.tabelasPreco.bulkPut(tabelasPreco);
+      }
+      if (condicoes.length > 0) {
+        await localDb.condicoesPagamento.bulkPut(condicoes);
       }
     });
 

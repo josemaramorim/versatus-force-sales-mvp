@@ -17,8 +17,8 @@ interface OrderTableProps {
 export function OrderTable({ items, onRemove }: OrderTableProps) {
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-slate-950/20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
-        <div className="flex h-20 w-20 items-center justify-center rounded-[2rem] bg-slate-900/40 text-slate-700 shadow-inner">
+      <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-slate-950/20 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+        <div className="flex h-20 w-20 items-center justify-center rounded-[2rem] bg-slate-100 dark:bg-slate-900/40 text-slate-400 dark:text-slate-700 shadow-inner">
           <ShoppingBag className="h-10 w-10" />
         </div>
         <p className="mt-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Nenhum item adicionado</p>
@@ -51,7 +51,7 @@ export function OrderTable({ items, onRemove }: OrderTableProps) {
                         radius="lg" 
                         size="md"
                         isBordered
-                        className="bg-slate-900 border-slate-800 shrink-0"
+                        className="bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 shrink-0"
                     />
                     <div>
                         <div className="font-black text-slate-900 dark:text-slate-200 text-base leading-none">{item.nome}</div>

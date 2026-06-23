@@ -30,6 +30,10 @@ import {
   Building
 } from 'lucide-react'
 
+import { searchClientes } from '@/lib/vendaApi'
+import { Cliente } from '@/types/vendas'
+import { Spinner } from '@nextui-org/react'
+
 const columns = [
   { name: "CLIENTE", uid: "nome" },
   { name: "CONTATO", uid: "contato" },
@@ -38,49 +42,22 @@ const columns = [
   { name: "AÇÕES", uid: "actions" },
 ]
 
-const clients = [
-  { 
-    id: "1", 
-    nome: "Supermercado Bom Preço", 
-    documento: "12.345.678/0001-90", 
-    email: "compras@bompreco.com.br", 
-    telefone: "(11) 4002-8922", 
-    cidade: "São Paulo, SP", 
-    status: "ativo" 
-  },
-  { 
-    id: "2", 
-    nome: "Atacado Expresso Ltda", 
-    documento: "98.765.432/0001-21", 
-    email: "financeiro@atacadoexp.com", 
-    telefone: "(21) 3344-5566", 
-    cidade: "Rio de Janeiro, RJ", 
-    status: "ativo" 
-  },
-  { 
-    id: "3", 
-    nome: "Mercearia São João", 
-    documento: "11.222.333/0001-44", 
-    email: "saojoao@gmail.com", 
-    telefone: "(41) 98877-6655", 
-    cidade: "Curitiba, PR", 
-    status: "pendente" 
-  },
-  { 
-    id: "4", 
-    nome: "Distribuidora Norte Sul", 
-    documento: "44.555.666/0001-77", 
-    email: "contato@nortesul.com.br", 
-    telefone: "(31) 2211-3322", 
-    cidade: "Belo Horizonte, MG", 
-    status: "bloqueado" 
-  },
-]
-
 export default function ClientesPage() {
-  const renderCell = React.useCallback((client: any, columnKey: React.Key) => {
-    const cellValue = client[columnKey as keyof typeof client]
+  const [clientes, setClientes] = React.useState<Cliente[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
 
+  React.useEffect(() => {
+    searchClientes(undefined, 1000)
+      .then((data) => {
+        setClientes(data)
+        setIsLoading(false)
+      })
+      .catch((err) => {
+        console.error('[ClientesPage] Error fetching clients:', err)
+        setIsLoading(false)
+      })
+  }, [])
+  const renderCell = React.useCallback((client: any, columnKey: React.Key) => {
     switch (columnKey) {
       case "nome":
         return (
@@ -101,28 +78,29 @@ export default function ClientesPage() {
         return (
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-              <Mail className="h-3 w-3" /> {client.email}
+              <Mail className="h-3 w-3" /> {client.email || 'contato@cliente.com.br'}
             </div>
             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-              <Phone className="h-3 w-3" /> {client.telefone}
+              <Phone className="h-3 w-3" /> {client.telefone || 'Sem telefone'}
             </div>
           </div>
         )
       case "local":
         return (
           <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-            <MapPin className="h-3.5 w-3.5 text-blue-500" /> {client.cidade}
+            <MapPin className="h-3.5 w-3.5 text-blue-500" /> {client.cidade || client.areaVenda || 'Geral'}
           </div>
         )
       case "status":
+        const statusValue = client.status || 'ativo';
         return (
           <Chip 
             className="capitalize font-black text-[9px] tracking-widest px-2" 
-            color={client.status === "ativo" ? "success" : client.status === "pendente" ? "warning" : "danger"} 
+            color={statusValue === "ativo" ? "success" : statusValue === "pendente" ? "warning" : "danger"} 
             size="sm" 
             variant="flat"
           >
-            {cellValue}
+            {statusValue}
           </Chip>
         )
       case "actions":
@@ -141,7 +119,7 @@ export default function ClientesPage() {
           </div>
         )
       default:
-        return cellValue
+        return client[columnKey as keyof typeof client] || ''
     }
   }, [])
 
@@ -208,7 +186,10 @@ export default function ClientesPage() {
                 </TableColumn>
               )}
             </TableHeader>
-            <TableBody items={clients}>
+            <TableBody 
+              items={clientes}
+              emptyContent={isLoading ? <div className="flex justify-center p-8"><Spinner label="Carregando clientes..." /></div> : "Nenhum cliente cadastrado."}
+            >
               {(item) => (
                 <TableRow key={item.id}>
                   {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}

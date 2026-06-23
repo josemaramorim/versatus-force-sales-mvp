@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import {
@@ -23,58 +23,109 @@ import {
   Card,
   CardBody,
   Divider,
-  Tooltip
+  Tooltip,
+  Spinner
 } from '@nextui-org/react'
 import { clsx } from 'clsx'
-
-const kpis = [
-  {
-    label: 'Pedidos Hoje',
-    value: '12',
-    delta: '+3 vs ontem',
-    trend: 'up',
-    icon: ShoppingCart,
-    color: 'bg-blue-600',
-    shadow: 'shadow-blue-500/20'
-  },
-  {
-    label: 'Ticket Médio',
-    value: 'R$ 847,50',
-    delta: '+12% semana',
-    trend: 'up',
-    icon: TrendingUp,
-    color: 'bg-emerald-600',
-    shadow: 'shadow-emerald-500/20'
-  },
-  {
-    label: 'Clientes Ativos',
-    value: '34',
-    delta: '2 novos hoje',
-    trend: 'up',
-    icon: Users,
-    color: 'bg-indigo-600',
-    shadow: 'shadow-indigo-500/20'
-  },
-  {
-    label: 'Status ERP',
-    value: 'Sincronizado',
-    delta: 'Última sync: 14:30',
-    trend: 'neutral',
-    icon: RefreshCw,
-    color: 'bg-amber-600',
-    shadow: 'shadow-amber-500/20'
-  },
-]
-
-const recentOrders = [
-  { id: '#00124', client: 'Supermercado Bom Preço', value: 'R$ 1.240,00', status: 'Enviado', type: 'success' },
-  { id: '#00123', client: 'Atacado Expresso Ltda', value: 'R$ 3.870,50', status: 'Processado', type: 'primary' },
-  { id: '#00122', client: 'Mercearia São João', value: 'R$ 560,00', status: 'Rascunho', type: 'default' },
-  { id: '#00121', client: 'Distribuidora Norte Sul', value: 'R$ 8.200,00', status: 'Processado', type: 'primary' },
-]
+import { listPedidosApi, searchClientes, PedidoSummary } from '@/lib/vendaApi'
+import { syncCatalogLocal, getLastSyncTime } from '@/lib/syncCatalog'
+import { db } from '@/lib/offlineDb'
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
+  const [pedidos, setPedidos] = useState<PedidoSummary[]>([])
+  const [clientesCount, setClientesCount] = useState(0)
+  const [lastSyncText, setLastSyncText] = useState('Nunca')
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  async function loadData() {
+    try {
+      const pedList = await listPedidosApi()
+      setPedidos(pedList)
+
+      const cliCount = typeof window !== 'undefined' && db ? await db.clientes.count() : 0
+      setClientesCount(cliCount)
+
+      const syncTime = getLastSyncTime()
+      if (syncTime) {
+        const date = new Date(syncTime)
+        setLastSyncText(date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+      } else {
+        setLastSyncText('Nunca')
+      }
+    } catch (err) {
+      console.error('[DashboardPage] Error loading dashboard data:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const handleForceSync = async () => {
+    setIsSyncing(true)
+    try {
+      const success = await syncCatalogLocal()
+      if (success) {
+        await loadData()
+      }
+    } catch (err) {
+      console.error('[DashboardPage] Sync error:', err)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  // 1. Pedidos Hoje
+  const todayStr = new Date().toDateString()
+  const pedidosHoje = pedidos.filter(p => p.criadoEm && new Date(p.criadoEm).toDateString() === todayStr)
+  const pedidosHojeCount = pedidosHoje.length
+
+  // 2. Ticket Médio
+  const totalValue = pedidos.reduce((sum, p) => sum + p.totalLiquido, 0)
+  const ticketMedio = pedidos.length > 0 ? totalValue / pedidos.length : 0
+
+  const activeKpis = [
+    {
+      label: 'Pedidos Hoje',
+      value: pedidosHojeCount.toString(),
+      delta: 'Hoje',
+      trend: 'neutral',
+      icon: ShoppingCart,
+      color: 'bg-blue-600',
+      shadow: 'shadow-blue-500/20'
+    },
+    {
+      label: 'Ticket Médio',
+      value: `R$ ${ticketMedio.toFixed(2)}`,
+      delta: `${pedidos.length} pedidos no total`,
+      trend: 'neutral',
+      icon: TrendingUp,
+      color: 'bg-emerald-600',
+      shadow: 'shadow-emerald-500/20'
+    },
+    {
+      label: 'Clientes Sincronizados',
+      value: clientesCount.toString(),
+      delta: 'Disponíveis offline',
+      trend: 'neutral',
+      icon: Users,
+      color: 'bg-indigo-600',
+      shadow: 'shadow-indigo-500/20'
+    },
+    {
+      label: 'Status ERP',
+      value: lastSyncText !== 'Nunca' ? 'Ativo' : 'Pendente',
+      delta: `Último Sync: ${lastSyncText}`,
+      trend: 'neutral',
+      icon: RefreshCw,
+      color: 'bg-amber-600',
+      shadow: 'shadow-amber-500/20'
+    },
+  ]
 
   return (
     <div className="space-y-12">
@@ -116,7 +167,7 @@ export default function DashboardPage() {
 
       {/* KPI Section */}
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((kpi) => (
+        {activeKpis.map((kpi) => (
           <Card key={kpi.label} className="premium-card p-2" radius="none" shadow="none">
             <CardBody className="p-8 space-y-6">
               <div className="flex justify-between items-start">
@@ -161,28 +212,43 @@ export default function DashboardPage() {
                    <th className="px-8 pb-4 text-center">Status</th>
                 </tr>
              </thead>
-             <tbody>
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="cursor-pointer group">
-                     <td className="px-8 py-8">
-                        <span className="text-sm font-black font-mono text-blue-500">{order.id}</span>
-                        <p className="text-[9px] font-black uppercase text-slate-500 mt-1 tracking-widest">Pedido Interno</p>
+              <tbody>
+                 {pedidos.slice(0, 4).map((order) => {
+                   const statusColor = order.status === 'sincronizado' ? 'success' : order.status === 'erro_sync' ? 'danger' : 'warning';
+                   const statusLabel = order.status === 'sincronizado' ? 'Sincronizado' : order.status === 'erro_sync' ? 'Erro Sync' : 'Pendente Sync';
+                   return (
+                     <tr key={order.pedidoId} className="cursor-pointer group">
+                        <td className="px-8 py-8">
+                           <span className="text-sm font-black font-mono text-blue-500">{order.pedidoId.substring(0, 8)}</span>
+                           <p className="text-[9px] font-black uppercase text-slate-500 mt-1 tracking-widest">
+                             {order.criadoEm ? new Date(order.criadoEm).toLocaleDateString('pt-BR') : 'Sem data'}
+                           </p>
+                        </td>
+                        <td className="px-8 py-8">
+                           <span className="text-base font-black text-slate-900 dark:text-slate-300 italic">{order.clienteId}</span>
+                        </td>
+                        <td className="px-8 py-8 text-right">
+                           <span className="text-xl font-black font-mono text-slate-900 dark:text-white tracking-tighter">
+                             R$ {order.totalLiquido.toFixed(2)}
+                           </span>
+                        </td>
+                        <td className="px-8 py-8 text-center">
+                           <Chip className="capitalize font-black text-[9px] tracking-widest px-4 h-6" color={statusColor as any} size="sm" variant="shadow">
+                             {statusLabel}
+                           </Chip>
+                        </td>
+                     </tr>
+                   )
+                 })}
+                 {pedidos.length === 0 && (
+                   <tr>
+                     <td colSpan={4} className="px-8 py-8 text-center font-bold text-slate-500">
+                       Nenhum pedido recente.
                      </td>
-                     <td className="px-8 py-8">
-                        <span className="text-base font-black text-slate-900 dark:text-slate-300 italic">{order.client}</span>
-                     </td>
-                     <td className="px-8 py-8 text-right">
-                        <span className="text-xl font-black font-mono text-slate-900 dark:text-white tracking-tighter">{order.value}</span>
-                     </td>
-                     <td className="px-8 py-8 text-center">
-                        <Chip className="capitalize font-black text-[9px] tracking-widest px-4 h-6" color={order.type as any} size="sm" variant="shadow">
-                          {order.status}
-                        </Chip>
-                     </td>
-                  </tr>
-                ))}
-             </tbody>
-          </table>
+                   </tr>
+                 )}
+              </tbody>
+           </table>
         </div>
 
         {/* Sidebar Info Column */}
@@ -205,7 +271,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                  <h4 className="text-2xl font-black italic tracking-tighter text-white">ERP Versatus.Net</h4>
                  <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
-                   Status em tempo real ativo. Última atualização de estoque e preços realizada às 14:30.
+                   Status em tempo real ativo. Última atualização de estoque e preços realizada às {lastSyncText}.
                  </p>
               </div>
               
@@ -225,8 +291,14 @@ export default function DashboardPage() {
                  />
               </div>
 
-              <Button fullWidth variant="flat" className="h-14 font-black uppercase tracking-widest text-[10px] bg-blue-600/10 border border-blue-500/10 rounded-[1.5rem] group-hover:bg-blue-600 transition-colors group-hover:text-white">
-                 Forçar Recarga Completa
+              <Button 
+                fullWidth 
+                variant="flat" 
+                onClick={handleForceSync}
+                disabled={isSyncing}
+                className="h-14 font-black uppercase tracking-widest text-[10px] bg-blue-600/10 border border-blue-500/10 rounded-[1.5rem] hover:bg-blue-600 transition-colors hover:text-white disabled:opacity-50"
+              >
+                 {isSyncing ? <Spinner size="sm" color="white" /> : 'Forçar Recarga Completa'}
               </Button>
             </div>
           </div>

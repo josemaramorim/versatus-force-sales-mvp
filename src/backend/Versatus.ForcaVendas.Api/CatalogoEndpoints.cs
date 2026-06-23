@@ -1,3 +1,4 @@
+using StackExchange.Redis;
 using Versatus.ForcaVendas.Api.Middleware;
 using Versatus.ForcaVendas.Application.Catalogo;
 
@@ -20,11 +21,11 @@ public static class CatalogoEndpoints
             }
 
             var effectiveLimit = limit.GetValueOrDefault(20);
-            if (effectiveLimit <= 0 || effectiveLimit > 100)
+            if (effectiveLimit <= 0 || effectiveLimit > 100000)
             {
                 return Results.ValidationProblem(new Dictionary<string, string[]>
                 {
-                    ["limit"] = ["limit must be between 1 and 100."]
+                    ["limit"] = ["limit must be between 1 and 100000."]
                 });
             }
 
@@ -50,11 +51,11 @@ public static class CatalogoEndpoints
             }
 
             var effectiveLimit = limit.GetValueOrDefault(50);
-            if (effectiveLimit <= 0 || effectiveLimit > 200)
+            if (effectiveLimit <= 0 || effectiveLimit > 100000)
             {
                 return Results.ValidationProblem(new Dictionary<string, string[]>
                 {
-                    ["limit"] = ["limit must be between 1 and 200."]
+                    ["limit"] = ["limit must be between 1 and 100000."]
                 });
             }
 
@@ -65,6 +66,54 @@ public static class CatalogoEndpoints
             return Results.Ok(clients);
         })
         .WithName("SearchClients")
+        .WithOpenApi();
+
+        app.MapGet("/catalogo/tabelas-preco", async (
+            ITenantContext tenantContext,
+            IConnectionMultiplexer redis,
+            CancellationToken cancellationToken) =>
+        {
+            if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var db = redis.GetDatabase();
+            var key = $"catalogo:{tenantContext.TenantId}:precos";
+            var json = await db.StringGetAsync(key);
+
+            if (!json.HasValue)
+            {
+                return Results.Content("[]", "application/json");
+            }
+
+            return Results.Content(json!, "application/json");
+        })
+        .WithName("GetTabelasPreco")
+        .WithOpenApi();
+
+        app.MapGet("/catalogo/condicoes-pagamento", async (
+            ITenantContext tenantContext,
+            IConnectionMultiplexer redis,
+            CancellationToken cancellationToken) =>
+        {
+            if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var db = redis.GetDatabase();
+            var key = $"catalogo:{tenantContext.TenantId}:condicoes-pagamento";
+            var json = await db.StringGetAsync(key);
+
+            if (!json.HasValue)
+            {
+                return Results.Content("[]", "application/json");
+            }
+
+            return Results.Content(json!, "application/json");
+        })
+        .WithName("GetCondicoesPagamento")
         .WithOpenApi();
 
         return app;

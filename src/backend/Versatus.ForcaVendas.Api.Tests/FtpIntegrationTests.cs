@@ -21,7 +21,7 @@ public class FtpIntegrationTests
     private const int Port = 21;
     private const string Username = "test";
     private const string Password = "test";
-    private const string BasePath = "/integration-tests";
+    private const string BasePath = "/integration-sync/integration-tests";
     private readonly string _tenantId = Guid.NewGuid().ToString();
 
     private readonly IOptions<FtpTransportOptions> _options;

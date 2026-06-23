@@ -139,3 +139,30 @@ Siga os passos a seguir usando o **Google Chrome** ou **Microsoft Edge** para va
 5. O aplicativo tentará enviar o pedido, mas o mock de negócio no Adaptador ERP rejeitará a gravação por erro de saldo/validação.
 6. O pedido ficará com status vermelho **"Erro de Estoque"** e a causa da falha estará impressa em vermelho abaixo do nome do cliente.
 7. No botão de Ações (três pontinhos) deste pedido, você poderá escolher entre **"Tentar Enviar Novamente"** ou **"Excluir Rascunho"** local.
+
+### 5.6. Sincronização Manual sob Demanda e Diagnóstico do Catálogo
+1. Vá até a tela de **Nova Venda**.
+2. Note o botão **🔄 Sync** localizado logo ao lado do campo de busca de Clientes.
+3. Clique em **🔄 Sync**: o ícone de sincronismo girará indicando a atualização enquanto o app baixa em paralelo todos os Clientes, Produtos, Tabelas de Preços e Condições de Pagamento em background da API e grava no banco local IndexedDB.
+4. No menu lateral, navegue até a tela **Sincronismo** (ícone de setas circulares).
+5. Esta tela apresentará o status diagnóstico detalhado da sincronização local:
+   - Quantidade de registros locais salvos no IndexedDB para cada tabela: **Clientes**, **Produtos**, **Tabelas de Preço** e **Condições de Pagamento**.
+   - Data e hora da última sincronização geral concluída com sucesso.
+6. Clique no botão principal **[ Sincronizar Catálogo Completo ]** para forçar uma atualização transacionada de todas as entidades de uma vez só e observe os contadores e badges atualizarem reativamente.
+
+### 5.7. Verificação de Descrições de Tabela de Preço
+1. Ao adicionar itens no carrinho de vendas ou ao listar as Tabelas de Preço, certifique-se de que a **descrição textual** da tabela de preço (ex: *"Tabela Padrao Varejo"*) está sendo exibida e carregada corretamente em vez de apenas o ID numérico.
+2. Isso valida a integração do SQL Server via `LEFT JOIN VENTABELAPRECO` que traz o nome descritivo de cada tabela.
+
+### 5.8. Parametrizando os Horários e Intervalos de Sincronismo
+1. No arquivo [appsettings.json](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/appsettings.json) do **Adaptador ERP**, você pode configurar o tempo entre as sincronizações parciais (Delta) e o horário da carga completa (Full):
+   * `CatalogExportIntervalSeconds`: Período em segundos do Delta Sync (Padrão: `300` - 5 minutos).
+   * `FullSyncHour` (por Tenant): Horário da madrugada para execução da carga completa (Padrão: `3`).
+2. Para testar o **Delta Sync** rapidamente, diminua o `CatalogExportIntervalSeconds` para `10` segundos.
+3. Para testar o **Full Sync** diário, ajuste o valor da propriedade `FullSyncHour` na seção do seu tenant correspondente para o horário local de agora (ex: se são 15h, coloque `15`). Reinicie o **Adaptador ERP** e observe nos logs o disparo da carga total (Full Sync).
+
+### 5.9. Validação de Registros Ativos vs Inativos (Regra de Negócio)
+1. No banco de dados do ERP (`SQL Server`), altere o campo `ATIVO` de um cliente ou produto para `0` (Inativo).
+2. Execute ou aguarde o ciclo de sincronização do ERP Adapter.
+3. No aplicativo PWA, clique em **🔄 Sync**.
+4. Pesquise pelo registro inativado e confirme que ele **não é exibido** e não foi sincronizado para o IndexedDB local. O catálogo offline traz por padrão apenas os registros marcados como ativos (`ATIVO = 1` no ERP).
