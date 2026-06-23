@@ -275,21 +275,22 @@ export default function DashboardPage() {
                  </p>
               </div>
               
-              <div className="space-y-4">
-                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-600 italic">
-                    <span>Performance Sinc</span>
-                    <span className="text-blue-500">98%</span>
-                 </div>
-                 <Progress 
-                    size="sm" 
-                    value={98} 
-                    radius="full" 
-                    classNames={{
-                      indicator: "bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.5)]",
-                      track: "bg-slate-900 border border-slate-800"
-                    }}
-                 />
-              </div>
+               <div className="space-y-4">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 italic">
+                     <span>Progresso Sinc</span>
+                     <span className="text-blue-500">{isSyncing ? 'Sincronizando...' : '0%'}</span>
+                  </div>
+                  <Progress 
+                     size="sm" 
+                     value={isSyncing ? undefined : 0} 
+                     isIndeterminate={isSyncing}
+                     radius="full" 
+                     classNames={{
+                       indicator: "bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.5)]",
+                       track: "bg-slate-900 border border-slate-800"
+                     }}
+                  />
+               </div>
 
               <Button 
                 fullWidth 
