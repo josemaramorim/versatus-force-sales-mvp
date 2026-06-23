@@ -31,6 +31,28 @@ import { listPedidosApi, searchClientes, PedidoSummary } from '@/lib/vendaApi'
 import { syncCatalogLocal, getLastSyncTime } from '@/lib/syncCatalog'
 import { db } from '@/lib/offlineDb'
 
+const statusColorMap: Record<string, "primary" | "success" | "warning" | "danger" | "default"> = {
+  processado: "success",
+  pendente: "warning",
+  erro: "danger",
+  enviado: "primary",
+  rascunho: "default",
+  pendente_sync: "warning",
+  erro_sync: "danger",
+  offline: "warning",
+}
+
+const statusLabelMap: Record<string, string> = {
+  processado: "Processado",
+  pendente: "Pendente",
+  erro: "Rejeitado ERP",
+  enviado: "Enviado",
+  rascunho: "Rascunho",
+  pendente_sync: "Aguardando Rede",
+  erro_sync: "Erro Sync",
+  offline: "Offline",
+}
+
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const [pedidos, setPedidos] = useState<PedidoSummary[]>([])
@@ -213,9 +235,9 @@ export default function DashboardPage() {
                 </tr>
              </thead>
               <tbody>
-                 {pedidos.slice(0, 4).map((order) => {
-                   const statusColor = order.status === 'sincronizado' ? 'success' : order.status === 'erro_sync' ? 'danger' : 'warning';
-                   const statusLabel = order.status === 'sincronizado' ? 'Sincronizado' : order.status === 'erro_sync' ? 'Erro Sync' : 'Pendente Sync';
+                  {pedidos.slice(0, 4).map((order) => {
+                    const statusColor = statusColorMap[order.status || ''] || 'warning';
+                    const statusLabel = statusLabelMap[order.status || ''] || order.status || 'Pendente Sync';
                    return (
                      <tr key={order.pedidoId} className="cursor-pointer group">
                         <td className="px-8 py-8">
