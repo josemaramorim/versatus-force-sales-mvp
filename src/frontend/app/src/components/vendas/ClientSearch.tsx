@@ -41,19 +41,29 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
     const clean = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.\-\/]/g, "")
     const cleanedInput = clean(inputValue)
 
-    if (!cleanedInput) return clientes
-
-    // If selected client matches current inputValue, do not filter so user can see all when they click the dropdown
+    // If selected client matches current inputValue, treat as "no search" so user can see all
     const selectedCliente = clientes.find((c) => c.id === selectedId)
-    if (selectedCliente && selectedCliente.nome === inputValue) {
-      return clientes
+    const isShowingSelected = selectedCliente && selectedCliente.nome === inputValue
+
+    let result: typeof clientes
+
+    if (!cleanedInput || isShowingSelected) {
+      // No search active: show first 30 to avoid DOM overload, user can type to search
+      const sliced = clientes.slice(0, 30)
+      if (selectedId && !sliced.some((c) => c.id === selectedId) && selectedCliente) {
+        sliced.push(selectedCliente)
+      }
+      return sliced
     }
 
-    return clientes.filter((c) => {
+    // Search active: show ALL matching results (no limit) so no client is hidden
+    result = clientes.filter((c) => {
       const cleanedNome = clean(c.nome)
       const cleanedDoc = clean(c.documento)
       return cleanedNome.includes(cleanedInput) || cleanedDoc.includes(cleanedInput)
     })
+
+    return result
   }, [clientes, inputValue, selectedId])
 
   const onSelectionChange = (id: React.Key | null) => {
@@ -111,9 +121,9 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
             <AutocompleteItem 
               key={cliente.id} 
               textValue={`${cliente.nome} ${cliente.documento}`}
-              className="p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80"
+              className="h-20 px-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center shrink-0"
             >
-              <div className="flex gap-4 items-center">
+              <div className="flex gap-4 items-center w-full">
                 <Avatar 
                   radius="lg" 
                   size="md" 

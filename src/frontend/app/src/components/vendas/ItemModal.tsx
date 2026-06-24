@@ -67,13 +67,18 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
     const clean = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.\-\/]/g, "")
     const cleanedInput = clean(productInputValue)
 
-    if (!cleanedInput) return produtos
+    const isShowingSelected = selectedProduto && selectedProduto.nome === productInputValue
 
-    // If selected product matches current productInputValue, do not filter so user can see all when they click the dropdown
-    if (selectedProduto && selectedProduto.nome === productInputValue) {
-      return produtos
+    if (!cleanedInput || isShowingSelected) {
+      // No search active: show first 30 to avoid DOM overload, user can type to search
+      const sliced = produtos.slice(0, 30)
+      if (selectedProduto?.id && !sliced.some((p) => p.id === selectedProduto.id)) {
+        sliced.push(selectedProduto)
+      }
+      return sliced
     }
 
+    // Search active: show ALL matching results (no limit) so no product is hidden
     return produtos.filter((p) => {
       const cleanedNome = clean(p.nome)
       const cleanedSku = clean(p.sku)
@@ -211,8 +216,12 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                       }}
                     >
                       {(produto) => (
-                        <AutocompleteItem key={produto.id} textValue={`${produto.nome} ${produto.sku}`} className="p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80">
-                          <div className="flex gap-4 items-center">
+                        <AutocompleteItem 
+                          key={produto.id} 
+                          textValue={`${produto.nome} ${produto.sku}`} 
+                          className="h-20 px-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center shrink-0"
+                        >
+                          <div className="flex gap-4 items-center w-full">
                             <Avatar src={produto.imagemUrl} radius="lg" size="md" isBordered className="bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" />
                             <div className="flex flex-col gap-1">
                               <span className="text-base font-black italic text-slate-900 dark:text-slate-200 leading-none">{produto.nome}</span>
