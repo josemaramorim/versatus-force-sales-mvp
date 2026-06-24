@@ -22,6 +22,7 @@ Entregar rapidamente um fluxo ponta a ponta para demonstracao ao cliente:
 ## Documentacao de Operacao
 
 - [docs/DEPLOY_VPS.md](docs/DEPLOY_VPS.md) — Guia completo de deploy em VPS (produção) com Docker, Nginx e SSL
+- [docs/INTEGRACAO_LEGADO_ERP.md](docs/INTEGRACAO_LEGADO_ERP.md) — O que o ERP legado precisa para funcionar com a app (tabelas, views, colunas, permissões)
 - [docs/GERENCIAMENTO_SERVICOS.md](docs/GERENCIAMENTO_SERVICOS.md) — Gerenciamento dos serviços locais e guia Docker para desenvolvimento
 - [docs/CONFIGURACAO_TENANTS.md](docs/CONFIGURACAO_TENANTS.md) — Configuração de tenants e empresas
 - [docs/CICLO_VIDA_PEDIDOS.md](docs/CICLO_VIDA_PEDIDOS.md) — Fluxo e ciclo de vida dos pedidos
