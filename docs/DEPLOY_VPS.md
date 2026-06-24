@@ -405,17 +405,80 @@ sudo systemctl start fvs-frontend
 
 ---
 
-## 13. Passo 11 — Configurar o Nginx como Proxy Reverso
+## 13. Passo 11 — Definir e Validar o Domínio de Acesso
+
+Antes de configurar o Nginx, você precisa saber qual endereço (domínio) será usado para acessar a aplicação. Existem duas situações:
+
+### Opção A — Usar o hostname da VPS (fornecido pela hospedagem)
+
+Se sua hospedagem (ex: icontainer, Contabo, DigitalOcean, etc.) fornece um hostname padrão para o servidor, você pode utilizá-lo diretamente. Exemplo típico:
+
+```
+vps6755.panel.icontainer.net
+```
+
+✅ Já aponta automaticamente para o IP da VPS  
+✅ Funciona com Nginx e SSL (Let's Encrypt)  
+✅ Ideal para testes, homologação ou demonstrações ao cliente  
+⚠️ Não é possível criar subdomínios (ex: `api.vps6755...`) sem passar pelo painel da hospedagem  
+
+### Opção B — Usar um domínio próprio
+
+Se você possui um domínio registrado (ex: `forcavendas.versatus.com.br`), aponte o registro DNS `A` para o IP da VPS no painel do provedor de DNS.
+
+✅ Recomendado para ambientes de produção definitivos  
+✅ Permite criar subdomínios livremente  
+✅ Mais profissional para uso pelo cliente final  
+
+---
+
+### 13.1. Descobrir o IP público da VPS
+
+Dentro do servidor (via SSH), execute:
+
+```bash
+curl -s ifconfig.me
+```
+
+Guarde este IP — ele é o endereço público da sua VPS.
+
+### 13.2. Confirmar que o domínio aponta para a VPS
+
+```bash
+# Verificar para qual IP o domínio resolve
+nslookup vps6755.panel.icontainer.net
+
+# Ou com dig (mais detalhado)
+dig +short vps6755.panel.icontainer.net
+```
+
+Se o IP retornado for o **mesmo** que o `curl -s ifconfig.me` mostrou, o domínio está pronto para ser usado.
+
+> [!NOTE]
+> Se você acabou de registrar ou alterar um domínio próprio, pode levar até 24h para a propagação do DNS. Use o hostname da hospedagem enquanto isso.
+
+### 13.3. Anotar o domínio escolhido
+
+Substitua `SEU_DOMINIO` pelo endereço escolhido nos próximos passos. Exemplos:
+
+| Situação | Valor a usar nos comandos |
+|---|---|
+| Hostname da icontainer | `vps6755.panel.icontainer.net` |
+| Domínio próprio | `forcavendas.versatus.com.br` |
+
+---
+
+## 14. Passo 12 — Configurar o Nginx como Proxy Reverso
 
 O Nginx recebe as requisições externas (porta 80/443) e as distribui entre o frontend e a API.
 
-### 13.1. Instalar o Nginx
+### 14.1. Instalar o Nginx
 
 ```bash
 sudo apt install -y nginx
 ```
 
-### 13.2. Criar a configuração do site
+### 14.2. Criar a configuração do site
 
 ```bash
 sudo tee /etc/nginx/sites-available/versatus-fvs > /dev/null << 'EOF'
@@ -454,7 +517,7 @@ server {
 EOF
 ```
 
-### 13.3. Ativar o site
+### 14.3. Ativar o site
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/versatus-fvs /etc/nginx/sites-enabled/
@@ -464,10 +527,10 @@ sudo systemctl reload nginx
 
 ---
 
-## 14. Passo 12 — Instalar o SSL com Let's Encrypt (HTTPS gratuito)
+## 15. Passo 13 — Instalar o SSL com Let's Encrypt (HTTPS gratuito)
 
 > [!IMPORTANT]
-> Este passo só funciona se o domínio já estiver apontando para o IP da VPS. Verifique com `ping SEU_DOMINIO.com.br` antes de continuar.
+> Este passo só funciona se o domínio já estiver apontando para o IP da VPS (veja o Passo 11). Verifique com `ping vps6755.panel.icontainer.net` (ou seu domínio próprio) antes de continuar.
 
 ```bash
 # Instalar o Certbot
@@ -485,7 +548,7 @@ sudo certbot renew --dry-run
 
 ---
 
-## 15. Verificação Final
+## 16. Verificação Final
 
 Após todos os passos, verifique se tudo está funcionando:
 
@@ -503,7 +566,7 @@ curl http://localhost:5000/health
 curl http://localhost:3000
 ```
 
-Abra o navegador e acesse `https://SEU_DOMINIO.com.br`. O sistema deve carregar a tela de login.
+Abra o navegador e acesse `https://vps6755.panel.icontainer.net` (ou seu domínio próprio). O sistema deve carregar a tela de login.
 
 ---
 
