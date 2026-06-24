@@ -21,6 +21,7 @@ Entregar rapidamente um fluxo ponta a ponta para demonstracao ao cliente:
 
 ## Documentacao de Operacao
 
+- [docs/ARQUITETURA_DEPLOY.md](docs/ARQUITETURA_DEPLOY.md) — O que fica na VPS e o que fica na máquina do cliente (visão geral da arquitetura de deploy)
 - [docs/DEPLOY_VPS.md](docs/DEPLOY_VPS.md) — Guia completo de deploy em VPS (produção) com Docker, Nginx e SSL
 - [docs/INTEGRACAO_LEGADO_ERP.md](docs/INTEGRACAO_LEGADO_ERP.md) — O que o ERP legado precisa para funcionar com a app (tabelas, views, colunas, permissões)
 - [docs/GERENCIAMENTO_SERVICOS.md](docs/GERENCIAMENTO_SERVICOS.md) — Gerenciamento dos serviços locais e guia Docker para desenvolvimento
