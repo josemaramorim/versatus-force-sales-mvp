@@ -31,7 +31,7 @@ Internet
 
 ## 2. Pré-requisitos da VPS
 
-- **Sistema operacional:** Ubuntu 22.04 LTS (recomendado) ou Debian 12
+- **Sistema operacional:** Ubuntu 24.04 LTS (recomendado) ou Debian 12
 - **RAM mínima:** 2 GB (recomendado 4 GB para conforto)
 - **Disco mínimo:** 20 GB livres
 - **Acesso:** SSH com usuário `root` ou usuário com `sudo`
@@ -66,7 +66,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 # Adicionar o repositório do Docker
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  noble stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # Instalar o Docker
