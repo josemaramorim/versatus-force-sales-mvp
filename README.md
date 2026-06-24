@@ -19,6 +19,13 @@ Entregar rapidamente um fluxo ponta a ponta para demonstracao ao cliente:
 - [Analise/07-conducao-projeto-mvp.md](Analise/07-conducao-projeto-mvp.md)
 - [Analise/08-backlog-mvp-historias-tarefas.md](Analise/08-backlog-mvp-historias-tarefas.md)
 
+## Documentacao de Operacao
+
+- [docs/DEPLOY_VPS.md](docs/DEPLOY_VPS.md) — Guia completo de deploy em VPS (produção) com Docker, Nginx e SSL
+- [docs/GERENCIAMENTO_SERVICOS.md](docs/GERENCIAMENTO_SERVICOS.md) — Gerenciamento dos serviços locais e guia Docker para desenvolvimento
+- [docs/CONFIGURACAO_TENANTS.md](docs/CONFIGURACAO_TENANTS.md) — Configuração de tenants e empresas
+- [docs/CICLO_VIDA_PEDIDOS.md](docs/CICLO_VIDA_PEDIDOS.md) — Fluxo e ciclo de vida dos pedidos
+
 ## Governanca GitHub
 
 - Issues no formato Historia + Tarefas
