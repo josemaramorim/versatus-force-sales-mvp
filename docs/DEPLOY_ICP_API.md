@@ -314,7 +314,7 @@ O seed cria automaticamente:
 > [!NOTE]
 > Para verificar se as migrations foram aplicadas com sucesso, acesse o endpoint de saúde:
 > ```
-> GET https://vps9526.panel.icontainer.net/health/ready
+> GET https://force-sales-api.vps9526.panel.icontainer.net/health/ready
 > ```
 > O status `Healthy` confirma que a API está conectada ao PostgreSQL e Redis.
 
@@ -385,7 +385,7 @@ Após o deploy, verifique se a API está respondendo:
 
 ### Endpoint de saúde (Liveness)
 ```
-GET https://vps9526.panel.icontainer.net/health/live
+GET https://force-sales-api.vps9526.panel.icontainer.net/health/live
 ```
 Resposta esperada (HTTP 200):
 ```json
@@ -394,7 +394,7 @@ Resposta esperada (HTTP 200):
 
 ### Endpoint de prontidão (Readiness)
 ```
-GET https://vps6755.panel.icontainer.net/health/ready
+GET https://force-sales-api.vps9526.panel.icontainer.net/health/ready
 ```
 Resposta esperada (HTTP 200):
 ```json
