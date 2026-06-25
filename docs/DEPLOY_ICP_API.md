@@ -280,6 +280,36 @@ Clique em **Criar** ou **Salvar**. O ICP irá:
 2. Executar `dotnet restore` e `dotnet publish`
 3. Iniciar a aplicação
 
+### 4.7. Banco de dados — migrations e usuários iniciais
+
+Ao iniciar pela primeira vez, a API **aplica automaticamente todas as migrations do Entity Framework Core** no PostgreSQL. O banco será criado e populado com os dados iniciais (seed) sem nenhuma intervenção manual.
+
+O seed cria automaticamente:
+
+#### Usuários padrão
+
+| Email | Username | Senha | Role | Tenant |
+|---|---|---|---|---|
+| `admin@demo1.versatus.com` | `admin` | `Mudar@!123` | `admin` | `00000000-...-0001` |
+| `gestor@demo2.versatus.com` | `gestor` | `Mudar@!123` | `gestor` | `00000000-...-0002` |
+
+#### Dados estruturais criados automaticamente
+
+- Status de pedido: `rascunho`, `enviado`, `processado`, `erro`
+- 2 tenants demo ativos (IDs `...0001` e `...0002`)
+- Todas as tabelas do sistema
+
+> [!CAUTION]
+> **Troque a senha `Mudar@!123` imediatamente após o primeiro acesso em produção!** Essa senha é padrão do repositório e conhecida publicamente. Use a API ou acesso direto ao banco para atualizá-la com um BCrypt hash seguro.
+
+> [!NOTE]
+> Para verificar se as migrations foram aplicadas com sucesso, acesse o endpoint de saúde:
+> ```
+> GET https://vps9526.panel.icontainer.net/api/health/ready
+> ```
+> O status `Healthy` confirma que a API está conectada ao PostgreSQL e Redis.
+
+
 ---
 
 ## Etapa 5 — Configurar o Webhook do GitHub
