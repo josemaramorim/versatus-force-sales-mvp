@@ -50,14 +50,21 @@ public partial class Program
             });
         });
 
-        // CORS: permite o frontend Next.js consumir a API em dev
+        // CORS: permite o frontend Next.js consumir a API em dev e produção
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("FrontendDev", policy =>
-                policy.WithOrigins("http://localhost:3000", "http://localhost:3001")
+            {
+                var originsStr = builder.Configuration["Cors:AllowedOrigins"];
+                var allowedOrigins = !string.IsNullOrEmpty(originsStr)
+                    ? originsStr.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    : new[] { "http://localhost:3000", "http://localhost:3001" };
+
+                policy.WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
-                    .AllowCredentials());
+                    .AllowCredentials();
+            });
         });
     }
 
