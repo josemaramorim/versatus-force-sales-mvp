@@ -235,22 +235,22 @@ INTEGRATION__FTP__BASEPATH=/integration-sync
 
 # Banco de dados PostgreSQL
 # ⚠️ O "Container" mostrado no Painel ICP é o hostname (não use localhost)
-ConnectionStrings__DefaultConnection=Host=postgresql-forca-venda;Port=5432;Database=forca_vendas;Username=versatus;Password=SUA_SENHA_POSTGRES
+CONNECTIONSTRINGS__DEFAULTCONNECTION=Host=postgresql-forca-venda;Port=5432;Database=forca_vendas;Username=versatus;Password=SUA_SENHA_POSTGRES
 
 # Redis
 # ⚠️ O "Container" mostrado no Painel ICP é o hostname (não use localhost)
-ConnectionStrings__Redis=redis-forca-venda:6379,password=SUA_SENHA_REDIS,abortConnect=false
+CONNECTIONSTRINGS__REDIS=redis-forca-venda:6379,password=SUA_SENHA_REDIS,abortConnect=false
 
 # JWT — use uma chave com no mínimo 64 caracteres aleatórios
-Auth__Jwt__Issuer=versatus-force-sales
-Auth__Jwt__Audience=versatus-force-sales-clients
-Auth__Jwt__SecretKey=GERE_UMA_CHAVE_ALEATORIA_LONGA_AQUI
-Auth__Jwt__AccessTokenMinutes=60
-Auth__Jwt__RefreshTokenDays=7
-Auth__Jwt__SessionTimeoutMinutes=20
+AUTH__JWT__ISSUER=versatus-force-sales
+AUTH__JWT__AUDIENCE=versatus-force-sales-clients
+AUTH__JWT__SECRETKEY=GERE_UMA_CHAVE_ALEATORIA_LONGA_AQUI
+AUTH__JWT__ACCESSTOKENMINUTES=60
+AUTH__JWT__REFRESHTOKENDAYS=7
+AUTH__JWT__SESSIONTIMEOUTMINUTES=20
 
 # Tenants (lista de UUIDs das empresas)
-Auth__Tenants__0=00000000-0000-0000-0000-000000000001
+AUTH__TENANTS__0=00000000-0000-0000-0000-000000000001
 ```
 
 > [!IMPORTANT]
