@@ -68,7 +68,7 @@ O token permite que o ICP acesse o repositório e configure o webhook automatica
 
 ### 2.1. Acessar o painel
 
-1. Acesse: `https://vps6755.panel.icontainer.net`
+1. Acesse: `https://vps9526.panel.icontainer.net`
 2. Faça login com suas credenciais
 
 ### 2.2. Vincular o GitHub
@@ -82,14 +82,51 @@ O ICP irá validar o token e listar os repositórios disponíveis na sua conta.
 
 ---
 
-## Etapa 3 — Configurar a Aplicação .NET no Painel ICP
+## Etapa 3 — Criar o Banco de Dados e o Redis no Painel ICP
 
-### 3.1. Criar uma nova aplicação
+> [!IMPORTANT]
+> O Painel ICP da icontainer oferece **PostgreSQL e Redis como serviços gerenciados**. Você não precisa instalar nem usar Docker para isso. Os serviços rodam no mesmo servidor e são acessíveis via endereço interno (não é `localhost` comum — o ICP usa endereços específicos por container).
+
+### 3.1. Criar o banco PostgreSQL
+
+1. No Painel ICP, vá em **Banco de Dados** → **PostgreSQL**
+2. Clique em **Criar banco de dados**
+3. Preencha:
+   - **Nome do banco:** `forca_vendas`
+   - Defina uma senha forte para o usuário
+4. Após criar, clique em **Informações de conexão**
+5. **Anote os valores:**
+   - **Endereço (local)** — ex: `pg-xxxxx.interno.icp` ← use este na API
+   - **Porta** — geralmente `5432`
+   - **Usuário** e **Senha**
+
+> [!WARNING]
+> Use sempre o **"Endereço (local)"** nas variáveis de ambiente da API, nunca `localhost` ou `127.0.0.1`. O ICP usa rede interna de containers com endereços específicos.
+
+### 3.2. Criar a instância Redis
+
+1. No Painel ICP, vá em **Banco de Dados** → **Redis**
+2. Clique em **Criar instância Redis**
+3. Defina uma senha forte
+4. Após criar, clique em **Informações de conexão**
+5. **Anote os valores da "Conexão de Container":**
+   - **Endereço** — ex: `redis-xxxxx.interno.icp`
+   - **Porta** — ex: `6379`
+   - **Senha**
+
+> [!WARNING]
+> Use sempre a **"Conexão de Container"** (não a "Conexão Externa") nas variáveis de ambiente da API. A "Conexão Externa" é apenas para ferramentas no seu computador (ex: RedisInsight).
+
+---
+
+## Etapa 4 — Configurar a Aplicação .NET no Painel ICP
+
+### 4.1. Criar uma nova aplicação
 
 1. No Painel ICP, vá em **Aplicações** → **Nova Aplicação**
 2. Escolha o tipo: **.NET** (ou **ASP.NET Core**)
 
-### 3.2. Configurar o repositório
+### 4.2. Configurar o repositório
 
 Preencha os campos:
 
@@ -101,7 +138,7 @@ Preencha os campos:
 | **Arquivo .csproj** | `Versatus.ForcaVendas.Api.csproj` |
 | **Versão do .NET** | `.NET 8` |
 
-### 3.3. Configurar o comando de inicialização
+### 4.3. Configurar o comando de inicialização
 
 O ICP compilará e publicará o projeto automaticamente. O comando de inicialização deve ser:
 
@@ -112,13 +149,13 @@ dotnet Versatus.ForcaVendas.Api.dll
 > [!NOTE]
 > Alguns painéis ICP executam `dotnet publish` automaticamente e depois iniciam o `.dll` gerado. Verifique se o campo de comando de inicialização já está pré-preenchido corretamente.
 
-### 3.4. Configurar a porta
+### 4.4. Configurar a porta
 
 | Campo | Valor |
 |---|---|
 | **Porta da aplicação** | `5000` |
 
-### 3.5. Configurar as variáveis de ambiente
+### 4.5. Configurar as variáveis de ambiente
 
 > [!CAUTION]
 > **Nunca deixe senhas ou chaves secretas no arquivo `appsettings.json` commitado no repositório.** Configure-as como variáveis de ambiente no painel ICP.
@@ -130,14 +167,16 @@ ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://0.0.0.0:5000
 
 # Banco de dados PostgreSQL
-ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=forca_vendas;Username=fvs;Password=SUA_SENHA_FORTE
+# ⚠️ Use o "Endereço (local)" mostrado no Painel ICP → Banco de Dados → PostgreSQL → Informações de conexão
+ConnectionStrings__DefaultConnection=Host=ENDERECO_LOCAL_ICP;Port=5432;Database=forca_vendas;Username=USUARIO_ICP;Password=SENHA_POSTGRES
 
 # Redis
-ConnectionStrings__Redis=localhost:6379,abortConnect=false
+# ⚠️ Use o endereço da "Conexão de Container" mostrado no Painel ICP → Banco de Dados → Redis → Informações de conexão
+ConnectionStrings__Redis=ENDERECO_CONTAINER_ICP:PORTA_REDIS,password=SENHA_REDIS,abortConnect=false
 
-# RabbitMQ
-ConnectionStrings__RabbitMQ=amqp://fvs:SUA_SENHA_FORTE@localhost:5672/
-Messaging__BrokerUrl=amqp://fvs:SUA_SENHA_FORTE@localhost:5672/
+# RabbitMQ (se instalado via ICP App Store ou container separado)
+ConnectionStrings__RabbitMQ=amqp://guest:guest@ENDERECO_RABBITMQ:5672/
+Messaging__BrokerUrl=amqp://guest:guest@ENDERECO_RABBITMQ:5672/
 Messaging__PedidosExchange=pedidos
 Messaging__RetornoQueue=pedidos.retorno.erp
 
@@ -163,7 +202,7 @@ Auth__Tenants__0=00000000-0000-0000-0000-000000000001
 - `ConnectionStrings__DefaultConnection` equivale a `ConnectionStrings.DefaultConnection` no `appsettings.json`
 - `Auth__Jwt__SecretKey` equivale a `Auth.Jwt.SecretKey`
 
-### 3.6. Finalizar a criação
+### 4.6. Finalizar a criação
 
 Clique em **Criar** ou **Salvar**. O ICP irá:
 1. Clonar o repositório
@@ -172,11 +211,11 @@ Clique em **Criar** ou **Salvar**. O ICP irá:
 
 ---
 
-## Etapa 4 — Configurar o Webhook do GitHub
+## Etapa 5 — Configurar o Webhook do GitHub
 
 O webhook notifica o ICP automaticamente quando um novo commit é enviado ao repositório.
 
-### 4.1. Via Painel ICP (automático — recomendado)
+### 5.1. Via Painel ICP (automático — recomendado)
 
 Na maioria dos casos, o ICP configura o webhook automaticamente ao vincular o repositório. Verifique se o webhook foi criado:
 
@@ -184,7 +223,7 @@ Na maioria dos casos, o ICP configura o webhook automaticamente ao vincular o re
 2. Você deve ver um webhook com a URL do ICP (algo como `https://vps6755.panel.icontainer.net/api/webhook/...`)
 3. O status deve estar como **verde** (entregues com sucesso)
 
-### 4.2. Via GitHub (manual — se necessário)
+### 5.2. Via GitHub (manual — se necessário)
 
 Se o webhook não foi criado automaticamente:
 
@@ -198,7 +237,7 @@ Se o webhook não foi criado automaticamente:
 
 ---
 
-## Etapa 5 — Enviar Alterações e Acompanhar o Deploy Automático
+## Etapa 6 — Enviar Alterações e Acompanhar o Deploy Automático
 
 ### 5.1. Enviar um commit para o GitHub
 
@@ -236,7 +275,7 @@ Após o deploy, verifique se a API está respondendo:
 
 ### Endpoint de saúde (Liveness)
 ```
-GET https://vps6755.panel.icontainer.net/api/health/live
+GET https://vps9526.panel.icontainer.net/api/health/live
 ```
 Resposta esperada (HTTP 200):
 ```json
