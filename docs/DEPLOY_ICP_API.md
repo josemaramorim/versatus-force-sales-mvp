@@ -190,19 +190,16 @@ Adicione as seguintes variáveis de ambiente no painel:
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://0.0.0.0:5000
 
+# Transporte de integração — OBRIGATÓRIO: define que o sistema usa FTP (não RabbitMQ)
+Integration__Transport=Ftp
+
 # Banco de dados PostgreSQL
-# ⚠️ Use o "Endereço (local)" mostrado no Painel ICP → Banco de Dados → PostgreSQL → Informações de conexão
-ConnectionStrings__DefaultConnection=Host=ENDERECO_LOCAL_ICP;Port=5432;Database=forca_vendas;Username=USUARIO_ICP;Password=SENHA_POSTGRES
+# ⚠️ O "Container" mostrado no Painel ICP é o hostname (não use localhost)
+ConnectionStrings__DefaultConnection=Host=postgresql-forca-venda;Port=5432;Database=forca_vendas;Username=versatus;Password=SUA_SENHA_POSTGRES
 
 # Redis
-# ⚠️ Use o endereço da "Conexão de Container" mostrado no Painel ICP → Banco de Dados → Redis → Informações de conexão
-ConnectionStrings__Redis=ENDERECO_CONTAINER_ICP:PORTA_REDIS,password=SENHA_REDIS,abortConnect=false
-
-# RabbitMQ (se instalado via ICP App Store ou container separado)
-ConnectionStrings__RabbitMQ=amqp://guest:guest@ENDERECO_RABBITMQ:5672/
-Messaging__BrokerUrl=amqp://guest:guest@ENDERECO_RABBITMQ:5672/
-Messaging__PedidosExchange=pedidos
-Messaging__RetornoQueue=pedidos.retorno.erp
+# ⚠️ O "Container" mostrado no Painel ICP é o hostname (não use localhost)
+ConnectionStrings__Redis=redis-forca-venda:6379,password=SUA_SENHA_REDIS,abortConnect=false
 
 # JWT — use uma chave com no mínimo 64 caracteres aleatórios
 Auth__Jwt__Issuer=versatus-force-sales
@@ -216,6 +213,9 @@ Auth__Jwt__SessionTimeoutMinutes=20
 Auth__Tenants__0=00000000-0000-0000-0000-000000000001
 ```
 
+> [!IMPORTANT]
+> A variável `Integration__Transport=Ftp` é **obrigatória**. Sem ela, o sistema tenta usar RabbitMQ por padrão e vai falhar ao criar pedidos, pois o transporte RabbitMQ **não está implementado** no projeto — ele foi planejado para uma fase futura.
+
 > [!TIP]
 > Para gerar uma chave JWT segura, execute no terminal:
 > ```bash
@@ -225,6 +225,20 @@ Auth__Tenants__0=00000000-0000-0000-0000-000000000001
 **Mapeamento de nomes:** O ASP.NET Core converte automaticamente variáveis de ambiente com `__` (dois underscores) para a hierarquia de configuração JSON. Exemplo:
 - `ConnectionStrings__DefaultConnection` equivale a `ConnectionStrings.DefaultConnection` no `appsettings.json`
 - `Auth__Jwt__SecretKey` equivale a `Auth.Jwt.SecretKey`
+- `Integration__Transport` equivale a `Integration.Transport`
+
+### ⚠️ RabbitMQ não é necessário
+
+O projeto utiliza **FTP como transporte de integração** entre a API e o ERP Adapter do cliente. O transporte RabbitMQ existe no código como estrutura para uma fase futura, mas **todos os seus métodos lançam `NotImplementedException`** — portanto, usar RabbitMQ quebraria a aplicação.
+
+| Serviço | Necessário? | Motivo |
+|---|---|---|
+| **PostgreSQL** | ✅ Sim | Armazena pedidos, usuários e tenants |
+| **Redis** | ✅ Sim | Cache do catálogo (clientes, produtos, preços) |
+| **RabbitMQ** | ❌ **Não** | Não implementado — o projeto usa FTP como transport |
+| **FTP** | ✅ Sim | Troca de arquivos com o ERP Adapter do cliente |
+
+A variável `Integration__Transport=Ftp` (já incluída na lista acima) garante que o sistema use o transporte correto.
 
 ### 4.6. Finalizar a criação
 
@@ -244,7 +258,7 @@ O webhook notifica o ICP automaticamente quando um novo commit é enviado ao rep
 Na maioria dos casos, o ICP configura o webhook automaticamente ao vincular o repositório. Verifique se o webhook foi criado:
 
 1. No GitHub, vá no repositório → **Settings** → **Webhooks**
-2. Você deve ver um webhook com a URL do ICP (algo como `https://vps6755.panel.icontainer.net/api/webhook/...`)
+2. Você deve ver um webhook com a URL do ICP (algo como `https://vps9526.panel.icontainer.net/api/webhook/...`)
 3. O status deve estar como **verde** (entregues com sucesso)
 
 ### 5.2. Via GitHub (manual — se necessário)
