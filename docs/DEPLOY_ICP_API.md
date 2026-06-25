@@ -401,9 +401,12 @@ Resposta esperada (HTTP 200):
 {
   "status": "Healthy",
   "checks": [
-    { "name": "postgres", "status": "Healthy" },
-    { "name": "redis", "status": "Healthy" },
-    { "name": "rabbitmq", "status": "Healthy" }
+    {
+      "name": "redis",
+      "status": "Healthy",
+      "description": "Pong: 1.9273ms",
+      "duration": 13.7074
+    }
   ]
 }
 ```
