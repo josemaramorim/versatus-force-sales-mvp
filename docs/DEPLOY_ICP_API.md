@@ -333,8 +333,8 @@ O seed cria automaticamente:
 
 | Email | Username | Senha | Role | Tenant |
 |---|---|---|---|---|
-| `admin@demo1.versatus.com` | `admin` | `Mudar@!123` | `admin` | `00000000-...-0001` |
-| `gestor@demo2.versatus.com` | `gestor` | `Mudar@!123` | `gestor` | `00000000-...-0002` |
+| `admin@demo1.versatus.com` | `admin` | `123456` | `admin` | `00000000-...-0001` |
+| `gestor@demo2.versatus.com` | `gestor` | `123456` | `gestor` | `00000000-...-0002` |
 
 #### Dados estruturais criados automaticamente
 

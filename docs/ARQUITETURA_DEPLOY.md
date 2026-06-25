@@ -4,6 +4,41 @@ Este documento explica a decisão arquitetural de onde cada componente do **Vers
 
 ---
 
+## 🗺️ Índice de Arquitetura e Instalação
+
+Selecione o tópico que deseja consultar ou acompanhe a documentação na ordem proposta:
+
+### 📐 Visão Arquitetural
+* [1. O Problema Central](#1-o-problema-central) — O motivo da divisão e a responsabilidade de cada ambiente (VPS vs Cliente).
+* [2. Diagrama Completo](#2-diagrama-completo-da-arquitetura) — Representação visual do fluxo de dados e conectividade.
+* [3. Distribuição de Componentes](#3-onde-cada-componente-é-instalado) — Detalhamento de onde cada serviço é executado:
+  * [3.1. Componentes na VPS](#31-componentes-que-ficam-na-vps) — Nginx, API, Frontend, PostgreSQL, Redis, RabbitMQ e FTP.
+  * [3.2. Componentes no Cliente](#32-componente-que-fica-na-máquina-do-cliente) — O ERP Adapter local.
+
+### 🔄 Fluxo de Integração e Comunicação
+* [4. Fluxo Completo de Dados](#4-fluxo-completo-de-dados) — Como os dados trafegam de ponta a ponta:
+  * [4.1. Exportação do Catálogo](#41-exportação-do-catálogo-do-erp-para-o-aplicativo) — Envio do catálogo do ERP para o app.
+  * [4.2. Recebimento de Pedidos](#42-recebimento-de-pedidos-do-aplicativo-para-o-erp) — Gravação de pedidos no ERP.
+  * [4.3. Retorno do Faturamento](#43-retorno-do-faturamento-do-erp-para-o-aplicativo) — Atualização do status dos pedidos.
+
+### 🔒 Segurança e Instalação
+* [5. Requisitos de Firewall](#5-requisitos-de-firewall) — Portas e regras de segurança necessárias:
+  * [5.1. Firewall do Cliente](#51-firewall-do-cliente-rede-interna) — Conexões de saída (outbound).
+  * [5.2. Firewall da VPS](#52-firewall-da-vps) — Portas públicas e privadas recomendadas.
+* [6. Instalação do ERP Adapter no Cliente](#6-instalação-do-erpadapter-na-máquina-do-cliente) — Passo a passo para o ambiente local:
+  * [6.1. Pré-requisitos](#61-pré-requisitos-na-máquina-do-cliente) — Requisitos básicos do sistema.
+  * [6.2. Obtenção de Arquivos](#62-obter-os-arquivos-do-erpadapter) — Compilação e publicação.
+  * [6.3. Configuração do appsettings.json](#63-configurar-o-arquivo-appsettingsjson) — Ajuste de variáveis obrigatórias.
+  * [6.4. Teste de Execução Manual](#64-testar-a-execução-manual) — Validação rápida em console.
+  * [6.5. Instalação como Serviço Windows](#65-registrar-o-erpadapter-como-serviço-do-windows) — Execução persistente em background.
+  * [6.6. Verificação de Logs](#66-verificar-os-logs-no-windows) — Diagnóstico pelo Visualizador de Eventos.
+
+### 📋 Resumo e Checklists
+* [7. Resumo Visual Rápido](#7-resumo-visual-rápido) — Diagrama e regras simples de memorização.
+* [8. Checklist de Instalação Completa](#8-checklist-de-instalação-completa) — Lista de tarefas finais para a VPS e o Cliente.
+
+---
+
 ## 1. O Problema Central
 
 O ERP Adapter precisa se conectar ao SQL Server do cliente para ler o catálogo de clientes, produtos e preços, e para gravar os pedidos recebidos. Como o SQL Server fica na rede interna da empresa (sem acesso externo), **o ERP Adapter não pode rodar na VPS** — ele não conseguiria alcançar o banco de dados.
