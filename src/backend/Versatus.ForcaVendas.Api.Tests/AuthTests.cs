@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Net.Http.Json;
@@ -224,5 +224,4 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
         var secondLogin = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin@demo1.versatus.com", "Mudar@!123"));
         secondLogin.EnsureSuccessStatusCode();
     }
-
 }

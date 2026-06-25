@@ -182,9 +182,16 @@ public partial class Program
             {
                 try
                 {
-                    logger.LogInformation("Aplicando migrations do banco de dados...");
-                    context.Database.Migrate();
-                    logger.LogInformation("Migrations aplicadas com sucesso!");
+                    if (context.Database.IsRelational())
+                    {
+                        logger.LogInformation("Aplicando migrations do banco de dados...");
+                        context.Database.Migrate();
+                        logger.LogInformation("Migrations aplicadas com sucesso!");
+                    }
+                    else
+                    {
+                        logger.LogInformation("Provedor de banco de dados nao relacional em uso. Ignorando migrations automaticas.");
+                    }
                     break;
                 }
                 catch (Exception ex)
