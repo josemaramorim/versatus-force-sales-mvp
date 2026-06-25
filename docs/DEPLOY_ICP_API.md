@@ -151,19 +151,26 @@ O projeto usa FTP/SFTP para trocar arquivos com o ERP Adapter do cliente. O ICP 
 1. No Painel ICP, vá em **App Store**
 2. Pesquise por **SFTPGo** e clique em **Instalar**
 3. Após a instalação, acesse as **Informações de conexão** do SFTPGo
-4. **Anote os valores:**
+4. **Valores do seu painel ICP:**
 
-| Campo | Onde usar |
-|---|---|
-| **Container** | `Integration__Ftp__Host=` |
-| **Porta SFTP** | `Integration__Ftp__Port=` (geralmente `22`) |
-| **Usuário** | `Integration__Ftp__Username=` |
-| **Senha** | `Integration__Ftp__Password=` |
+| Campo mostrado no ICP | Valor real | Variável de ambiente |
+|---|---|---|
+| **Container** | `ftp-forca-venda` | `INTEGRATION__FTP__HOST=ftp-forca-venda` |
+| **Porta SFTP** | `2022` ⚠️ | `INTEGRATION__FTP__PORT=2022` |
+| **Usuário Admin** | `versatus` | `INTEGRATION__FTP__USERNAME=versatus` |
+| **Senha** | `(a que você definiu)` | `INTEGRATION__FTP__PASSWORD=SUA_SENHA` |
 
-5. Defina o diretório base de integração. No SFTPGo, crie o diretório `/integration-sync` para o usuário configurado
+> [!CAUTION]
+> A **Porta SFTP é 2022** — não a porta padrão 22! Configure exatamente `2022` na variável de ambiente, caso contrário a API não conseguirá se conectar ao servidor de arquivos.
+
+5. No SFTPGo, crie o diretório `/integration-sync` para o usuário `versatus` (pode ser feito via interface web na **Porta Web 8282**)
 
 > [!NOTE]
-> O campo **"Container"** do SFTPGo no ICP é o hostname para conexões internas — use-o diretamente nas variáveis de ambiente da API.
+> Para acessar a interface de administração do SFTPGo, use:
+> ```
+> http://ftp-forca-venda:8282
+> ```
+> Ou pelo IP externo: `http://23.80.91.77:8282` (acesso de fora da VPS)
 
 ---
 
@@ -217,13 +224,13 @@ ASPNETCORE_URLS=http://0.0.0.0:5000
 # Transporte de integração — OBRIGATÓRIO: define que o sistema usa FTP/SFTP (não RabbitMQ)
 INTEGRATION__TRANSPORT=Ftp
 
-# SFTPGo — configuração de conexão SFTP
-# ⚠️ Use o "Container" mostrado no Painel ICP → SFTPGo → Informações de conexão
-INTEGRATION__FTP__HOST=CONTAINER_DO_SFTPGO_NO_ICP
-INTEGRATION__FTP__PORT=22
+# SFTPGo — configuração de conexão SFTP (dados reais do Painel ICP)
+# Container = hostname interno; Porta SFTP = 2022 (não é a porta padrão 22!)
+INTEGRATION__FTP__HOST=ftp-forca-venda
+INTEGRATION__FTP__PORT=2022
 INTEGRATION__FTP__USESFTP=true
-INTEGRATION__FTP__USERNAME=USUARIO_SFTPGO
-INTEGRATION__FTP__PASSWORD=SENHA_SFTPGO
+INTEGRATION__FTP__USERNAME=versatus
+INTEGRATION__FTP__PASSWORD=SUA_SENHA_SFTPGO
 INTEGRATION__FTP__BASEPATH=/integration-sync
 
 # Banco de dados PostgreSQL
