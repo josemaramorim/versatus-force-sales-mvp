@@ -500,3 +500,40 @@ O arquivo `publish.zip` (com cerca de 7.4 MB) será criado na pasta `src/backend
 7. Clique em **Confirmar** ou **Salvar**.
 
 O painel descompactará o ZIP e iniciará a API instantaneamente, sem precisar compilar ou baixar imagens pesadas na VPS.
+
+### A.3. Como Atualizar ou Enviar Arquivos Grandes (Evitando limites do navegador)
+
+Se o navegador bloquear o upload do arquivo `publish.zip` (geralmente devido a limites de tamanho de upload padrão no formulário do painel), utilize uma das opções abaixo para atualizar os arquivos diretamente no servidor:
+
+#### Opção A: Gerenciador de Arquivos do Painel ICP
+
+O ICP possui um gerenciador de arquivos integrado com limites muito maiores e ferramenta de descompactação interna:
+
+1. Acesse o Painel ICP e vá na listagem de aplicações.
+2. Na linha da aplicação `force-sales-api`, clique no **ícone de pasta azul** na coluna **Arquivos**.
+3. No topo do Gerenciador de Arquivos, clique em **Enviar** (ou **Upload**) e selecione o arquivo `publish.zip`.
+4. Após concluir o upload, clique com o botão direito sobre o arquivo `publish.zip` e escolha a opção **Extrair** (ou **Descompactar**).
+5. Exclua o arquivo `publish.zip` para economizar espaço em disco.
+6. Volte à listagem de aplicações e clique em **Reiniciar** a aplicação para aplicar as mudanças.
+
+#### Opção B: Envio direto via SFTP (Recomendado e Sem Limites)
+
+Esta é a forma mais ágil e profissional. Ela dispensa o uso do navegador e permite o envio direto das pastas e arquivos descompactados:
+
+1. Abra um cliente SFTP (como **FileZilla** ou **WinSCP**) no seu computador.
+2. Conecte-se ao servidor utilizando os dados de acesso SSH da VPS:
+   * **Protocolo:** `SFTP` (SSH File Transfer Protocol)
+   * **Host:** `vps9526.panel.icontainer.net` (ou o IP do servidor)
+   * **Porta:** `22` (ou a sua porta SSH configurada)
+   * **Usuário:** `root`
+   * **Senha:** `(sua senha do usuário root do servidor)`
+3. No painel direito (servidor remoto), acesse a pasta da aplicação:
+   ```text
+   /home/apps/force-sales-api/
+   ```
+4. No painel esquerdo (computador local), acesse a pasta onde a compilação foi gerada:
+   ```text
+   c:\Pasta de Trabalho\Projetos\Analises\Versatus.Net\versatus-force-sales-mvp\src\backend\publish\
+   ```
+5. Selecione todos os arquivos e pastas dentro de `publish` e arraste-os para a pasta `/home/apps/force-sales-api/` no painel do servidor, autorizando a substituição dos arquivos existentes.
+6. Após a transferência de todos os arquivos, vá ao Painel ICP e clique em **Reiniciar** a aplicação.
