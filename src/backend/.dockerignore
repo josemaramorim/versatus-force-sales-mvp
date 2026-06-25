@@ -1,0 +1,22 @@
+# Pastas de build local
+**/bin/
+**/obj/
+**/.vs/
+
+# Configuração NuGet local do Windows — não deve entrar no container Linux
+nuget.config
+**/nuget.config
+
+# Testes — não incluídos na imagem de produção
+**/*.Tests/
+
+# Docker
+**/.dockerignore
+**/Dockerfile
+
+# Git
+**/.git/
+**/.gitignore
+
+# Logs
+**/*.log
