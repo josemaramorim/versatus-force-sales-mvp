@@ -7,6 +7,40 @@ Este documento descreve como publicar o serviço **`Versatus.ForcaVendas.Api`** 
 
 ---
 
+## 🗺️ Índice do Tutorial de Deploy
+
+Selecione a etapa que deseja consultar ou siga o passo a passo na ordem sugerida:
+
+### 🏁 Preparação e Acessos
+* [1. Visão Geral](#visão-geral) — Estrutura e portas padrão do projeto.
+* [2. Pré-requisitos](#pré-requisitos) — Acessos necessários e validação local.
+* [3. Token do GitHub](#etapa-1--criar-um-token-de-acesso-no-github) — Como autorizar o painel ICP a acessar seu código.
+* [4. Conectar GitHub](#etapa-2--configurar-o-github-no-painel-icp) — Vinculação do token no painel.
+
+### 🗄️ Infraestrutura (Banco e Arquivos)
+* [5. PostgreSQL](#31-criar-o-banco-postgresql) — Criação do banco e string de conexão.
+* [6. Redis Cache](#32-criar-a-instância-redis) — Configuração do cache do catálogo.
+* [7. SFTPGo (FTP/SFTP)](#33-instalar-o-sftpgo-servidor-ftpsftp) — Servidor de arquivos para integração ERP.
+
+### 🚀 Deploy Nível 1 — Fluxo Contínuo (Git + Auto-compilação)
+* [8. Criar App .NET no ICP](#etapa-4--configurar-a-aplicação-net-no-painel-icp) — Passo a passo do assistente.
+* [9. Variáveis de Ambiente](#45-configurar-as-variáveis-de-ambiente) — Chaves e senhas obrigatórias em CAIXA ALTA.
+* [10. Banco & Seed Automático](#47-banco-de-dados--migrations-e-usuários-iniciais) — Como as tabelas e usuários iniciais são gerados no startup.
+* [11. Webhooks de Auto-deploy](#etapa-5--configurar-o-webhook-do-github) — Atualização automática com `git push`.
+
+### 🛡️ Diagnóstico e Monitoramento
+* [12. Testes de Saúde (Health Checks)](#verificação-final) — Validar se a API e os bancos estão conectados.
+* [13. Rotas da API](#estrutura-das-rotas-da-api) — Tabela de endpoints disponíveis.
+* [14. Resolução de Erros Comuns](#solução-de-problemas) — O que fazer se algo der errado.
+
+### 🔌 Deploy Nível 2 — Método ZIP Local (Solução para conexões instáveis)
+* [15. Por que usar o ZIP?](#método-alternativo--publicação-via-arquivo-zip-recomendado-para-conexões-instáveis) — Vantagens do deploy local.
+* [16. Compilar e Zipar Localmente](#a1-compilar-e-gerar-o-zip-localmente) — Comandos rápidos em PowerShell.
+* [17. Configurar a Aplicação ZIP](#a2-configurar-a-aplicação-no-painel-icp) — Criação da aplicação usando o ZIP.
+* [18. Atualizar arquivos via Gerenciador ou SFTP](#a3-como-atualizar-ou-enviar-arquivos-grandes-evitando-limites-do-navegador) — Como enviar arquivos grandes sem restrição de tamanho.
+
+---
+
 ## Visão Geral
 
 O projeto da API está localizado em:
