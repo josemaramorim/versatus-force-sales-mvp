@@ -40,3 +40,7 @@ TestResults/
 
 # Local sync data
 /integration-sync/
+
+# Local publish output for deploy
+src/backend/publish/
+src/backend/publish.zip
