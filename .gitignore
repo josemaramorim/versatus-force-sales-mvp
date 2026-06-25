@@ -41,6 +41,10 @@ TestResults/
 # Local sync data
 /integration-sync/
 
-# Local publish output for deploy
-src/backend/publish/
-src/backend/publish.zip
+# Local publish output and build artifacts
+publish/
+*.zip
+
+# Production secrets and environment-specific settings
+appsettings.Production.json
+appsettings.local.json

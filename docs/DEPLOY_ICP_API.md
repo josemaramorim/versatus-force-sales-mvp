@@ -206,6 +206,9 @@ O projeto usa FTP/SFTP para trocar arquivos com o ERP Adapter do cliente. O ICP 
 > ```
 > Ou pelo IP externo: `http://23.80.91.77:8282` (acesso de fora da VPS)
 
+> [!TIP]
+> Para obter instruções detalhadas de como configurar, compilar e rodar o **ERP Adapter** na máquina ou servidor local do cliente integrado a este ambiente ICP, consulte o guia completo [DEPLOY_ICP_ERP_ADAPTER.md](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/docs/DEPLOY_ICP_ERP_ADAPTER.md).
+
 ---
 
 ## Etapa 4 — Configurar a Aplicação .NET no Painel ICP
@@ -285,6 +288,10 @@ AUTH__JWT__SESSIONTIMEOUTMINUTES=20
 
 # Tenants (lista de UUIDs das empresas)
 AUTH__TENANTS__0=00000000-0000-0000-0000-000000000001
+
+# CORS — Origens permitidas do frontend Next.js (separadas por vírgula)
+# Permite o localhost (HTTP) e o IP/domínio da sua VPS em HTTPS onde o frontend está rodando
+CORS__ALLOWEDORIGINS=http://localhost:3000,http://localhost:3001,https://vps9526.panel.icontainer.net:3000,https://23.80.91.77:3000
 ```
 
 > [!IMPORTANT]
@@ -302,6 +309,7 @@ AUTH__TENANTS__0=00000000-0000-0000-0000-000000000001
 - `ConnectionStrings__DefaultConnection` equivale a `ConnectionStrings.DefaultConnection` no `appsettings.json`
 - `Auth__Jwt__SecretKey` equivale a `Auth.Jwt.SecretKey`
 - `Integration__Transport` equivale a `Integration.Transport`
+- `Cors__AllowedOrigins` equivale a `Cors.AllowedOrigins` no `appsettings.json`
 
 ### ⚠️ RabbitMQ não é necessário
 
