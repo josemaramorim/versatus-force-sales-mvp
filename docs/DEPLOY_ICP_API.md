@@ -119,16 +119,27 @@ ConnectionStrings__DefaultConnection=Host=postgresql-forca-venda;Port=5432;Datab
 ### 3.2. Criar a instância Redis
 
 1. No Painel ICP, vá em **Banco de Dados** → **Redis**
-2. Clique em **Criar instância Redis**
-3. Defina uma senha forte
-4. Após criar, clique em **Informações de conexão**
-5. **Anote os valores da "Conexão de Container":**
-   - **Endereço** — ex: `redis-xxxxx.interno.icp`
-   - **Porta** — ex: `6379`
-   - **Senha**
+2. Clique em **Configuração de parâmetro** ou **Informações de conexão**
+3. **Anote os valores exibidos:**
 
-> [!WARNING]
-> Use sempre a **"Conexão de Container"** (não a "Conexão Externa") nas variáveis de ambiente da API. A "Conexão Externa" é apenas para ferramentas no seu computador (ex: RedisInsight).
+| Campo mostrado no ICP | Exemplo real | Onde usar na connection string |
+|---|---|---|
+| **Container** | `redis-forca-venda` | hostname |
+| **Senha** | `(definida por você)` | `password=` |
+| **Porta** | `6379` | porta |
+
+> [!IMPORTANT]
+> O campo **"Container"** do painel ICP é o **hostname** a ser usado. Não use `localhost` nem `127.0.0.1`.
+
+**Exemplo de connection string com os dados reais do painel:**
+```
+redis-forca-venda:6379,password=SUA_SENHA,abortConnect=false
+```
+
+Portanto a variável de ambiente na API ficará:
+```
+ConnectionStrings__Redis=redis-forca-venda:6379,password=SUA_SENHA,abortConnect=false
+```
 
 ---
 
