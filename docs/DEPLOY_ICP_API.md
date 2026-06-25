@@ -215,16 +215,16 @@ ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://0.0.0.0:5000
 
 # Transporte de integração — OBRIGATÓRIO: define que o sistema usa FTP/SFTP (não RabbitMQ)
-Integration__Transport=Ftp
+INTEGRATION__TRANSPORT=Ftp
 
 # SFTPGo — configuração de conexão SFTP
 # ⚠️ Use o "Container" mostrado no Painel ICP → SFTPGo → Informações de conexão
-Integration__Ftp__Host=CONTAINER_DO_SFTPGO_NO_ICP
-Integration__Ftp__Port=22
-Integration__Ftp__UseSftp=true
-Integration__Ftp__Username=USUARIO_SFTPGO
-Integration__Ftp__Password=SENHA_SFTPGO
-Integration__Ftp__BasePath=/integration-sync
+INTEGRATION__FTP__HOST=CONTAINER_DO_SFTPGO_NO_ICP
+INTEGRATION__FTP__PORT=22
+INTEGRATION__FTP__USESFTP=true
+INTEGRATION__FTP__USERNAME=USUARIO_SFTPGO
+INTEGRATION__FTP__PASSWORD=SENHA_SFTPGO
+INTEGRATION__FTP__BASEPATH=/integration-sync
 
 # Banco de dados PostgreSQL
 # ⚠️ O "Container" mostrado no Painel ICP é o hostname (não use localhost)
@@ -247,7 +247,9 @@ Auth__Tenants__0=00000000-0000-0000-0000-000000000001
 ```
 
 > [!IMPORTANT]
-> A variável `Integration__Transport=Ftp` é **obrigatória**. Sem ela, o sistema tenta usar RabbitMQ por padrão e vai falhar ao criar pedidos, pois o transporte RabbitMQ **não está implementado** no projeto — ele foi planejado para uma fase futura.
+> O valor de `INTEGRATION__TRANSPORT` deve ser `Ftp` (com F maiúsculo). O código agora aceita qualquer capitalização (`FTP`, `ftp`, `Ftp`), mas o padrão documentado é `Ftp`.
+>
+> O **nome da variável** pode ser em qualquer capitalização (`INTEGRATION__TRANSPORT` ou `Integration__Transport`) — o ASP.NET Core trata as chaves como case-insensitive.
 
 > [!TIP]
 > Para gerar uma chave JWT segura, execute no terminal:
