@@ -141,6 +141,30 @@ Portanto a variável de ambiente na API ficará:
 ConnectionStrings__Redis=redis-forca-venda:6379,password=SUA_SENHA,abortConnect=false
 ```
 
+### 3.3. Instalar o SFTPGo (servidor FTP/SFTP)
+
+O projeto usa FTP/SFTP para trocar arquivos com o ERP Adapter do cliente. O ICP tem o **SFTPGo** disponível na App Store — ele suporta SFTP (recomendado, mais seguro) e FTP clássico.
+
+> [!TIP]
+> **Use SFTP ao invés de FTP simples.** O código já suporta SFTP nativamente e é mais seguro pois criptografa a transferência via SSH. O SFTPGo do ICP suporta ambos os protocolos.
+
+1. No Painel ICP, vá em **App Store**
+2. Pesquise por **SFTPGo** e clique em **Instalar**
+3. Após a instalação, acesse as **Informações de conexão** do SFTPGo
+4. **Anote os valores:**
+
+| Campo | Onde usar |
+|---|---|
+| **Container** | `Integration__Ftp__Host=` |
+| **Porta SFTP** | `Integration__Ftp__Port=` (geralmente `22`) |
+| **Usuário** | `Integration__Ftp__Username=` |
+| **Senha** | `Integration__Ftp__Password=` |
+
+5. Defina o diretório base de integração. No SFTPGo, crie o diretório `/integration-sync` para o usuário configurado
+
+> [!NOTE]
+> O campo **"Container"** do SFTPGo no ICP é o hostname para conexões internas — use-o diretamente nas variáveis de ambiente da API.
+
 ---
 
 ## Etapa 4 — Configurar a Aplicação .NET no Painel ICP
@@ -190,8 +214,17 @@ Adicione as seguintes variáveis de ambiente no painel:
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://0.0.0.0:5000
 
-# Transporte de integração — OBRIGATÓRIO: define que o sistema usa FTP (não RabbitMQ)
+# Transporte de integração — OBRIGATÓRIO: define que o sistema usa FTP/SFTP (não RabbitMQ)
 Integration__Transport=Ftp
+
+# SFTPGo — configuração de conexão SFTP
+# ⚠️ Use o "Container" mostrado no Painel ICP → SFTPGo → Informações de conexão
+Integration__Ftp__Host=CONTAINER_DO_SFTPGO_NO_ICP
+Integration__Ftp__Port=22
+Integration__Ftp__UseSftp=true
+Integration__Ftp__Username=USUARIO_SFTPGO
+Integration__Ftp__Password=SENHA_SFTPGO
+Integration__Ftp__BasePath=/integration-sync
 
 # Banco de dados PostgreSQL
 # ⚠️ O "Container" mostrado no Painel ICP é o hostname (não use localhost)
