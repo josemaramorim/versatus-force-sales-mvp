@@ -12,6 +12,9 @@ Program.AddDependencyComposition(builder);
 
 var app = builder.Build();
 
+// Aplica migrations pendentes no startup (PostgreSQL + Seed inicial)
+Program.ApplyMigrations(app);
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

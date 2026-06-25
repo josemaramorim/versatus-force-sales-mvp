@@ -169,6 +169,38 @@ public partial class Program
                 builder.Configuration.GetSection(MessagingOptions.SectionName));
         }
     }
+
+    internal static void ApplyMigrations(WebApplication app)
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<PedidosDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            
+            int retries = 5;
+            while (retries > 0)
+            {
+                try
+                {
+                    logger.LogInformation("Aplicando migrations do banco de dados...");
+                    context.Database.Migrate();
+                    logger.LogInformation("Migrations aplicadas com sucesso!");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    retries--;
+                    logger.LogWarning(ex, "Falha ao conectar no banco de dados para aplicar migrations. Tentativas restantes: {Retries}", retries);
+                    if (retries == 0)
+                    {
+                        logger.LogError(ex, "Erro fatal: Nao foi possivel aplicar as migrations no banco de dados.");
+                        throw;
+                    }
+                    Thread.Sleep(3000);
+                }
+            }
+        }
+    }
 }
 
 /// <summary>Opções de mensageria – placeholder para Phase 3 (US3).</summary>
