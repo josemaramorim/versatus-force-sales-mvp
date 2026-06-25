@@ -90,18 +90,31 @@ O ICP irá validar o token e listar os repositórios disponíveis na sua conta.
 ### 3.1. Criar o banco PostgreSQL
 
 1. No Painel ICP, vá em **Banco de Dados** → **PostgreSQL**
-2. Clique em **Criar banco de dados**
-3. Preencha:
-   - **Nome do banco:** `forca_vendas`
-   - Defina uma senha forte para o usuário
-4. Após criar, clique em **Informações de conexão**
-5. **Anote os valores:**
-   - **Endereço (local)** — ex: `pg-xxxxx.interno.icp` ← use este na API
-   - **Porta** — geralmente `5432`
-   - **Usuário** e **Senha**
+2. Clique em **Criar** (ou no container PostgreSQL já criado)
+3. Clique em **Configuração de parâmetro** ou **Informações de conexão**
+4. **Anote os valores exibidos:**
 
-> [!WARNING]
-> Use sempre o **"Endereço (local)"** nas variáveis de ambiente da API, nunca `localhost` ou `127.0.0.1`. O ICP usa rede interna de containers com endereços específicos.
+| Campo mostrado no ICP | Exemplo real | Onde usar na connection string |
+|---|---|---|
+| **Container** | `postgresql-forca-venda` | `Host=` |
+| **Usuário** | `versatus` | `Username=` |
+| **Senha** | `(definida por você)` | `Password=` |
+| **Porta** | `5432` | `Port=` |
+
+5. Crie o banco de dados `forca_vendas` dentro do container (Painel ICP → PostgreSQL → Databases → Criar)
+
+> [!IMPORTANT]
+> O campo **"Container"** do painel ICP é o **hostname** a ser usado nas conexões internas. Não use `localhost` nem `127.0.0.1`. Use exatamente o nome do container.
+
+**Exemplo de connection string com os dados reais do painel:**
+```
+Host=postgresql-forca-venda;Port=5432;Database=forca_vendas;Username=versatus;Password=SUA_SENHA
+```
+
+Portanto a variável de ambiente na API ficará:
+```
+ConnectionStrings__DefaultConnection=Host=postgresql-forca-venda;Port=5432;Database=forca_vendas;Username=versatus;Password=SUA_SENHA
+```
 
 ### 3.2. Criar a instância Redis
 
