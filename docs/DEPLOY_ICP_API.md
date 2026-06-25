@@ -448,3 +448,52 @@ Resposta esperada (HTTP 200):
 1. Acesse GitHub → repositório → **Settings** → **Webhooks**
 2. Clique no webhook → **Recent Deliveries** → verifique os erros
 3. Certifique-se de que o payload URL está correto e acessível a partir da internet
+
+---
+
+## Método Alternativo — Publicação via Arquivo ZIP (Recomendado para conexões instáveis)
+
+Caso a VPS do ICP apresente instabilidade de rede ao baixar as imagens do SDK do .NET do Microsoft Container Registry (gerando erros de `connection reset by peer`), você pode compilar a aplicação localmente e enviar o pacote pronto.
+
+Este método é **100% garantido** pois elimina a necessidade de compilação no servidor.
+
+### A.1. Compilar e Gerar o ZIP Localmente
+
+Execute os seguintes passos no terminal (PowerShell) do seu computador local:
+
+1. Abra o PowerShell e navegue até a pasta do backend:
+   ```powershell
+   cd "c:\Pasta de Trabalho\Projetos\Analises\Versatus.Net\versatus-force-sales-mvp\src\backend"
+   ```
+
+2. Execute o comando para limpar publicações anteriores, compilar e gerar a pasta de publicação:
+   ```powershell
+   Remove-Item -Path ./publish -Recurse -ErrorAction SilentlyContinue
+   dotnet publish Versatus.ForcaVendas.Api/Versatus.ForcaVendas.Api.csproj -c Release -o ./publish
+   ```
+
+3. Compacte o conteúdo gerado em um arquivo ZIP chamado `publish.zip`:
+   ```powershell
+   Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force
+   ```
+
+O arquivo `publish.zip` (com cerca de 7.4 MB) será criado na pasta `src/backend/`.
+
+### A.2. Configurar a Aplicação no Painel ICP
+
+1. No Painel ICP, vá em **Aplicações** → **Nova Aplicação** (ou edite a existente).
+2. Defina a versão do .NET como **8.0**.
+3. Em **Arquivos do Projeto**, selecione a aba **Enviar arquivos** (primeira aba à esquerda).
+4. Arraste ou selecione o arquivo `publish.zip` gerado localmente.
+5. Preencha as seguintes configurações básicas:
+
+| Campo no ICP | Valor |
+|---|---|
+| **Script de Execução** | `dotnet Versatus.ForcaVendas.Api.dll` |
+| **Porta da aplicação** | `5000` |
+| **Porta Externa** | `5000` |
+
+6. Adicione as mesmas variáveis de ambiente em **CAIXA ALTA** especificadas na [Etapa 4.5](#45-configurar-as-variáveis-de-ambiente).
+7. Clique em **Confirmar** ou **Salvar**.
+
+O painel descompactará o ZIP e iniciará a API instantaneamente, sem precisar compilar ou baixar imagens pesadas na VPS.
