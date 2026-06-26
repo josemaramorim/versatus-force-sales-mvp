@@ -226,3 +226,11 @@ Após iniciar o serviço, verifique se tudo está funcionando conforme o esperad
   1. Certifique-se de que a string de conexão está correta e que o usuário/senha do SQL Server está correto.
   2. Se a conexão exigir criptografia, garanta que o parâmetro `TrustServerCertificate=True` está incluído no final da connection string.
   3. Verifique se o protocolo TCP/IP está habilitado no *SQL Server Configuration Manager* do seu servidor SQL local.
+
+### Erro: `Renci.SshNet.Common.SshAuthenticationException: Permission denied (password)`
+* **Causa:** O ERP Adapter local tentou se conectar ao servidor SFTPGo na VPS via SSH/SFTP, mas a senha fornecida para o usuário de integração foi rejeitada.
+* **O que verificar:**
+  1. No arquivo `appsettings.Production.json` do ERP Adapter local, certifique-se de que a chave `Integration.Ftp.Password` foi preenchida com a **senha real** do usuário `versatus` que você definiu no painel ICP (e não com o texto de exemplo `"SUA_SENHA_SFTPGO_DEFINIDA_NO_ICP"`).
+  2. Confirme se o usuário `versatus` está devidamente cadastrado no **SFTPGo** no painel ICP e se ele possui permissão para acessar a pasta `/integration-sync`.
+  3. Certifique-se de que não há espaços extras ou caracteres incorretos na senha no arquivo de configuração do ERP Adapter.
+
