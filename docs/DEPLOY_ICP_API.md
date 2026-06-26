@@ -32,6 +32,7 @@ Selecione a etapa que deseja consultar ou siga o passo a passo na ordem sugerida
 * [12. Testes de Saúde (Health Checks)](#verificação-final) — Validar se a API e os bancos estão conectados.
 * [13. Rotas da API](#estrutura-das-rotas-da-api) — Tabela de endpoints disponíveis.
 * [14. Resolução de Erros Comuns](#solução-de-problemas) — O que fazer se algo der errado.
+  * [14.1. Erro de Projetos Não Encontrados no Build](#erro-de-compilação-no-container-projetos-não-encontrados) — Como compilar projetos multi-camadas no container do painel.
 
 ### 🔌 Deploy Nível 2 — Método ZIP Local (Solução para conexões instáveis)
 * [15. Por que usar o ZIP?](#método-alternativo--publicação-via-arquivo-zip-recomendado-para-conexões-instáveis) — Vantagens do deploy local.
@@ -493,6 +494,20 @@ Resposta esperada (HTTP 200):
 1. Acesse GitHub → repositório → **Settings** → **Webhooks**
 2. Clique no webhook → **Recent Deliveries** → verifique os erros
 3. Certifique-se de que o payload URL está correto e acessível a partir da internet
+
+### Erro de Compilação no Container (Projetos Não Encontrados)
+Se ao tentar fazer o deploy usando a opção **"Compilar antes de publicar"** (Git Auto-compilação) o container de build falhar pulando os projetos irmãos com mensagens do tipo:
+`Skipping project "/Versatus.ForcaVendas.Application/...csproj" because it was not found.`
+
+*   **Causa:** O compilador da API depende dos projetos irmãos localizados sob a pasta `src/backend/` (como `Application` e `Infrastructure`). Se a **Pasta do projeto** no painel estiver apontando diretamente para `src/backend/Versatus.ForcaVendas.Api`, o container de build copiará apenas essa subpasta, impedindo o compilador de acessar os níveis superiores (`..\`) do repositório.
+*   **Solução (Ajustar caminhos de Build):**
+    1. Acesse as configurações da aplicação da API no painel ICP.
+    2. No campo **Pasta do projeto** (no topo), altere para a **raiz do repositório** (deixe em branco ou coloque `/` ou `.`). Isso fará o painel montar o repositório completo no container.
+    3. No campo **Comando de build**, altere para especificar o caminho completo do `.csproj` a partir da raiz:
+       ```bash
+       dotnet publish src/backend/Versatus.ForcaVendas.Api/Versatus.ForcaVendas.Api.csproj -c Release -o /app
+       ```
+    4. Salve e force uma nova compilação no painel.
 
 ---
 
