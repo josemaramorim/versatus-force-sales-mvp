@@ -24,9 +24,10 @@ Selecione a etapa que deseja consultar ou siga o passo a passo na ordem sugerida
 ### 🛡️ Diagnóstico e Solução de Problemas
 * [7. Verificação Pós-Deploy e Acesso no Navegador](#etapa-5--verificação-pós-deploy-e-acesso-no-navegador) — Como chamar e testar a aplicação no browser.
 * [8. Resolução de Erros Comuns](#solução-de-problemas) — O que fazer se a tela ficar em branco ou não conectar à API.
-  * [8.1. Erro ao Descompactar o ZIP](#erro-ao-descompactar-o-arquivo-zip-no-painel-mkdir--not-a-directory-ou-falha-no-progresso) — Solução para falhas de descompactação, arquivos gigantes e erros com parênteses (ex: route groups).
-  * [8.2. Erro sh: next: Permission denied](#erro-ao-iniciar-a-aplicação-sh-next-permission-denied) — Correção para falta de permissão de execução nos binários após transferir o ZIP.
-  * [8.3. Erro ERR_SSL_PROTOCOL_ERROR ao Acessar via Porta](#erro-err_ssl_protocol_error-ao-acessar-a-porta-3000-via-https) — Diferença de protocolo (HTTP na porta vs HTTPS no domínio).
+  * [8.1. Erro ao Descompactar o ZIP](#erro-ao-descompactar-o-arquivo-zip-no-painel-mkdir--not-a-directory-ou-falha-no-progresso) — Solução para falhas de descompactação.
+  * [8.2. Erro sh: next: Permission denied](#erro-ao-iniciar-a-aplicação-sh-next-permission-denied) — Correção para falta de permissão de execução.
+  * [8.3. Erro ERR_SSL_PROTOCOL_ERROR ao Acessar via Porta](#erro-err_ssl_protocol_error-ao-acessar-a-porta-3000-via-https) — Diferença de protocolo.
+  * [8.4. Configuração com Domínio Real (versatusapp.com.br)](#521-caso-real-configuração-do-domínio-versatusappcombr) — Como configurar o SSL e o apontamento DNS para o domínio próprio.
 
 ### 🔌 Deploy Nível 2 — Método ZIP Local (Solução para conexões instáveis)
 * [9. Por que usar o ZIP?](#método-alternativo--publicação-via-arquivo-zip-recomendado-para-conexões-instáveis) — Vantagens do deploy local.
@@ -186,6 +187,26 @@ No painel do seu provedor de domínio (Registro.br, Cloudflare, GoDaddy, etc.), 
    ```text
    https://vendas.suaempresa.com.br
    ```
+
+#### 5.2.1. Caso Real: Configuração do Domínio versatusapp.com.br
+
+Caso utilize o domínio **`versatusapp.com.br`**, a estrutura recomendada e os passos práticos para implantar o sistema completo com SSL sob subdomínios seguros são os seguintes:
+
+1. **Subdomínio do Frontend (`vendas.versatusapp.com.br`)**:
+   * **DNS (Provedor)**: Crie uma entrada do tipo `A`, com nome `vendas`, apontando para o IP público da sua VPS (ex: `23.80.91.77`).
+   * **Painel ICP**: Acesse as configurações da aplicação do Frontend -> aba **Domínios** -> adicione `vendas.versatusapp.com.br` -> ative o **SSL (Let's Encrypt)**.
+2. **Subdomínio da API (`api.versatusapp.com.br`)**:
+   * **DNS (Provedor)**: Crie uma entrada do tipo `A`, com nome `api`, apontando para o mesmo IP público da sua VPS.
+   * **Painel ICP**: Acesse as configurações da aplicação da API -> aba **Domínios** -> adicione `api.versatusapp.com.br` -> ative o **SSL (Let's Encrypt)**.
+3. **Injeção da URL da API no Frontend (Build-Time)**:
+   * No Painel ICP, acesse a aplicação do **Frontend**.
+   * Na aba **Variáveis de Ambiente**, atualize o valor da variável de ambiente com o subdomínio seguro da API:
+     ```env
+     NEXT_PUBLIC_API_URL=https://api.versatusapp.com.br
+     ```
+   * Clique em **Recompilar (Rebuild)** ou **Redeploy** para gerar a versão de produção com o endereço configurado.
+4. **Segurança (CORS)**:
+   * Garanta que a API em C# aceita requisições vindas de `https://vendas.versatusapp.com.br`. Se estiver utilizando `AllowAnyOrigin()` em ambiente MVP, isso funcionará sem alterações adicionais de código.
 
 ---
 

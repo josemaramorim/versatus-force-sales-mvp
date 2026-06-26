@@ -19,6 +19,7 @@ Selecione a etapa que deseja consultar ou siga o passo a passo na ordem sugerida
 * [3. Criar App .NET no ICP](#3-criar-app-net-no-icp) — Configuração do assistente para o Worker.
 * [4. Variáveis de Ambiente](#4-variáveis-de-ambiente) — Chaves e credenciais de infraestrutura em CAIXA ALTA.
 * [5. Configurações de Porta e Acesso Externo](#5-configurações-de-porta-e-acesso-externo) — Por que o Worker não expõe portas públicas.
+  * [5.1. O Worker precisa de Domínio ou SSL próprio?](#51-esclarecimento-o-worker-precisa-de-domínio-próprio-ou-certificado-ssl) — Esclarecimento sobre segurança e tráfego de background.
 
 ### 🛡️ Diagnóstico e Monitoramento
 * [6. Verificação do Funcionamento (Logs)](#6-verificação-do-funcionamento-logs) — Como checar se o Worker está importando os arquivos.
@@ -117,6 +118,18 @@ Como o Worker é um serviço de background que não recebe requisições externa
 1. **Porta da Aplicação / Porta Externa:** Caso o painel exija obrigatoriamente preencher uma porta no formulário de criação, defina uma porta genérica que não esteja em uso (exemplo: **`8081`** ou **`5001`**).
 2. **Acesso Externo:** **Desative** o switch de *Acesso Externo* (mantenha-o desligado). Isso garante que nenhuma porta seja aberta no firewall da VPS para este contêiner, aumentando a segurança.
 3. **Domínio:** Não é necessário vincular nenhum domínio ou subdomínio para esta aplicação.
+
+### 5.1. Esclarecimento: O Worker precisa de Domínio Próprio ou Certificado SSL?
+
+> [!NOTE]
+> **Resposta Curta: Não.**
+> 
+> Como o Worker é um serviço interno executado em segundo plano (*Background Service*), ele nunca recebe conexões externas vindas da internet ou de navegadores de usuários. Portanto:
+> 
+> * **Sem Necessidade de Domínio:** Ele não precisa de um endereço como `worker.versatusapp.com.br`. Ele se comunica internamente dentro da rede da VPS.
+> * **Sem Necessidade de SSL próprio:** Como ele não expõe portas HTTP/HTTPS para fora, não há necessidade de gerar um certificado SSL (Let's Encrypt) para o Worker.
+> * **Comunicação Segura Interna:** Ele se conecta ao banco de dados e ao Redis utilizando os hostnames internos da rede isolada do painel ICP (ex: `Host=postgresql-forca-venda` e `redis-forca-venda`), o que já é 100% seguro contra interceptações externas.
+> * **Chamadas para a API**: O Worker utiliza internamente a URL da API para se comunicar quando necessário. Se a API estiver configurada com SSL (ex: `https://api.versatusapp.com.br`), o Worker fará chamadas seguras para a API de forma automática, validando o certificado de produção.
 
 Clique em **Confirmar** ou **Criar** para iniciar o primeiro deploy do Worker.
 
