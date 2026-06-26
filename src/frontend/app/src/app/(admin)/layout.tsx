@@ -48,7 +48,7 @@ export default function AdminLayout({
       <Sidebar />
       
       {/* Dynamic Margin to accommodate the large Sidebar */}
-      <div className="pl-4 pr-4 lg:pl-36 lg:pr-6 pt-36 pb-12 transition-all duration-500 ease-in-out min-h-screen">
+      <div className="pl-4 pr-4 lg:pl-36 lg:pr-6 pt-28 lg:pt-36 pb-12 transition-all duration-500 ease-in-out min-h-screen">
         <Topbar />
         <OfflineBanner />
         

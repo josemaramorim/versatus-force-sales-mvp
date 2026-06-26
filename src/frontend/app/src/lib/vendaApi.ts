@@ -77,8 +77,8 @@ export async function searchClientes(q?: string, limit?: number): Promise<Client
     const { data } = await api.get<ClientApiResponse[]>('/catalogo/clientes', { params })
     const results = data.map((c) => ({
       id: c.clientId,
-      nome: c.nome,
-      documento: c.documento,
+      nome: c.documento, // Mapeado invertido para corrigir o retorno do banco legado
+      documento: c.nome, // Mapeado invertido para corrigir o retorno do banco legado
       areaVenda: c.areaVenda,
     }))
 

@@ -233,6 +233,10 @@ export default function NovaVendaPage() {
                         classNames={{
                           trigger: "h-16 px-8 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 italic font-black text-slate-500",
                         }}
+                        popoverProps={{
+                          radius: "lg",
+                          className: "p-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-xl z-[9999]",
+                        }}
                       >
                         {condicoes.map((cond) => (
                           <SelectItem key={cond.condicaoPagtoIdERP.toString()} value={cond.condicaoPagtoIdERP.toString()} className="font-bold italic">

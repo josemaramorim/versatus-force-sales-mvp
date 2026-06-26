@@ -76,7 +76,7 @@ export function Topbar() {
   }
 
   return (
-    <header className="fixed top-6 right-6 left-4 lg:left-36 z-40 flex items-center justify-between px-4 lg:px-10 py-6 premium-card h-24 transition-all duration-500">
+    <header className="fixed top-4 lg:top-6 right-4 lg:right-6 left-4 lg:left-36 z-40 flex items-center justify-between px-4 lg:px-10 py-4 lg:py-6 premium-card h-20 lg:h-24 transition-all duration-500">
       
       <div className="flex items-center gap-4 lg:gap-10 flex-1">
         {/* Mobile Hamburger */}
@@ -84,8 +84,8 @@ export function Topbar() {
           isIconOnly
           variant="flat"
           radius="lg"
-          onPress={() => toggleMobileMenu()}
-          className="lg:hidden h-12 w-12 bg-slate-950/40 border border-slate-900 text-slate-400 hover:text-blue-500 transition-all flex shrink-0"
+          onClick={() => toggleMobileMenu()}
+          className="lg:hidden h-12 w-12 bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-900 text-slate-600 dark:text-slate-400 hover:text-blue-500 transition-all flex shrink-0"
         >
           <Menu size={24} />
         </Button>
@@ -152,8 +152,8 @@ export function Topbar() {
           isIconOnly
           variant="flat"
           radius="lg"
-          onPress={toggleTheme}
-          className="h-10 w-10 lg:h-12 lg:w-12 bg-slate-950/40 border border-slate-900 text-slate-400 hover:text-blue-500 hover:border-blue-500 transition-all"
+          onClick={toggleTheme}
+          className="h-10 w-10 lg:h-12 lg:w-12 bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-900 text-slate-600 dark:text-slate-400 hover:text-blue-500 hover:border-blue-500 transition-all"
         >
           {mounted && (resolvedTheme === 'dark' ? <Sun size={20} className="text-amber-500" /> : <Moon size={20} className="text-blue-500" />)}
         </Button>

@@ -219,13 +219,19 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                         <AutocompleteItem 
                           key={produto.id} 
                           textValue={`${produto.nome} ${produto.sku}`} 
-                          className="h-20 px-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center shrink-0"
+                          className="min-h-[5rem] py-3 px-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center shrink-0"
                         >
                           <div className="flex gap-4 items-center w-full">
-                            <Avatar src={produto.imagemUrl} radius="lg" size="md" isBordered className="bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" />
-                            <div className="flex flex-col gap-1">
-                              <span className="text-base font-black italic text-slate-900 dark:text-slate-200 leading-none">{produto.nome}</span>
-                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">SKU: {produto.sku} • R$ {produto.precoBase.toFixed(2)}</span>
+                            {produto.imagemUrl ? (
+                              <Avatar src={produto.imagemUrl} radius="lg" size="md" isBordered className="bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 shrink-0" />
+                            ) : (
+                              <div className="h-10 w-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0">
+                                <Package className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                              </div>
+                            )}
+                            <div className="flex flex-col gap-1 min-w-0">
+                              <span className="text-base font-black italic text-slate-900 dark:text-slate-200 leading-tight break-words">{produto.nome}</span>
+                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic leading-tight break-words">SKU: {produto.sku} • R$ {produto.precoBase.toFixed(2)}</span>
                             </div>
                           </div>
                         </AutocompleteItem>

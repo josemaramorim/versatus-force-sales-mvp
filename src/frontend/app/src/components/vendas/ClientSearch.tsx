@@ -121,7 +121,7 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
             <AutocompleteItem 
               key={cliente.id} 
               textValue={`${cliente.nome} ${cliente.documento}`}
-              className="h-20 px-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center shrink-0"
+              className="min-h-[5rem] py-3 px-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center shrink-0"
             >
               <div className="flex gap-4 items-center w-full">
                 <Avatar 
@@ -130,11 +130,11 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
                   name={cliente.nome.charAt(0)}
                   color="primary"
                   isBordered
-                  className="bg-blue-600 text-white font-black"
+                  className="bg-blue-600 text-white font-black shrink-0"
                 />
-                <div className="flex flex-col gap-1">
-                  <span className="text-base font-black italic text-slate-900 dark:text-white leading-none">{cliente.nome}</span>
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] italic">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-base font-black italic text-slate-900 dark:text-white leading-tight break-words">{cliente.nome}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] italic leading-tight break-words">
                     {cliente.documento} {cliente.areaVenda ? `• ${cliente.areaVenda}` : ''}
                   </span>
                 </div>
