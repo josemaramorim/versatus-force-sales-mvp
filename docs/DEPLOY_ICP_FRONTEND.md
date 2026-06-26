@@ -150,14 +150,14 @@ Para automatizar as atualizações sempre que um novo commit for enviado:
 
 Após a conclusão da compilação e inicialização no painel ICP, você poderá acessar a aplicação de duas maneiras no seu navegador, trabalhando sempre com segurança (HTTPS/SSL):
 
-### 5.1. Acesso Rápido via Porta (IP/Domínio da VPS com SSL)
-Ideal para validações rápidas e testes logo após a instalação utilizando o protocolo seguro.
+### 5.1. Acesso Rápido via Porta (IP/Domínio da VPS em HTTP)
+Ideal para validações rápidas e testes logo após a instalação.
 
 1. Abra o navegador de sua preferência.
-2. Digite o endereço da VPS com **`https://`** seguido da porta configurada para o frontend (porta padrão `3000`). Exemplo:
-   * **Via Hostname do ICP:** `https://vps9526.panel.icontainer.net:3000`
-   * **Via IP Direto:** `https://23.80.91.77:3000` *(Substitua pelo IP real da sua VPS)*
-3. **Alerta de Certificado em Testes:** Como você está acessando a porta `3000` diretamente via IP ou hostname genérico do ICP, o navegador exibirá um alerta de privacidade (ex: `Sua conexão não é privada` ou `ERR_CERT_COMMON_NAME_INVALID`). **Para testes rápidos, isso é perfeitamente normal:** basta clicar em **Avançado** e depois em **Prosseguir/Ir para o site (não seguro)**. O navegador aceitará a exceção e abrirá a tela de login com segurança.
+2. Digite o endereço da VPS com **`http://`** (sem o "s") seguido da porta configurada para o frontend (porta padrão `3000`). Exemplo:
+   * **Via Hostname do ICP:** `http://vps9526.panel.icontainer.net:3000`
+   * **Via IP Direto:** `http://23.80.91.77:3000` *(Substitua pelo IP real da sua VPS)*
+3. **Nota sobre o Protocolo:** Como o Next.js roda internamente em HTTP na porta 3000, o acesso direto por esta porta não utiliza SSL (HTTPS). Por isso, use estritamente `http://`.
 4. **Nota sobre Firewall:** Caso a página não carregue de forma alguma, certifique-se de que a porta `3000` está liberada nas regras de segurança/firewall do painel da sua VPS ou da icontainer.
 
 ---
