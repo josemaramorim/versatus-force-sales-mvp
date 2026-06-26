@@ -28,70 +28,126 @@ export function OrderTable({ items, onRemove }: OrderTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="premium-table">
-        <thead className="premium-label opacity-40">
-          <tr>
-            <th className="px-8 pb-4 italic">Produtos / Identificação</th>
-            <th className="px-8 pb-4 text-center uppercase">Qtd.</th>
-            <th className="px-8 pb-4 text-right uppercase">Unit.</th>
-            <th className="px-8 pb-4 text-right uppercase">Desc.</th>
-            <th className="px-8 pb-4 text-right uppercase">Total</th>
-            <th className="px-8 pb-4 text-center uppercase">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id} className="group italic">
-              <td className="px-8 py-8 first:rounded-l-[2rem]">
-                <div className="flex items-center gap-4">
-                    <Avatar 
-                        src={item.imagemUrl} 
-                        name={item.nome.charAt(0)}
-                        radius="lg" 
-                        size="md"
-                        isBordered
-                        className="bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 shrink-0"
-                    />
-                    <div>
-                        <div className="font-black text-slate-900 dark:text-slate-200 text-base leading-none">{item.nome}</div>
-                        <div className="text-[9px] text-slate-500 font-black tracking-[0.3em] mt-2 uppercase leading-none">SKU: {item.sku} • {item.naturezaOperacao}</div>
-                    </div>
-                </div>
-              </td>
-              <td className="px-8 py-8 text-center font-mono font-black text-slate-400 text-base uppercase tracking-tight">
-                {item.quantidade} x
-              </td>
-              <td className="px-8 py-8 text-right font-mono text-slate-500 text-sm opacity-60">
-                R$ {item.valorUnitario.toFixed(2)}
-              </td>
-              <td className="px-8 py-8 text-right font-mono text-amber-500/70 text-xs font-black">
-                - R$ {item.valorDesconto.toFixed(2)}
-              </td>
-              <td className="px-8 py-8 text-right font-mono text-blue-500 font-black text-2xl tracking-tighter leading-none pr-8">
-                R$ {item.total.toFixed(2)}
-              </td>
-              <td className="px-8 py-8 text-center last:rounded-r-[2rem]">
-                <div className="flex items-center justify-center gap-2">
-                    <Button isIconOnly variant="light" size="sm" className="h-10 w-10 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all">
-                        <Edit2 className="h-5 w-5" />
-                    </Button>
-                    <Button 
-                        isIconOnly 
-                        variant="light" 
-                        size="sm" 
-                        color="danger"
-                        onPress={() => onRemove(item.id)}
-                        className="h-10 w-10 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
-                    >
-                        <Trash2 className="h-5 w-5" />
-                    </Button>
-                </div>
-              </td>
+    <div>
+      {/* Layout Desktop/Tablet: Tabela Corporativa */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="premium-table">
+          <thead className="premium-label opacity-40">
+            <tr>
+              <th className="px-8 pb-4 italic">Produtos / Identificação</th>
+              <th className="px-8 pb-4 text-center uppercase">Qtd.</th>
+              <th className="px-8 pb-4 text-right uppercase">Unit.</th>
+              <th className="px-8 pb-4 text-right uppercase">Desc.</th>
+              <th className="px-8 pb-4 text-right uppercase">Total</th>
+              <th className="px-8 pb-4 text-center uppercase">Ações</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id} className="group italic">
+                <td className="px-8 py-8 first:rounded-l-[2rem]">
+                  <div className="flex items-center gap-4">
+                      <Avatar 
+                          src={item.imagemUrl} 
+                          name={item.nome.charAt(0)}
+                          radius="lg" 
+                          size="md"
+                          isBordered
+                          className="bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 shrink-0"
+                      />
+                      <div>
+                          <div className="font-black text-slate-900 dark:text-slate-200 text-base leading-none">{item.nome}</div>
+                          <div className="text-[9px] text-slate-500 font-black tracking-[0.3em] mt-2 uppercase leading-none">SKU: {item.sku} • {item.naturezaOperacao}</div>
+                      </div>
+                  </div>
+                </td>
+                <td className="px-8 py-8 text-center font-mono font-black text-slate-400 text-base uppercase tracking-tight">
+                  {item.quantidade} x
+                </td>
+                <td className="px-8 py-8 text-right font-mono text-slate-500 text-sm opacity-60">
+                  R$ {item.valorUnitario.toFixed(2)}
+                </td>
+                <td className="px-8 py-8 text-right font-mono text-amber-500/70 text-xs font-black">
+                  - R$ {item.valorDesconto.toFixed(2)}
+                </td>
+                <td className="px-8 py-8 text-right font-mono text-blue-500 font-black text-2xl tracking-tighter leading-none pr-8">
+                  R$ {item.total.toFixed(2)}
+                </td>
+                <td className="px-8 py-8 text-center last:rounded-r-[2rem]">
+                  <div className="flex items-center justify-center gap-2">
+                      <Button isIconOnly variant="light" size="sm" className="h-10 w-10 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all">
+                          <Edit2 className="h-5 w-5" />
+                      </Button>
+                      <Button 
+                          isIconOnly 
+                          variant="light" 
+                          size="sm" 
+                          color="danger"
+                          onPress={() => onRemove(item.id)}
+                          className="h-10 w-10 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                      >
+                          <Trash2 className="h-5 w-5" />
+                      </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Layout Mobile: Cards Táteis */}
+      <div className="block md:hidden space-y-4">
+        {items.map((item) => (
+          <div key={item.id} className="p-5 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 rounded-[2rem] shadow-sm flex flex-col gap-4">
+            <div className="flex items-start gap-4">
+              <Avatar 
+                src={item.imagemUrl} 
+                name={item.nome.charAt(0)}
+                radius="lg" 
+                size="md"
+                isBordered
+                className="bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="font-black text-slate-900 dark:text-slate-200 text-base leading-tight break-words italic">{item.nome}</div>
+                <div className="text-[9px] text-slate-500 font-black tracking-[0.2em] mt-2 uppercase leading-none">SKU: {item.sku}</div>
+                <div className="text-[9px] text-blue-500 font-black tracking-wider mt-1 uppercase leading-none">{item.naturezaOperacao}</div>
+              </div>
+              <Button 
+                isIconOnly 
+                variant="light" 
+                size="sm" 
+                color="danger"
+                onPress={() => onRemove(item.id)}
+                className="h-10 w-10 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all shrink-0"
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Preço & Qtd</span>
+                <span className="text-xs font-bold text-slate-500 font-mono">
+                  {item.quantidade} x R$ {item.valorUnitario.toFixed(2)}
+                </span>
+                {item.valorDesconto > 0 && (
+                  <span className="text-[10px] text-amber-500 font-mono font-black mt-1">
+                    Desc: - R$ {item.valorDesconto.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <div className="text-right flex flex-col items-end">
+                <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">Total Linha</span>
+                <span className="text-xl font-black font-mono text-blue-500 italic">
+                  R$ {item.total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

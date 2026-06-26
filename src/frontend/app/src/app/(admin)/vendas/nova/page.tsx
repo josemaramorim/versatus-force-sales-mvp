@@ -12,6 +12,8 @@ import {
   ShoppingCart, 
   FileText, 
   ChevronRight, 
+  ChevronUp,
+  ChevronDown,
   Save, 
   Trash2,
   Tag,
@@ -46,6 +48,7 @@ export default function NovaVendaPage() {
   const [descontoGlobal, setDescontoGlobal] = useState(0)
   const [acrescimoGlobal, setAcrescimoGlobal] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isOnline, setIsOnline] = useState(true)
   const [condicoes, setCondicoes] = useState<CondicaoPagamento[]>([])
@@ -131,7 +134,7 @@ export default function NovaVendaPage() {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 pb-32 lg:pb-0">
       
       {/* High-Fidelity Header */}
       <header className="flex flex-col sm:flex-row items-center sm:justify-between gap-6 pb-8 border-b border-slate-100 dark:border-slate-900 leading-none">
@@ -216,8 +219,8 @@ export default function NovaVendaPage() {
               </div>
           </div>
 
-          {/* Checkout / Summary Siderbar */}
-          <div className="space-y-10 lg:sticky lg:top-36 h-fit">
+          {/* Checkout / Summary Sidebar (Desktop only) */}
+          <div className="hidden lg:block space-y-10 lg:sticky lg:top-36 h-fit">
               
               <div className="premium-card p-8 space-y-10 leading-none shadow-2xl relative overflow-hidden">
                   {/* Subtle Glow */}
@@ -313,6 +316,111 @@ export default function NovaVendaPage() {
         onClose={onClose} 
         onAdd={handleAddItem} 
       />
+
+      {/* Sticky Bottom Summary Sheet (Mobile/Tablet only) */}
+      <div className="block lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] transition-all duration-300">
+        
+        {/* Toggle Expand Handle */}
+        <button 
+          type="button"
+          onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+          className="w-full py-3 flex items-center justify-center gap-2 text-slate-500 hover:text-blue-500 border-b border-slate-100 dark:border-slate-800/60 relative"
+        >
+          <div className="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full absolute top-2" />
+          {isSummaryExpanded ? (
+            <>
+              <ChevronDown className="h-4 w-4 text-slate-500" />
+              <span className="text-[9px] font-black uppercase tracking-widest italic">Ocultar Fechamento</span>
+            </>
+          ) : (
+            <>
+              <ChevronUp className="h-4 w-4 text-slate-500" />
+              <span className="text-[9px] font-black uppercase tracking-widest italic">Configurar Fechamento & Descontos</span>
+            </>
+          )}
+        </button>
+
+        {/* Expandable Content Panel */}
+        {isSummaryExpanded && (
+          <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-4">
+              <label className="premium-label tracking-[0.4em]">Forma de Pagto</label>
+              <Select 
+                selectedKeys={[condicaoPagamento]}
+                onChange={(e) => setCondicaoPagamento(e.target.value)}
+                variant="flat"
+                radius="lg"
+                classNames={{
+                  trigger: "h-14 px-6 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 italic font-black text-slate-500",
+                }}
+                popoverProps={{
+                  radius: "lg",
+                  className: "p-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-xl z-[9999]",
+                }}
+              >
+                {condicoes.map((cond) => (
+                  <SelectItem key={cond.condicaoPagtoIdERP.toString()} value={cond.condicaoPagtoIdERP.toString()} className="font-bold italic">
+                    {cond.descricao}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3 text-center">
+                <label className="premium-label tracking-widest opacity-50 block italic text-[9px]">Desc. Geral (R$)</label>
+                <input 
+                  type="number" 
+                  value={descontoGlobal} 
+                  onChange={(e) => setDescontoGlobal(Number(e.target.value))}
+                  className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-emerald-500 font-black text-center shadow-inner text-sm italic"
+                />
+              </div>
+              <div className="space-y-3 text-center">
+                <label className="premium-label tracking-widest opacity-50 block italic text-[9px]">Acresc. Geral (R$)</label>
+                <input 
+                  type="number" 
+                  value={acrescimoGlobal}
+                  onChange={(e) => setAcrescimoGlobal(Number(e.target.value))}
+                  className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-rose-500 font-mono text-rose-500 font-black text-center shadow-inner text-sm italic"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-4 font-mono text-[9px] font-black uppercase tracking-wider italic text-slate-400">
+              <div className="flex items-center justify-between">
+                <span>Subtotal Bruto</span>
+                <span className="text-slate-600 dark:text-slate-500">R$ {subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between text-amber-500/80">
+                <span>Desconto Total</span>
+                <span>- R$ {(descontoGlobal + (items.reduce((acc, i) => acc + i.valorDesconto, 0))).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Persistent Bottom Bar */}
+        <div className="px-6 py-4 flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50">
+          <div className="flex flex-col">
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Pedido</span>
+            <span className="text-2xl font-black font-mono text-blue-500 italic leading-none">
+              R$ {totalFinal.toFixed(2)}
+            </span>
+            <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase leading-none">
+              {items.length} {items.length === 1 ? 'item' : 'itens'}
+            </span>
+          </div>
+          <Button 
+            size="lg"
+            isLoading={isSubmitting}
+            className="flex-1 max-w-[200px] py-6 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-lg shadow-blue-500/20 transition-all uppercase tracking-wider text-xs italic transform active:scale-95"
+            onClick={handleConfirmarPedido}
+          >
+            Confirmar
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
