@@ -26,6 +26,7 @@ Selecione a etapa que deseja consultar ou siga o passo a passo na ordem sugerida
 * [8. Resolução de Erros Comuns](#solução-de-problemas) — O que fazer se a tela ficar em branco ou não conectar à API.
   * [8.1. Erro ao Descompactar o ZIP](#erro-ao-descompactar-o-arquivo-zip-no-painel-mkdir--not-a-directory-ou-falha-no-progresso) — Solução para falhas de descompactação, arquivos gigantes e erros com parênteses (ex: route groups).
   * [8.2. Erro sh: next: Permission denied](#erro-ao-iniciar-a-aplicação-sh-next-permission-denied) — Correção para falta de permissão de execução nos binários após transferir o ZIP.
+  * [8.3. Erro ERR_SSL_PROTOCOL_ERROR ao Acessar via Porta](#erro-err_ssl_protocol_error-ao-acessar-a-porta-3000-via-https) — Diferença de protocolo (HTTP na porta vs HTTPS no domínio).
 
 ### 🔌 Deploy Nível 2 — Método ZIP Local (Solução para conexões instáveis)
 * [9. Por que usar o ZIP?](#método-alternativo--publicação-via-arquivo-zip-recomendado-para-conexões-instáveis) — Vantagens do deploy local.
@@ -296,6 +297,25 @@ Ao abrir a aplicação no browser pela primeira vez, realize o seguinte teste b�
        chmod +x node_modules/next/dist/bin/next
        ```
     3. Após executar os comandos acima, acesse a área de aplicações do painel ICP e clique em **Reiniciar** (ou **Iniciar**) o frontend. O erro de permissão será resolvido e o servidor iniciará perfeitamente.
+
+### Erro `ERR_SSL_PROTOCOL_ERROR` ao Acessar a Porta 3000 via HTTPS
+
+* **Sintoma:** Ao tentar acessar `https://23.80.91.77:3000`, o navegador exibe a mensagem *"Este site não consegue fornecer uma ligação segura"* e o código de erro `ERR_SSL_PROTOCOL_ERROR`.
+* **Causa:** O Next.js roda nativamente em HTTP simples (sem SSL) na porta 3000 dentro do container. Tentar forçar o protocolo `https://` diretamente nessa porta resulta em erro porque a aplicação não possui chaves SSL configuradas localmente para responder a esse handshake.
+* **Solução:**
+  1. **Para Acesso Rápido/Testes (via IP e Porta):** Acesse estritamente sem o "s" no protocolo:
+     ```text
+     http://23.80.91.77:3000
+     ```
+  2. **Para Acesso com Segurança (via Domínio com SSL em Produção):**
+     Para que o cadeado de segurança (`https://`) funcione corretamente:
+     * Vincule seu domínio ou subdomínio (ex: `vendas.suaempresa.com.br`) na aba **Domínios** do painel ICP para esta aplicação.
+     * Ative o **SSL (Let's Encrypt)** no painel para este domínio.
+     * Acesse usando a URL do domínio sem especificar a porta: `https://vendas.suaempresa.com.br`. O servidor Nginx do painel cuidará de traduzir o HTTPS externo para o HTTP interno da porta 3000 de forma transparente.
+
+> [!WARNING]
+> **Correção de documentação anterior:**
+> Caso tenha consultado versões anteriores deste manual que instruíam o acesso direto à porta 3000 utilizando `https://`, pedimos desculpas pelo equívoco. O protocolo correto para acesso à porta direta é estritamente `http://`. A documentação foi corrigida e sincronizada nas branches `develop` e `main`.
 
 ---
 
