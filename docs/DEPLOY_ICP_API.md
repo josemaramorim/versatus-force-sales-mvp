@@ -26,19 +26,20 @@ Selecione a etapa que deseja consultar ou siga o passo a passo na ordem sugerida
 * [8. Criar App .NET no ICP](#etapa-4--configurar-a-aplicação-net-no-painel-icp) — Passo a passo do assistente.
 * [9. Variáveis de Ambiente](#45-configurar-as-variáveis-de-ambiente) — Chaves e senhas obrigatórias em CAIXA ALTA.
 * [10. Banco & Seed Automático](#47-banco-de-dados--migrations-e-usuários-iniciais) — Como as tabelas e usuários iniciais são gerados no startup.
-* [11. Webhooks de Auto-deploy](#etapa-5--configurar-o-webhook-do-github) — Atualização automática com `git push`.
+* [11. Configuração de Domínio e SSL](#48-configuração-de-domínio-próprio-e-ssl-lets-encrypt) — Como vincular o domínio real e configurar o SSL.
+* [12. Webhooks de Auto-deploy](#etapa-5--configurar-o-webhook-do-github) — Atualização automática com `git push`.
 
 ### 🛡️ Diagnóstico e Monitoramento
-* [12. Testes de Saúde (Health Checks)](#verificação-final) — Validar se a API e os bancos estão conectados.
-* [13. Rotas da API](#estrutura-das-rotas-da-api) — Tabela de endpoints disponíveis.
-* [14. Resolução de Erros Comuns](#solução-de-problemas) — O que fazer se algo der errado.
-  * [14.1. Erro de Projetos Não Encontrados no Build](#erro-de-compilação-no-container-projetos-não-encontrados) — Como compilar projetos multi-camadas no container do painel.
+* [13. Testes de Saúde (Health Checks)](#verificação-final) — Validar se a API e os bancos estão conectados.
+* [14. Rotas da API](#estrutura-das-rotas-da-api) — Tabela de endpoints disponíveis.
+* [15. Resolução de Erros Comuns](#solução-de-problemas) — O que fazer se algo der errado.
+  * [15.1. Erro de Projetos Não Encontrados no Build](#erro-de-compilação-no-container-projetos-não-encontrados) — Como compilar projetos multi-camadas no container do painel.
 
 ### 🔌 Deploy Nível 2 — Método ZIP Local (Solução para conexões instáveis)
-* [15. Por que usar o ZIP?](#método-alternativo--publicação-via-arquivo-zip-recomendado-para-conexões-instáveis) — Vantagens do deploy local.
-* [16. Compilar e Zipar Localmente](#a1-compilar-e-gerar-o-zip-localmente) — Comandos rápidos em PowerShell.
-* [17. Configurar a Aplicação ZIP](#a2-configurar-a-aplicação-no-painel-icp) — Criação da aplicação usando o ZIP.
-* [18. Atualizar arquivos via Gerenciador ou SFTP](#a3-como-atualizar-ou-enviar-arquivos-grandes-evitando-limites-do-navegador) — Como enviar arquivos grandes sem restrição de tamanho.
+* [16. Por que usar o ZIP?](#método-alternativo--publicação-via-arquivo-zip-recomendado-para-conexões-instáveis) — Vantagens do deploy local.
+* [17. Compilar e Zipar Localmente](#a1-compilar-e-gerar-o-zip-localmente) — Comandos rápidos em PowerShell.
+* [18. Configurar a Aplicação ZIP](#a2-configurar-a-aplicação-no-painel-icp) — Criação da aplicação usando o ZIP.
+* [19. Atualizar arquivos via Gerenciador ou SFTP](#a3-como-atualizar-ou-enviar-arquivos-grandes-evitando-limites-do-navegador) — Como enviar arquivos grandes sem restrição de tamanho.
 
 ---
 
@@ -360,6 +361,40 @@ O seed cria automaticamente:
 > GET https://force-sales-api.vps9526.panel.icontainer.net/health/ready
 > ```
 > O status `Healthy` confirma que a API está conectada ao PostgreSQL e Redis.
+
+### 4.8. Configuração de Domínio Próprio e SSL (Let's Encrypt)
+
+Para que a API responda sob um domínio seguro de produção (ex: `https://api.versatusapp.com.br`), siga os passos de configuração no Painel ICP:
+
+#### Passo 1 — Apontamento de DNS
+No painel do seu provedor de domínio (Registro.br, Cloudflare, GoDaddy, etc.), crie o seguinte registro DNS apontando para o IP público da sua VPS:
+* **Tipo:** `A`
+* **Nome/Host:** `api` (o subdomínio desejado para o backend)
+* **Destino/Aponta para:** IP público da sua VPS (ex: `23.80.91.77`)
+
+#### Passo 2 — Vincular o Domínio no Painel ICP
+1. Acesse o **Painel ICP** (`https://vps9526.panel.icontainer.net`).
+2. Vá em **Aplicações** e selecione a aplicação do seu Backend (API).
+3. Acesse a aba **Domínios** ou **Configuração Web**.
+4. Insira o domínio completo da API: `api.versatusapp.com.br` e clique em salvar. O painel ICP criará automaticamente a configuração do proxy reverso no Nginx interno do servidor.
+
+#### Passo 3 — Ativar o SSL (HTTPS Grátis)
+1. Ainda na configuração de domínios no painel ICP, localize a opção de **SSL** ou **Let's Encrypt**.
+2. Clique em **Ativar SSL** ou **Gerar Certificado**. O painel emitirá e instalará o certificado de segurança de forma automatizada.
+3. A partir deste momento, a API estará acessível de forma segura em:
+   ```text
+   https://api.versatusapp.com.br
+   ```
+
+#### ⚠️ Passo 4 — Ajuste Crítico do CORS (Segurança de Origem)
+Após migrar a API e o Frontend para domínios próprios seguros, você **deve** atualizar a variável de ambiente de CORS nas configurações da API no painel ICP para permitir que o navegador do cliente envie requisições ao backend:
+
+1. Acesse as configurações da aplicação **API** no painel ICP.
+2. Na aba **Variáveis de Ambiente**, atualize a variável `CORS__ALLOWEDORIGINS` incluindo a URL exata do seu frontend em HTTPS:
+   ```env
+   CORS__ALLOWEDORIGINS=http://localhost:3000,http://localhost:3001,https://vendas.versatusapp.com.br
+   ```
+3. Salve a alteração e **reinicie** a aplicação da API para aplicar a nova política de origens permitidas.
 
 
 ---
