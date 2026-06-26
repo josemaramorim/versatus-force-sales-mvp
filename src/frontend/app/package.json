@@ -26,9 +26,7 @@
     "react-hook-form": "^7.72.0",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6",
-    "zustand": "^5.0.12"
-  },
-  "devDependencies": {
+    "zustand": "^5.0.12",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -37,5 +35,6 @@
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "devDependencies": {}
 }
