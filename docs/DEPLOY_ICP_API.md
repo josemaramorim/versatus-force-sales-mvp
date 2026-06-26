@@ -495,15 +495,15 @@ Resposta esperada (HTTP 200):
 2. Clique no webhook → **Recent Deliveries** → verifique os erros
 3. Certifique-se de que o payload URL está correto e acessível a partir da internet
 
-### Erro de Compilação no Container (Projetos Não Encontrados)
-Se ao tentar fazer o deploy usando a opção **"Compilar antes de publicar"** (Git Auto-compilação) o container de build falhar pulando os projetos irmãos com mensagens do tipo:
-`Skipping project "/Versatus.ForcaVendas.Application/...csproj" because it was not found.`
+### Erro de Compilação no Container: `MSB1003: Specify a project or solution file` (Projetos Não Encontrados)
+Se ao tentar fazer o deploy usando a opção **"Compilar antes de publicar"** (Git Auto-compilação) o container de build falhar pulando os projetos irmãos com erros de namespaces ausentes ou apresentar a seguinte mensagem de erro:
+`MSBUILD : error MSB1003: Specify a project or solution file. The current working directory does not contain a project or solution file.`
 
-*   **Causa:** O compilador da API depende dos projetos irmãos localizados sob a pasta `src/backend/` (como `Application` e `Infrastructure`). Se a **Pasta do projeto** no painel estiver apontando diretamente para `src/backend/Versatus.ForcaVendas.Api`, o container de build copiará apenas essa subpasta, impedindo o compilador de acessar os níveis superiores (`..\`) do repositório.
+*   **Causa:** A API depende dos projetos irmãos localizados sob a pasta `src/backend/` (como `Application` e `Infrastructure`). Se a **Pasta do projeto** no painel estiver apontando diretamente para `src/backend/Versatus.ForcaVendas.Api`, o container de build copiará apenas essa subpasta, impedindo o compilador de acessar os níveis superiores (`..\`) do repositório. Caso você altere a **Pasta do projeto** para `/` (raiz do repositório) para resolver isso, a compilação rodará na raiz, falhando com o erro `MSB1003` se você não especificar qual projeto deve ser compilado.
 *   **Solução (Ajustar caminhos de Build):**
     1. Acesse as configurações da aplicação da API no painel ICP.
-    2. No campo **Pasta do projeto** (no topo), altere para a **raiz do repositório** (deixe em branco ou coloque `/` ou `.`). Isso fará o painel montar o repositório completo no container.
-    3. No campo **Comando de build**, altere para especificar o caminho completo do `.csproj` a partir da raiz:
+    2. No campo **Pasta do projeto** (no topo), altere para a **raiz do repositório** (deixe em branco ou coloque `/` ou `.`). Isso fará o painel copiar o repositório completo para o container de build.
+    3. No campo **Comando de build** (logo abaixo do switch de compilação), altere para especificar o caminho completo do `.csproj` a partir da raiz, garantindo que o MSBuild saiba o que compilar:
        ```bash
        dotnet publish src/backend/Versatus.ForcaVendas.Api/Versatus.ForcaVendas.Api.csproj -c Release -o /app
        ```
