@@ -156,6 +156,19 @@ Se você visualizar mensagens de importação com sucesso, o fluxo completo de s
 * **Causa:** O Worker não conseguiu acessar o servidor Redis interno da VPS.
 * **Solução:** Verifique se o endereço do host do Redis (`redis-forca-venda` ou o nome do contêiner do Redis no seu painel) está correto e se a senha configurada na variável `CONNECTIONSTRINGS__REDIS` está correta.
 
+### Erro de Compilação no Container (Projetos Não Encontrados)
+Se ao tentar fazer o deploy do Worker no painel ICP o build falhar pulando os projetos irmãos (`Application` e `Infrastructure`) com erros de namespaces ausentes:
+
+* **Causa:** O Worker depende de projetos irmãos localizados na pasta `src/backend/` (como `Application` e `Infrastructure`). Se a **Pasta do projeto** no painel estiver apontando diretamente para `src/worker/Versatus.ForcaVendas.Worker`, o container de build do painel copiará apenas essa subpasta, impedindo o compilador de acessar os níveis superiores (`../../backend/...`) do repositório.
+* **Solução (Ajustar caminhos de Build):**
+  1. Acesse as configurações da aplicação do Worker no painel ICP.
+  2. No campo **Pasta do projeto** (no topo), altere para a **raiz do repositório** (deixe em branco, ou coloque `/` ou `.`). Isso fará o painel copiar o repositório completo para o container de build.
+  3. No campo **Comando de build** (ou similar), altere para especificar o caminho completo do `.csproj` a partir da raiz:
+     ```bash
+     dotnet publish src/worker/Versatus.ForcaVendas.Worker/Versatus.ForcaVendas.Worker.csproj -c Release -o /app
+     ```
+  4. Salve e force uma nova compilação no painel.
+
 ---
 
 ## Método Alternativo — Publicação via Arquivo ZIP (Recomendado para conexões instáveis)
