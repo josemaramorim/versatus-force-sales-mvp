@@ -114,6 +114,7 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
           }}
           popoverProps={{
             radius: "lg",
+            style: { minWidth: 'min(calc(100vw - 2rem), 520px)', width: 'auto' },
             className: "p-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999]",
           }}
         >
@@ -133,8 +134,8 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
                   className="bg-blue-600 text-white font-black shrink-0"
                 />
                 <div className="flex flex-col gap-1 min-w-0">
-                  <span className="text-base font-black italic text-slate-900 dark:text-white leading-tight break-words">{cliente.nome}</span>
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] italic leading-tight break-words">
+                  <span className="text-sm font-black italic text-slate-900 dark:text-white leading-tight break-words">{cliente.nome}</span>
+                  <span className="text-xs text-slate-500 font-bold uppercase tracking-widest italic leading-tight break-words">
                     {cliente.documento} {cliente.areaVenda ? `• ${cliente.areaVenda}` : ''}
                   </span>
                 </div>

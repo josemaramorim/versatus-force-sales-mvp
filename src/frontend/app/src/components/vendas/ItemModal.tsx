@@ -163,11 +163,11 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      size="2xl"
+      size="full"
       radius="none"
       backdrop="blur"
-      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] p-2 shadow-2xl text-slate-900 dark:text-slate-100"
-      scrollBehavior="outside"
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 md:rounded-[3rem] p-0 md:p-2 shadow-2xl text-slate-900 dark:text-slate-100 md:max-w-2xl md:my-auto md:mx-auto"
+      scrollBehavior="inside"
       hideCloseButton
     >
       <ModalContent>
@@ -185,7 +185,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                 </Button>
             </ModalHeader>
 
-            <ModalBody className="p-10 space-y-8">
+            <ModalBody className="p-4 md:p-10 space-y-6 md:space-y-8 overflow-y-auto">
               <form id="add-item-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 
                 {/* Product Search Selection */}
@@ -212,6 +212,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                       }}
                       popoverProps={{
                         radius: "lg",
+                        style: { minWidth: 'min(calc(100vw - 2rem), 520px)', width: 'auto' },
                         className: "p-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999]",
                       }}
                     >
@@ -230,8 +231,8 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                               </div>
                             )}
                             <div className="flex flex-col gap-1 min-w-0">
-                              <span className="text-base font-black italic text-slate-900 dark:text-slate-200 leading-tight break-words">{produto.nome}</span>
-                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic leading-tight break-words">SKU: {produto.sku} • R$ {produto.precoBase.toFixed(2)}</span>
+                              <span className="text-sm font-black italic text-slate-900 dark:text-slate-200 leading-tight break-words">{produto.nome}</span>
+                              <span className="text-xs text-slate-500 font-bold uppercase tracking-widest italic leading-tight break-words">SKU: {produto.sku} • R$ {produto.precoBase.toFixed(2)}</span>
                             </div>
                           </div>
                         </AutocompleteItem>
@@ -239,7 +240,7 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                     </Autocomplete>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
                     <Controller
                       name="quantidade"
                       control={control}
