@@ -78,3 +78,36 @@ No arquivo `appsettings.json` do ERP Adapter, temos duas seções principais lig
 * **Para que serve:** Define a hora do dia (no formato 24h, de `0` a `23`) em que o adaptador deve realizar uma **sincronização completa (Full Sync)** do catálogo no Redis. 
 * **Impacto no Sistema:** Fora dessa hora, a sincronização periódica ocorre de forma incremental/delta (apenas dados alterados recentemente). Ao atingir o horário definido, o adaptador limpa o histórico local e força uma carga completa de todos os dados do catálogo para garantir consistência.
 * **Valor Padrão:** Se omitido, assume a hora `3` (3:00 AM).
+
+---
+
+## 3. Sobrescrita com Variáveis de Ambiente (Produção / Painel ICP)
+
+Em ambientes de produção (como o **Painel ICP**, contêineres Docker ou serviços de nuvem), o padrão de configuração do .NET Core permite sobrescrever qualquer propriedade do `appsettings.json` utilizando variáveis de ambiente.
+
+A convenção do .NET para mapear a hierarquia JSON em chaves lineares de variáveis de ambiente é a utilização de **dois sublinhados (`__`) como separador**.
+
+### 3.1. Configurando a Lista de Tenants (`Auth:Tenants`)
+
+Para configurar um array/lista via variáveis de ambiente, utilize o index numérico (começando em `0`) como a chave final.
+
+No seu painel de controle (Painel ICP), cadastre as variáveis da seguinte forma:
+
+| Variável | Valor |
+|---|---|
+| `Auth__Tenants__0` | `00000000-0000-0000-0000-000000000001` |
+| `Auth__Tenants__1` | `00000000-0000-0000-0000-000000000002` |
+
+> [!NOTE]
+> Essa configuração aplica-se tanto na **API** quanto no **ERP Adapter**.
+
+### 3.2. Configurando o Mapeamento no ERP Adapter (`ErpAdapter:Tenants`)
+
+Para o mapeamento de dicionários (chave/valor) por `TenantId` no adaptador, o próprio GUID do tenant funciona como a chave da estrutura:
+
+| Variável | Valor |
+|---|---|
+| `ErpAdapter__Tenants__00000000-0000-0000-0000-000000000001__FilialId` | `1` |
+| `ErpAdapter__Tenants__00000000-0000-0000-0000-000000000001__FullSyncHour` | `11` |
+| `ErpAdapter__Tenants__00000000-0000-0000-0000-000000000002__FilialId` | `2` |
+
