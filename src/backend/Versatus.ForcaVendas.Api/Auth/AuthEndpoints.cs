@@ -29,12 +29,6 @@ public static class AuthEndpoints
             }
 
             var authOptions = options.Value;
-            if (authOptions.Tenants.Count == 0)
-            {
-                return Results.Problem(
-                    detail: "Configuracao de autenticacao invalida no servidor.",
-                    statusCode: StatusCodes.Status500InternalServerError);
-            }
 
             var usuarioBanco = await usuarioRepository.GetByEmailAsync(request.Email, cancellationToken);
             if (usuarioBanco is null)
@@ -57,12 +51,17 @@ public static class AuthEndpoints
                 Password = ""
             };
 
-            var tenantExists = authOptions.Tenants
-                .Any(t => string.Equals(t, user.TenantId, StringComparison.OrdinalIgnoreCase));
-
-            if (!tenantExists)
+            // Se a lista estática de tenants estiver configurada, valida contra ela.
+            // Caso contrário (vazia/produção), a API é dinâmica e valida apenas pelo banco de dados (assinaturas).
+            if (authOptions.Tenants.Count > 0)
             {
-                return Results.Unauthorized();
+                var tenantExists = authOptions.Tenants
+                    .Any(t => string.Equals(t, user.TenantId, StringComparison.OrdinalIgnoreCase));
+
+                if (!tenantExists)
+                {
+                    return Results.Unauthorized();
+                }
             }
 
             var subscription = await subscriptionRepository.GetByTenantIdAsync(user.TenantId, cancellationToken);
