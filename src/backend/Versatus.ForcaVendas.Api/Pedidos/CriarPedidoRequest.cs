@@ -101,7 +101,8 @@ public sealed record CriarPedidoItemRequest(
     string Nome,
     decimal Quantidade,
     decimal PrecoUnitario,
-    decimal Desconto);
+    decimal Desconto,
+    int? TabelaPrecoEstoqueIdERP = null);
 
 public sealed record CriarPedidoCondicaoPagamentoRequest(
     string? CondicaoPagamentoId,

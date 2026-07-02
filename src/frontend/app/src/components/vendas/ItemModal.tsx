@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { MOCK_NATUREZAS } from '@/lib/mocks'
 import { searchProdutos } from '@/lib/vendaApi'
-import { ItemPedido, Produto } from '@/types/vendas'
+import { ItemPedido, Produto, TenantParameters } from '@/types/vendas'
 import { 
   Plus, 
   Calculator, 
@@ -48,12 +48,14 @@ interface ItemModalProps {
   isOpen: boolean
   onClose: () => void
   onAdd: (item: ItemPedido) => void
+  tenantParameters: TenantParameters
 }
 
-export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
+export function ItemModal({ isOpen, onClose, onAdd, tenantParameters }: ItemModalProps) {
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null)
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [productInputValue, setProductInputValue] = useState('')
+  const [selectedTabelaId, setSelectedTabelaId] = useState<number>(tenantParameters?.tabelaPrecoIdDefault || 1)
 
   useEffect(() => {
     searchProdutos(undefined, 100000)
@@ -111,6 +113,20 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
   const subtotalItem = qty * price
   const totalItem = subtotalItem - disc + incr
 
+  const selectedTabelaEntry = useMemo(() => {
+    return selectedProduto?.precosPorTabela?.find(p => p.tabelaPrecoIdERP === selectedTabelaId)
+  }, [selectedProduto, selectedTabelaId])
+
+  const isSelectedTabelaPromocional = useMemo(() => {
+    if (!selectedTabelaEntry) return false
+    const hoje = new Date()
+    const inicio = selectedTabelaEntry.vigenciaInicio ? new Date(selectedTabelaEntry.vigenciaInicio) : null
+    const fim = selectedTabelaEntry.vigenciaFim ? new Date(selectedTabelaEntry.vigenciaFim) : null
+    const checkInicio = !inicio || hoje >= inicio
+    const checkFim = !fim || hoje <= fim
+    return selectedTabelaEntry.isPromocional && checkInicio && checkFim
+  }, [selectedTabelaEntry])
+
   useEffect(() => {
     if (isOpen) {
       reset({
@@ -121,20 +137,57 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
       })
       setSelectedProduto(null)
       setProductInputValue('')
+      setSelectedTabelaId(tenantParameters?.tabelaPrecoIdDefault || 1)
     }
-  }, [isOpen, reset])
+  }, [isOpen, reset, tenantParameters])
 
   function handleProductChange(id: React.Key | null) {
     const produto = produtos.find((p) => p.id === id)
     if (produto) {
       setSelectedProduto(produto)
       setValue('produtoId', produto.id)
-      setValue('valorUnitario', produto.precoBase)
+      
+      const hoje = new Date()
+      const promoVigente = produto.precosPorTabela?.find(p => {
+        if (!p.isPromocional) return false
+        const inicio = p.vigenciaInicio ? new Date(p.vigenciaInicio) : null
+        const fim = p.vigenciaFim ? new Date(p.vigenciaFim) : null
+        const checkInicio = !inicio || hoje >= inicio
+        const checkFim = !fim || hoje <= fim
+        return checkInicio && checkFim
+      })
+
+      let precoFinal = produto.precoBase
+      let tabelaId = tenantParameters?.tabelaPrecoIdDefault || 1
+
+      if (promoVigente) {
+        precoFinal = promoVigente.valorUnitario
+        tabelaId = promoVigente.tabelaPrecoIdERP
+      } else {
+        const precoPadrao = produto.precosPorTabela?.find(p => p.tabelaPrecoIdERP === (tenantParameters?.tabelaPrecoIdDefault || 1))
+        if (precoPadrao) {
+          precoFinal = precoPadrao.valorUnitario
+          tabelaId = precoPadrao.tabelaPrecoIdERP
+        }
+      }
+
+      setSelectedTabelaId(tabelaId)
+      setValue('valorUnitario', precoFinal)
       setProductInputValue(produto.nome)
     } else {
       setSelectedProduto(null)
       setValue('produtoId', '')
       setProductInputValue('')
+    }
+  }
+
+  function handleTabelaChange(tabelaId: number) {
+    setSelectedTabelaId(tabelaId)
+    if (selectedProduto) {
+      const precoEncontrado = selectedProduto.precosPorTabela?.find(p => p.tabelaPrecoIdERP === tabelaId)
+      if (precoEncontrado) {
+        setValue('valorUnitario', precoEncontrado.valorUnitario)
+      }
     }
   }
 
@@ -153,11 +206,13 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
       naturezaOperacao: values.naturezaOperacao,
       total: totalItem,
       imagemUrl: selectedProduto.imagemUrl,
+      tabelaPrecoEstoqueIdERP: selectedTabelaEntry?.tabelaPrecoEstoqueIdERP,
     }
 
     onAdd(newItem)
     onClose()
   }
+
 
   return (
     <Modal 
@@ -240,6 +295,42 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                     </Autocomplete>
                 </div>
 
+                {/* Seleção de Tabela de Preço */}
+                {selectedProduto && (
+                  <div className="space-y-4">
+                    <label className="premium-label tracking-[0.4em]">Tabela de Preço</label>
+                    {tenantParameters.permiteAlterarTabelaPreco ? (
+                      <Select
+                        label={null}
+                        variant="flat"
+                        radius="lg"
+                        selectedKeys={[selectedTabelaId.toString()]}
+                        onSelectionChange={(keys) => {
+                          const key = Array.from(keys)[0];
+                          if (key) handleTabelaChange(Number(key));
+                        }}
+                        classNames={{
+                          trigger: "h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-6",
+                          value: "text-lg font-bold text-slate-800 dark:text-slate-200"
+                        }}
+                      >
+                        {(selectedProduto.precosPorTabela || []).map((p) => (
+                          <SelectItem key={p.tabelaPrecoIdERP.toString()} value={p.tabelaPrecoIdERP.toString()}>
+                            {`${p.descricao || 'Tabela ' + p.tabelaPrecoIdERP} - R$ ${p.valorUnitario.toFixed(2)}${p.isPromocional ? ' (Promocional)' : ''}`}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    ) : (
+                      <div className="h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-6 rounded-2xl flex items-center justify-between">
+                        <span className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                          {selectedTabelaEntry?.descricao || `Tabela ${selectedTabelaId}`}
+                        </span>
+                        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Apenas Leitura</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
                     <Controller
                       name="quantidade"
@@ -267,7 +358,12 @@ export function ItemModal({ isOpen, onClose, onAdd }: ItemModalProps) {
                       control={control}
                       render={({ field }) => (
                         <div className="space-y-4">
-                          <label className="premium-label tracking-[0.4em]">Valor Unitário</label>
+                          <div className="flex items-center justify-between">
+                            <label className="premium-label tracking-[0.4em]">Valor Unitário</label>
+                            {isSelectedTabelaPromocional && (
+                              <span className="px-3 py-1 bg-amber-500 text-white text-xs font-black rounded-full animate-pulse">PROMOÇÃO</span>
+                            )}
+                          </div>
                           <Input
                             {...field}
                             value={field.value?.toString()}

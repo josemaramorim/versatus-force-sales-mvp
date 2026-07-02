@@ -9,7 +9,9 @@ public sealed class CatalogSnapshot
     public IReadOnlyList<ClienteCatalogDto> Clientes { get; set; } = Array.Empty<ClienteCatalogDto>();
     public IReadOnlyList<ProdutoCatalogDto> Produtos { get; set; } = Array.Empty<ProdutoCatalogDto>();
     public IReadOnlyList<TabelaPrecoCatalogDto> TabelasPreco { get; set; } = Array.Empty<TabelaPrecoCatalogDto>();
+    public IReadOnlyList<TabelaPrecoMetadataDto> TabelasPrecoMetadata { get; set; } = Array.Empty<TabelaPrecoMetadataDto>();
     public IReadOnlyList<CondicaoPagamentoCatalogDto> CondicoesPagamento { get; set; } = Array.Empty<CondicaoPagamentoCatalogDto>();
+    public TenantParametersDto TenantParameters { get; set; } = new();
 }
 
 public sealed class CatalogFileWrapper<T>
@@ -54,6 +56,25 @@ public sealed class TabelaPrecoCatalogDto
     public decimal PercentualDescontoMaximo { get; set; }
     public bool ControlaDescontoMaximo { get; set; }
     public string Descricao { get; set; } = string.Empty;
+    public bool IsPromocional { get; set; }
+    public DateTime? VigenciaInicio { get; set; }
+    public DateTime? VigenciaFim { get; set; }
+}
+
+public sealed class TabelaPrecoMetadataDto
+{
+    public int TabelaPrecoIdERP { get; set; }
+    public string Descricao { get; set; } = string.Empty;
+    public bool IsPromocional { get; set; }
+    public bool Ativa { get; set; } = true;
+    public DateTime? VigenciaInicio { get; set; }
+    public DateTime? VigenciaFim { get; set; }
+}
+
+public sealed class TenantParametersDto
+{
+    public int TabelaPrecoIdDefault { get; set; } = 1;
+    public bool PermiteAlterarTabelaPreco { get; set; } = true;
 }
 
 public sealed class CondicaoPagamentoCatalogDto

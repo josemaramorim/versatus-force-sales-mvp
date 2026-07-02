@@ -3,7 +3,32 @@ export interface Produto {
   sku: string;
   nome: string;
   precoBase: number;
+  precosPorTabela?: PriceTableEntry[];
   imagemUrl?: string;
+}
+
+export interface PriceTableEntry {
+  tabelaPrecoIdERP: number;
+  tabelaPrecoEstoqueIdERP: number;
+  descricao: string;
+  valorUnitario: number;
+  isPromocional: boolean;
+  vigenciaInicio?: string;
+  vigenciaFim?: string;
+}
+
+export interface TabelaPrecoMetadata {
+  tabelaPrecoIdERP: number;
+  descricao: string;
+  isPromocional: boolean;
+  ativa: boolean;
+  vigenciaInicio?: string;
+  vigenciaFim?: string;
+}
+
+export interface TenantParameters {
+  tabelaPrecoIdDefault: number;
+  permiteAlterarTabelaPreco: boolean;
 }
 
 export interface Cliente {
@@ -25,6 +50,7 @@ export interface ItemPedido {
   naturezaOperacao: string;
   total: number;
   imagemUrl?: string;
+  tabelaPrecoEstoqueIdERP?: number;
 }
 
 export interface PedidoDraft {

@@ -1,5 +1,5 @@
 import api from './api'
-import { Cliente, Produto, TabelaPreco, CondicaoPagamento } from '@/types/vendas'
+import { Cliente, Produto, TabelaPreco, CondicaoPagamento, TabelaPrecoMetadata, TenantParameters, PriceTableEntry } from '@/types/vendas'
 import { db, type OfflinePedido } from './offlineDb'
 
 // ─── Response shapes matching backend serialization ───────────────────────
@@ -36,6 +36,7 @@ export interface CriarPedidoPayload {
     quantidade: number
     precoUnitario: number
     desconto: number
+    tabelaPrecoEstoqueIdERP?: number
   }[]
   condicaoPagamento: {
     condicaoPagamentoId: string;
@@ -110,6 +111,7 @@ interface ProductApiResponse {
   unit: string
   price: number
   availableStock: number
+  pricesByTable?: PriceTableEntry[]
 }
 
 export async function searchProdutos(q?: string, limit?: number): Promise<Produto[]> {
@@ -138,6 +140,7 @@ export async function searchProdutos(q?: string, limit?: number): Promise<Produt
       sku: p.sku,
       nome: p.name,
       precoBase: p.price,
+      precosPorTabela: p.pricesByTable || [],
     }))
 
     results.sort((a, b) => a.nome.localeCompare(b.nome))
@@ -418,6 +421,56 @@ export async function criarPedidoApi(payload: CriarPedidoPayload): Promise<Pedid
         totalDesconto,
         totalLiquido
       }
+    }
+    throw error
+  }
+}
+
+export async function getTabelasPrecoMetadata(): Promise<TabelaPrecoMetadata[]> {
+  const localDb = db
+  const isOffline = typeof window !== 'undefined' && !navigator.onLine
+
+  if (isOffline && localDb) {
+    return localDb.tabelasPrecoMetadata.toArray()
+  }
+
+  try {
+    const { data } = await api.get<TabelaPrecoMetadata[]>('/catalogo/tabelas-preco-metadata')
+    if (typeof window !== 'undefined' && localDb) {
+      await localDb.tabelasPrecoMetadata.clear()
+      await localDb.tabelasPrecoMetadata.bulkPut(data)
+    }
+    return data
+  } catch (error) {
+    console.warn('[Offline Fallback] Falha ao consultar API de metadados de tabelas de preco, buscando no local...', error)
+    if (localDb) {
+      return localDb.tabelasPrecoMetadata.toArray()
+    }
+    throw error
+  }
+}
+
+export async function getTenantParameters(): Promise<TenantParameters> {
+  const localDb = db
+  const isOffline = typeof window !== 'undefined' && !navigator.onLine
+
+  if (isOffline && localDb) {
+    const cached = await localDb.tenantParameters.toArray()
+    return cached[0] || { tabelaPrecoIdDefault: 1, permiteAlterarTabelaPreco: true }
+  }
+
+  try {
+    const { data } = await api.get<TenantParameters>('/catalogo/tenant-parameters')
+    if (typeof window !== 'undefined' && localDb) {
+      await localDb.tenantParameters.clear()
+      await localDb.tenantParameters.put({ id: 1, ...data })
+    }
+    return data
+  } catch (error) {
+    console.warn('[Offline Fallback] Falha ao consultar API de parametros do tenant, buscando no local...', error)
+    if (localDb) {
+      const cached = await localDb.tenantParameters.toArray()
+      return cached[0] || { tabelaPrecoIdDefault: 1, permiteAlterarTabelaPreco: true }
     }
     throw error
   }

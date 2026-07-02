@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using StackExchange.Redis;
 using Versatus.ForcaVendas.Application.Catalogo;
+using Versatus.ForcaVendas.Infrastructure.Integration.Models;
 
 namespace Versatus.ForcaVendas.Infrastructure.Data.Repositories;
 
@@ -37,10 +38,48 @@ public sealed class RedisProductCatalogRepository(IConnectionMultiplexer redis) 
 
                 if (redisProducts is not null && redisProducts.Count > 0)
                 {
-                    // Tabela de preço padrão = 1
+                    // Ler parâmetros do tenant para obter tabela padrão
+                    var tenantParamsJson = await db.StringGetAsync($"catalogo:{request.TenantId}:tenant-parameters");
+                    var defaultTableId = 1;
+                    if (tenantParamsJson.HasValue)
+                    {
+                        try
+                        {
+                            var tenantParams = JsonSerializer.Deserialize<TenantParametersDto>(tenantParamsJson!, new JsonSerializerOptions
+                            {
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                            });
+                            if (tenantParams != null)
+                            {
+                                defaultTableId = tenantParams.TabelaPrecoIdDefault;
+                            }
+                        }
+                        catch
+                        {
+                            // Fallback para 1
+                        }
+                    }
+
+                    // Preço principal = tabela padrão do tenant
                     var priceDict = redisPrices?
-                        .Where(p => p.TabelaPrecoIdERP == 1)
+                        .Where(p => p.TabelaPrecoIdERP == defaultTableId)
                         .ToDictionary(p => p.ProdutoIdERP, p => p.ValorUnitario) ?? [];
+
+                    // Todos os preços agrupados por produto (para enviar ao frontend)
+                    var pricesByProduct = redisPrices?
+                        .GroupBy(p => p.ProdutoIdERP)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => g.Select(p => new PriceTableEntry(
+                                p.TabelaPrecoIdERP,
+                                p.TabelaPrecoEstoqueIdERP,
+                                p.Descricao ?? "Tabela de Preço",
+                                p.ValorUnitario,
+                                p.IsPromocional,
+                                p.VigenciaInicio,
+                                p.VigenciaFim
+                            )).ToList()
+                        ) ?? [];
 
                     var normalizedQuery = request.Query?.Trim() ?? string.Empty;
 
@@ -51,13 +90,15 @@ public sealed class RedisProductCatalogRepository(IConnectionMultiplexer redis) 
                         .Take(request.Limit)
                         .Select(p => {
                             var price = priceDict.TryGetValue(p.ProdutoIdERP, out var pr) ? pr : 0.00m;
+                            pricesByProduct.TryGetValue(p.ProdutoIdERP, out var pricesList);
                             return new ProductSummary(
                                 p.ProdutoIdERP.ToString(),
                                 $"SKU-PRD-{p.ProdutoIdERP}",
                                 p.Descricao,
                                 p.SiglaUnidadeVenda,
                                 price,
-                                p.Saldo);
+                                p.Saldo,
+                                pricesList);
                         })
                         .ToList();
                 }
@@ -72,5 +113,13 @@ public sealed class RedisProductCatalogRepository(IConnectionMultiplexer redis) 
     }
 
     private sealed record RedisProductItem(int ProdutoIdERP, string Descricao, string SiglaUnidadeVenda, decimal Saldo);
-    private sealed record RedisPriceItem(int ProdutoIdERP, int TabelaPrecoIdERP, decimal ValorUnitario);
+    private sealed record RedisPriceItem(
+        int ProdutoIdERP, 
+        int TabelaPrecoIdERP, 
+        int TabelaPrecoEstoqueIdERP,
+        string Descricao,
+        decimal ValorUnitario,
+        bool IsPromocional,
+        DateTime? VigenciaInicio,
+        DateTime? VigenciaFim);
 }

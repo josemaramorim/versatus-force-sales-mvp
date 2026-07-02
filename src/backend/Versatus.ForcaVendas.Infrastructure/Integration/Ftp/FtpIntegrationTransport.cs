@@ -171,6 +171,8 @@ public sealed class FtpIntegrationTransport : IIntegrationTransport
         var produtosPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "produtos.json");
         var precosPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "tabelas-preco.json");
         var condicoesPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "condicoes-pagamento.json");
+        var precosMetadataPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "tabelas-preco-metadata.json");
+        var tenantParamsPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "tenant-parameters.json");
 
         if (!await client.FileExists(clientesPath, ct) ||
             !await client.FileExists(produtosPath, ct) ||
@@ -198,7 +200,7 @@ public sealed class FtpIntegrationTransport : IIntegrationTransport
                 return null;
             }
 
-            return new CatalogSnapshot
+            var snapshot = new CatalogSnapshot
             {
                 IsFullSync = clientes.IsFullSync,
                 Clientes = clientes.Data,
@@ -206,6 +208,43 @@ public sealed class FtpIntegrationTransport : IIntegrationTransport
                 TabelasPreco = precos.Data,
                 CondicoesPagamento = condicoes.Data
             };
+
+            // Opcionais/Novos arquivos: Graceful handling
+            if (await client.FileExists(precosMetadataPath, ct))
+            {
+                try
+                {
+                    var bytes = await client.DownloadBytes(precosMetadataPath, ct);
+                    var wrapper = JsonSerializer.Deserialize<CatalogFileWrapper<TabelaPrecoMetadataDto>>(Encoding.UTF8.GetString(bytes), _jsonOptions);
+                    if (wrapper != null)
+                    {
+                        snapshot.TabelasPrecoMetadata = wrapper.Data;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Falha ao baixar/desserializar tabelas-preco-metadata.json para tenant {TenantId}.", tenantId);
+                }
+            }
+
+            if (await client.FileExists(tenantParamsPath, ct))
+            {
+                try
+                {
+                    var bytes = await client.DownloadBytes(tenantParamsPath, ct);
+                    var parameters = JsonSerializer.Deserialize<TenantParametersDto>(Encoding.UTF8.GetString(bytes), _jsonOptions);
+                    if (parameters != null)
+                    {
+                        snapshot.TenantParameters = parameters;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Falha ao baixar/desserializar tenant-parameters.json para tenant {TenantId}.", tenantId);
+                }
+            }
+
+            return snapshot;
         }
         catch (Exception ex)
         {
@@ -338,6 +377,8 @@ public sealed class FtpIntegrationTransport : IIntegrationTransport
         var produtosPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "produtos.json");
         var precosPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "tabelas-preco.json");
         var condicoesPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "condicoes-pagamento.json");
+        var precosMetadataPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "tabelas-preco-metadata.json");
+        var tenantParamsPath = FtpFolderStructure.GetCatalogFilePath(_options.BasePath, tenantId, "tenant-parameters.json");
 
         var checkFilesTask = Task.Run(() => 
             client.Exists(clientesPath) && 
@@ -374,7 +415,7 @@ public sealed class FtpIntegrationTransport : IIntegrationTransport
                 return null;
             }
 
-            return new CatalogSnapshot
+            var snapshot = new CatalogSnapshot
             {
                 IsFullSync = clientes.IsFullSync,
                 Clientes = clientes.Data,
@@ -382,6 +423,45 @@ public sealed class FtpIntegrationTransport : IIntegrationTransport
                 TabelasPreco = precos.Data,
                 CondicoesPagamento = condicoes.Data
             };
+
+            // Opcionais/Novos arquivos: Graceful handling
+            var hasMetadata = await Task.Run(() => client.Exists(precosMetadataPath), ct);
+            if (hasMetadata)
+            {
+                try
+                {
+                    var metadataBytes = await DownloadSftpBytesAsync(client, precosMetadataPath, ct);
+                    var wrapper = JsonSerializer.Deserialize<CatalogFileWrapper<TabelaPrecoMetadataDto>>(Encoding.UTF8.GetString(metadataBytes), _jsonOptions);
+                    if (wrapper != null)
+                    {
+                        snapshot.TabelasPrecoMetadata = wrapper.Data;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Falha ao baixar/desserializar tabelas-preco-metadata.json via SFTP para tenant {TenantId}.", tenantId);
+                }
+            }
+
+            var hasTenantParams = await Task.Run(() => client.Exists(tenantParamsPath), ct);
+            if (hasTenantParams)
+            {
+                try
+                {
+                    var paramsBytes = await DownloadSftpBytesAsync(client, tenantParamsPath, ct);
+                    var parameters = JsonSerializer.Deserialize<TenantParametersDto>(Encoding.UTF8.GetString(paramsBytes), _jsonOptions);
+                    if (parameters != null)
+                    {
+                        snapshot.TenantParameters = parameters;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Falha ao baixar/desserializar tenant-parameters.json via SFTP para tenant {TenantId}.", tenantId);
+                }
+            }
+
+            return snapshot;
         }
         catch (Exception ex)
         {

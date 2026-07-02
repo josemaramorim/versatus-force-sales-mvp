@@ -96,6 +96,7 @@ public sealed class CatalogSyncJob : BackgroundService
                     List<ClienteCatalogDto> mergedClientes;
                     List<ProdutoCatalogDto> mergedProdutos;
                     List<TabelaPrecoCatalogDto> mergedPrecos;
+                    List<TabelaPrecoMetadataDto> mergedPrecosMetadata;
                     List<CondicaoPagamentoCatalogDto> mergedCondicoes;
 
                     if (snapshot.IsFullSync)
@@ -103,6 +104,7 @@ public sealed class CatalogSyncJob : BackgroundService
                         mergedClientes = snapshot.Clientes.ToList();
                         mergedProdutos = snapshot.Produtos.ToList();
                         mergedPrecos = snapshot.TabelasPreco.ToList();
+                        mergedPrecosMetadata = snapshot.TabelasPrecoMetadata.ToList();
                         mergedCondicoes = snapshot.CondicoesPagamento.ToList();
                     }
                     else
@@ -110,11 +112,13 @@ public sealed class CatalogSyncJob : BackgroundService
                         var existingClientes = await GetExistingListAsync<ClienteCatalogDto>(redisDb, $"catalogo:{tenantId}:clientes");
                         var existingProdutos = await GetExistingListAsync<ProdutoCatalogDto>(redisDb, $"catalogo:{tenantId}:produtos");
                         var existingPrecos = await GetExistingListAsync<TabelaPrecoCatalogDto>(redisDb, $"catalogo:{tenantId}:precos");
+                        var existingPrecosMetadata = await GetExistingListAsync<TabelaPrecoMetadataDto>(redisDb, $"catalogo:{tenantId}:tabelas-preco-metadata");
                         var existingCondicoes = await GetExistingListAsync<CondicaoPagamentoCatalogDto>(redisDb, $"catalogo:{tenantId}:condicoes-pagamento");
 
                         mergedClientes = MergeDelta(existingClientes, snapshot.Clientes, c => c.ClienteIdERP);
                         mergedProdutos = MergeDelta(existingProdutos, snapshot.Produtos, p => p.ProdutoIdERP);
                         mergedPrecos = MergeDelta(existingPrecos, snapshot.TabelasPreco, tp => tp.TabelaPrecoEstoqueIdERP);
+                        mergedPrecosMetadata = MergeDelta(existingPrecosMetadata, snapshot.TabelasPrecoMetadata, tp => tp.TabelaPrecoIdERP);
                         mergedCondicoes = MergeDelta(existingCondicoes, snapshot.CondicoesPagamento, cp => cp.CondicaoPagtoIdERP);
                     }
 
@@ -122,18 +126,23 @@ public sealed class CatalogSyncJob : BackgroundService
                     var clientesJson = JsonSerializer.Serialize(mergedClientes, _jsonOptions);
                     var produtosJson = JsonSerializer.Serialize(mergedProdutos, _jsonOptions);
                     var precosJson = JsonSerializer.Serialize(mergedPrecos, _jsonOptions);
+                    var precosMetadataJson = JsonSerializer.Serialize(mergedPrecosMetadata, _jsonOptions);
                     var condicoesJson = JsonSerializer.Serialize(mergedCondicoes, _jsonOptions);
+                    var tenantParamsJson = JsonSerializer.Serialize(snapshot.TenantParameters, _jsonOptions);
 
                     await redisDb.StringSetAsync($"catalogo:{tenantId}:clientes", clientesJson);
                     await redisDb.StringSetAsync($"catalogo:{tenantId}:produtos", produtosJson);
                     await redisDb.StringSetAsync($"catalogo:{tenantId}:precos", precosJson);
+                    await redisDb.StringSetAsync($"catalogo:{tenantId}:tabelas-preco-metadata", precosMetadataJson);
                     await redisDb.StringSetAsync($"catalogo:{tenantId}:condicoes-pagamento", condicoesJson);
+                    await redisDb.StringSetAsync($"catalogo:{tenantId}:tenant-parameters", tenantParamsJson);
 
-                    _logger.LogInformation("Catálogo sincronizado com sucesso para tenant {TenantId}. IsFullSync: {IsFullSync}. Clientes: {Clientes} (Delta: {DeltaClientes}), Produtos: {Produtos} (Delta: {DeltaProdutos}), Preços: {Precos} (Delta: {DeltaPrecos}), Condições: {Condicoes} (Delta: {DeltaCondicoes})",
+                    _logger.LogInformation("Catálogo sincronizado com sucesso para tenant {TenantId}. IsFullSync: {IsFullSync}. Clientes: {Clientes} (Delta: {DeltaClientes}), Produtos: {Produtos} (Delta: {DeltaProdutos}), Preços: {Precos} (Delta: {DeltaPrecos}), Metadados Tabelas: {MetadadosPreco} (Delta: {DeltaMetadadosPreco}), Condições: {Condicoes} (Delta: {DeltaCondicoes})",
                         tenantId, snapshot.IsFullSync, 
                         mergedClientes.Count, snapshot.Clientes.Count, 
                         mergedProdutos.Count, snapshot.Produtos.Count, 
                         mergedPrecos.Count, snapshot.TabelasPreco.Count, 
+                        mergedPrecosMetadata.Count, snapshot.TabelasPrecoMetadata.Count,
                         mergedCondicoes.Count, snapshot.CondicoesPagamento.Count);
 
                     // Opcional: Invalida o cache de buscas de catálogo na API para forçar releitura dos dados novos

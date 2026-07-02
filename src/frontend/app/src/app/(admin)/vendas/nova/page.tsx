@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ClientSearch } from '@/components/vendas/ClientSearch'
 import { OrderTable } from '@/components/vendas/OrderTable'
 import { ItemModal } from '@/components/vendas/ItemModal'
-import { ItemPedido, Cliente, CondicaoPagamento } from '@/types/vendas'
-import { criarPedidoApi, getCondicoesPagamento } from '@/lib/vendaApi'
+import { ItemPedido, Cliente, CondicaoPagamento, TenantParameters } from '@/types/vendas'
+import { criarPedidoApi, getCondicoesPagamento, getTenantParameters } from '@/lib/vendaApi'
 import { 
   Plus, 
   ShoppingCart, 
@@ -52,6 +52,7 @@ export default function NovaVendaPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isOnline, setIsOnline] = useState(true)
   const [condicoes, setCondicoes] = useState<CondicaoPagamento[]>([])
+  const [tenantParameters, setTenantParameters] = useState<TenantParameters>({ tabelaPrecoIdDefault: 1, permiteAlterarTabelaPreco: true })
 
   useEffect(() => {
     getCondicoesPagamento()
@@ -61,6 +62,10 @@ export default function NovaVendaPage() {
           setCondicaoPagamento(data[0].condicaoPagtoIdERP.toString())
         }
       })
+      .catch(console.error)
+
+    getTenantParameters()
+      .then(setTenantParameters)
       .catch(console.error)
   }, [])
 
@@ -117,6 +122,7 @@ export default function NovaVendaPage() {
           quantidade: i.quantidade,
           precoUnitario: i.valorUnitario,
           desconto: i.valorDesconto,
+          tabelaPrecoEstoqueIdERP: i.tabelaPrecoEstoqueIdERP,
         })),
         condicaoPagamento: {
           condicaoPagamentoId: selectedCond ? `cond-${selectedCond.condicaoPagtoIdERP}` : 'cond-1',
@@ -315,6 +321,7 @@ export default function NovaVendaPage() {
         isOpen={isOpen} 
         onClose={onClose} 
         onAdd={handleAddItem} 
+        tenantParameters={tenantParameters}
       />
 
       {/* Sticky Bottom Summary Sheet (Mobile/Tablet only) */}

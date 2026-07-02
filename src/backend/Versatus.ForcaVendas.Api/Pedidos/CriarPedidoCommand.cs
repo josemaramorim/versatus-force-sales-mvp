@@ -58,7 +58,8 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
                 Quantidade = item.Quantidade,
                 PrecoUnitario = item.PrecoUnitario,
                 Desconto = item.Desconto,
-                Total = totalItem
+                Total = totalItem,
+                TabelaPrecoEstoqueIdERP = item.TabelaPrecoEstoqueIdERP ?? 0
             };
         }).ToList();
 
@@ -131,7 +132,7 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
                             return new OrderItemExportDto
                             {
                                 ProdutoIdERP = ParseErpId(item.ProdutoId, "prod-"),
-                                TabelaPrecoEstoqueIdERP = ParseErpId(item.Sku, "sku-"),
+                                TabelaPrecoEstoqueIdERP = item.TabelaPrecoEstoqueIdERP != 0 ? item.TabelaPrecoEstoqueIdERP : ParseErpId(item.Sku, "sku-"),
                                 SiglaUnidade = "UN",
                                 Quantidade = item.Quantidade,
                                 PrecoUnitario = item.PrecoUnitario,

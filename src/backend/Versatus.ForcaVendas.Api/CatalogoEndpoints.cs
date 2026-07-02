@@ -116,6 +116,54 @@ public static class CatalogoEndpoints
         .WithName("GetCondicoesPagamento")
         .WithOpenApi();
 
+        app.MapGet("/catalogo/tabelas-preco-metadata", async (
+            ITenantContext tenantContext,
+            IConnectionMultiplexer redis,
+            CancellationToken cancellationToken) =>
+        {
+            if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var db = redis.GetDatabase();
+            var key = $"catalogo:{tenantContext.TenantId}:tabelas-preco-metadata";
+            var json = await db.StringGetAsync(key);
+
+            if (!json.HasValue)
+            {
+                return Results.Content("[]", "application/json");
+            }
+
+            return Results.Content(json!, "application/json");
+        })
+        .WithName("GetTabelasPrecoMetadata")
+        .WithOpenApi();
+
+        app.MapGet("/catalogo/tenant-parameters", async (
+            ITenantContext tenantContext,
+            IConnectionMultiplexer redis,
+            CancellationToken cancellationToken) =>
+        {
+            if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var db = redis.GetDatabase();
+            var key = $"catalogo:{tenantContext.TenantId}:tenant-parameters";
+            var json = await db.StringGetAsync(key);
+
+            if (!json.HasValue)
+            {
+                return Results.Content("{\"tabelaPrecoIdDefault\":1,\"permiteAlterarTabelaPreco\":true}", "application/json");
+            }
+
+            return Results.Content(json!, "application/json");
+        })
+        .WithName("GetTenantParameters")
+        .WithOpenApi();
+
         return app;
     }
 }

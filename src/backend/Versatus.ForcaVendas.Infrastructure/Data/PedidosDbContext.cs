@@ -67,6 +67,7 @@ public sealed class PedidosDbContext : DbContext
             entity.Property(x => x.PrecoUnitario).HasPrecision(18, 2);
             entity.Property(x => x.Desconto).HasPrecision(18, 2);
             entity.Property(x => x.Total).HasPrecision(18, 2);
+            entity.Property(x => x.TabelaPrecoEstoqueIdERP).IsRequired();
 
             entity.HasOne(x => x.Pedido)
                 .WithMany(x => x.Itens)

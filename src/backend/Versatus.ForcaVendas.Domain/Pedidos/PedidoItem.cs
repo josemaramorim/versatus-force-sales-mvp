@@ -11,6 +11,7 @@ public sealed class PedidoItem
     public decimal PrecoUnitario { get; set; }
     public decimal Desconto { get; set; }
     public decimal Total { get; set; }
+    public int TabelaPrecoEstoqueIdERP { get; set; }
 
     public Pedido? Pedido { get; set; }
 }

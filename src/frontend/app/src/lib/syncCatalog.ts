@@ -1,5 +1,5 @@
 import { db } from './offlineDb';
-import { searchClientes, searchProdutos, getTabelasPreco, getCondicoesPagamento } from './vendaApi';
+import { searchClientes, searchProdutos, getTabelasPreco, getCondicoesPagamento, getTabelasPrecoMetadata, getTenantParameters } from './vendaApi';
 
 export interface SyncStatus {
   lastSyncedAt: string | null;
@@ -24,21 +24,25 @@ export async function syncCatalogLocal(): Promise<boolean> {
     
     // 1. Buscar dados atualizados da API em paralelo
     // Chamamos com limit de 100000 para trazer a listagem completa
-    const [clientes, produtos, tabelasPreco, condicoes] = await Promise.all([
+    const [clientes, produtos, tabelasPreco, precosMetadata, tenantParams, condicoes] = await Promise.all([
       searchClientes(undefined, 100000),
       searchProdutos(undefined, 100000),
       getTabelasPreco(),
+      getTabelasPrecoMetadata(),
+      getTenantParameters(),
       getCondicoesPagamento()
     ]);
 
-    console.log(`[Offline Sync] Dados baixados. Clientes: ${clientes.length}, Produtos: ${produtos.length}, Tabelas Preço: ${tabelasPreco.length}, Condições Pagto: ${condicoes.length}`);
+    console.log(`[Offline Sync] Dados baixados. Clientes: ${clientes.length}, Produtos: ${produtos.length}, Tabelas Preço: ${tabelasPreco.length}, Metadados Tabelas: ${precosMetadata.length}, Condições Pagto: ${condicoes.length}`);
 
     // 2. Persistir no IndexedDB usando transação do Dexie para consistência
-    await localDb.transaction('rw', [localDb.clientes, localDb.produtos, localDb.tabelasPreco, localDb.condicoesPagamento], async () => {
+    await localDb.transaction('rw', [localDb.clientes, localDb.produtos, localDb.tabelasPreco, localDb.tabelasPrecoMetadata, localDb.tenantParameters, localDb.condicoesPagamento], async () => {
       // Limpa as tabelas antes de repopular para evitar lixo acumulado
       await localDb.clientes.clear();
       await localDb.produtos.clear();
       await localDb.tabelasPreco.clear();
+      await localDb.tabelasPrecoMetadata.clear();
+      await localDb.tenantParameters.clear();
       await localDb.condicoesPagamento.clear();
 
       if (clientes.length > 0) {
@@ -49,6 +53,12 @@ export async function syncCatalogLocal(): Promise<boolean> {
       }
       if (tabelasPreco.length > 0) {
         await localDb.tabelasPreco.bulkPut(tabelasPreco);
+      }
+      if (precosMetadata.length > 0) {
+        await localDb.tabelasPrecoMetadata.bulkPut(precosMetadata);
+      }
+      if (tenantParams) {
+        await localDb.tenantParameters.put({ id: 1, ...tenantParams });
       }
       if (condicoes.length > 0) {
         await localDb.condicoesPagamento.bulkPut(condicoes);
