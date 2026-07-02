@@ -284,7 +284,7 @@ Edite o arquivo `appsettings.json` na pasta do ErpAdapter com os dados do ambien
 | `ConnectionStrings.ErpDatabase` → `Server=` | Nome ou IP do servidor SQL Server na rede interna |
 | `ConnectionStrings.ErpDatabase` → `Password=` | Senha do usuário SQL Server |
 | `Integration.Ftp.Host` | Endereço da VPS (ex: `vps6755.panel.icontainer.net`) |
-| `Auth.Tenants` | UUID do tenant para integração no ERP Adapter (configuração opcional na API) |
+| `Auth.Tenants` | UUID do tenant para integração no ERP Adapter (não utilizado na API) |
 | `ErpAdapter.Tenants.<UUID>.FilialId` | ID da filial (`IDGLOFILIAL`) no banco do ERP |
 
 ### 6.4. Testar a execução manual

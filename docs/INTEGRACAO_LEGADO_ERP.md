@@ -530,7 +530,7 @@ src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/appsettings.json
 | `Integration.Ftp.Host` | IP ou hostname do servidor que tem o FTP (onde está o Force Sales) |
 | `Integration.Ftp.Port` | Porta FTP (padrão 21) ou SFTP (padrão 22) |
 | `Integration.Ftp.UseSftp` | `true` para SFTP seguro, `false` para FTP simples |
-| `Auth.Tenants` | Lista de UUIDs dos tenants para integração no ERP Adapter. Na API, esta configuração é opcional (a API valida dinamicamente via banco PostgreSQL). |
+| `Auth.Tenants` | Lista de UUIDs dos tenants para integração no ERP Adapter. (Não é utilizada na API, que é 100% dinâmica via banco de dados). |
 | `ErpAdapter.CatalogExportIntervalSeconds` | Frequência de exportação do catálogo (segundos). Padrão: 300 (5 min) |
 | `ErpAdapter.OrderImportIntervalSeconds` | Frequência de verificação de pedidos novos (segundos). Padrão: 10 |
 | `ErpAdapter.Tenants.<UUID>.FilialId` | ID da filial (`IDGLOFILIAL`) no SQL Server para este tenant |

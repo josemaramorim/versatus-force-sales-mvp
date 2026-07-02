@@ -51,19 +51,6 @@ public static class AuthEndpoints
                 Password = ""
             };
 
-            // Se a lista estática de tenants estiver configurada, valida contra ela.
-            // Caso contrário (vazia/produção), a API é dinâmica e valida apenas pelo banco de dados (assinaturas).
-            if (authOptions.Tenants.Count > 0)
-            {
-                var tenantExists = authOptions.Tenants
-                    .Any(t => string.Equals(t, user.TenantId, StringComparison.OrdinalIgnoreCase));
-
-                if (!tenantExists)
-                {
-                    return Results.Unauthorized();
-                }
-            }
-
             var subscription = await subscriptionRepository.GetByTenantIdAsync(user.TenantId, cancellationToken);
             if (subscription is null || !subscription.IsActive)
             {

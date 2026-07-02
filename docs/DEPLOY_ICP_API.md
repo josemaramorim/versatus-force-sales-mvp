@@ -288,11 +288,6 @@ AUTH__JWT__ACCESSTOKENMINUTES=60
 AUTH__JWT__REFRESHTOKENDAYS=7
 AUTH__JWT__SESSIONTIMEOUTMINUTES=20
 
-# Tenants (Opcional - Lista de UUIDs para whitelist estática. 
-# Se omitido ou vazio, a validação é dinâmica pelo banco PostgreSQL (tabela assinaturas), 
-# evitando necessidade de redeploys/restarts da API ao cadastrar novos tenants)
-# AUTH__TENANTS__0=00000000-0000-0000-0000-000000000001
-
 # CORS — Origens permitidas do frontend Next.js (separadas por vírgula)
 # Permite o localhost (HTTP) e o IP/domínio da sua VPS em HTTPS onde o frontend está rodando
 CORS__ALLOWEDORIGINS=http://localhost:3000,http://localhost:3001,https://vps9526.panel.icontainer.net:3000,https://23.80.91.77:3000

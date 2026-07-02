@@ -41,11 +41,6 @@ public class AuthContractTests : IClassFixture<WebApplicationFactory<Program>>
 
                 var authOptions = new AuthOptions
                 {
-                    Tenants = new()
-                    {
-                        "00000000-0000-0000-0000-000000000001",
-                        "00000000-0000-0000-0000-000000000002"
-                    },
                     Jwt = new JwtOptions
                     {
                         Issuer = "versatus-force-sales",

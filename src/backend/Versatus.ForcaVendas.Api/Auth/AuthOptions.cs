@@ -5,7 +5,6 @@ public sealed class AuthOptions
     public const string SectionName = "Auth";
 
     public JwtOptions Jwt { get; init; } = new();
-    public List<string> Tenants { get; init; } = [];
     public List<DemoUser> Users { get; init; } = [];
 }
 
