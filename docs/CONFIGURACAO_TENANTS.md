@@ -17,16 +17,16 @@ No arquivo `appsettings.json` da API, temos a seguinte seção:
 }
 ```
 
-### Para que serve?
-Esta lista atua como uma **lista de permissões (whitelist)** de segurança e licenciamento em nível de servidor. 
-Quando um vendedor tenta fazer login na aplicação móvel/web:
-1. A API busca o usuário no banco de dados.
-2. Recupera o `TenantId` associado àquele usuário.
-3. Verifica se o `TenantId` está presente nesta lista `Auth:Tenants`.
-4. Se o ID **não** estiver na lista, a API bloqueia a autenticação imediatamente com `401 Unauthorized` (mesmo se o usuário e senha estiverem corretos).
+### Para que serve? (Opcional / Dinâmico)
+Esta lista atua como uma **lista de permissões (whitelist)** estática opcional. 
+
+1. **Se a lista `Auth:Tenants` estiver configurada (tiver itens)**: A API verifica se o `TenantId` do usuário está presente na lista. Se não estiver, bloqueia o acesso com `401 Unauthorized`.
+2. **Se a lista `Auth:Tenants` estiver vazia ou for omitida (Recomendado para Produção)**: A API valida a assinatura do tenant diretamente no banco de dados PostgreSQL (tabela `assinaturas`).
+
+Dessa forma, em ambiente de produção (como no **Painel ICP**), você pode omitir ou deixar a lista vazia na API. Para cadastrar um novo tenant, basta adicionar o registro correspondente no banco PostgreSQL (tabela `assinaturas`), e o login será liberado de forma totalmente dinâmica, **sem necessidade de alterar configurações ou reiniciar a API**.
 
 ### Como configurar?
-Basta adicionar ou remover os identificadores únicos (UUIDs/GUIDs) dos tenants autorizados a acessar o sistema. Cada tenant deve ser inserido como uma string no array JSON.
+Para configurar a whitelist estática, adicione os identificadores únicos (UUIDs/GUIDs) dos tenants autorizados no array. Se preferir a validação dinâmica pelo banco de dados (sem reinicializações), deixe o array vazio ou remova a seção `"Tenants"` de `"Auth"`.
 
 ---
 
@@ -99,7 +99,8 @@ No seu painel de controle (Painel ICP), cadastre as variáveis da seguinte forma
 | `Auth__Tenants__1` | `00000000-0000-0000-0000-000000000002` |
 
 > [!NOTE]
-> Essa configuração aplica-se tanto na **API** quanto no **ERP Adapter**.
+> * **API**: Essa configuração de variável de ambiente é **opcional**. Se omitida ou vazia, a API valida os novos tenants dinamicamente consultando o banco de dados PostgreSQL.
+> * **ERP Adapter**: Essa configuração é **obrigatória** no adaptador local, pois o processo em background local necessita saber quais tenants deve exportar/importar ativamente.
 
 ### 3.2. Configurando o Mapeamento no ERP Adapter (`ErpAdapter:Tenants`)
 
