@@ -104,9 +104,8 @@ INTEGRATION__FTP__BASEPATH=/integration-sync
 INTEGRATION__FTP__CATALOGPOLLINTERVALSECONDS=300
 INTEGRATION__FTP__RESULTPOLLINTERVALSECONDS=30
 
-# Tenants ativos cadastrados (Lista de UUIDs das filiais autorizadas)
-AUTH__TENANTS__0=00000000-0000-0000-0000-000000000001
-AUTH__TENANTS__1=00000000-0000-0000-0000-000000000002
+# O Worker não necessita da configuração AUTH__TENANTS, pois busca todos
+# os tenants ativos de forma dinâmica diretamente do banco de dados (assinaturas).
 ```
 
 ---
