@@ -265,11 +265,12 @@ Edite o arquivo `appsettings.json` na pasta do ErpAdapter com os dados do ambien
   "ErpAdapter": {
     "CatalogExportIntervalSeconds": 300,
     "OrderImportIntervalSeconds": 10,
-    "UseSimulatedCatalog": false,
     "Tenants": {
       "00000000-0000-0000-0000-000000000001": {
         "FilialId": 1,
-        "FullSyncHour": 3
+        "FullSyncHour": 3,
+        "TabelaPrecoIdDefault": 1,
+        "PermiteAlterarTabelaPreco": true
       }
     }
   }

@@ -510,11 +510,12 @@ src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/appsettings.json
   "ErpAdapter": {
     "CatalogExportIntervalSeconds": 300,
     "OrderImportIntervalSeconds": 10,
-    "UseSimulatedCatalog": false,
     "Tenants": {
       "00000000-0000-0000-0000-000000000001": {
         "FilialId": 1,
-        "FullSyncHour": 3
+        "FullSyncHour": 3,
+        "TabelaPrecoIdDefault": 1,
+        "PermiteAlterarTabelaPreco": true
       }
     }
   }
@@ -532,9 +533,10 @@ src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/appsettings.json
 | `Auth.Tenants` | Lista de UUIDs dos tenants/empresas configurados no sistema |
 | `ErpAdapter.CatalogExportIntervalSeconds` | Frequência de exportação do catálogo (segundos). Padrão: 300 (5 min) |
 | `ErpAdapter.OrderImportIntervalSeconds` | Frequência de verificação de pedidos novos (segundos). Padrão: 10 |
-| `ErpAdapter.UseSimulatedCatalog` | `false` em produção (usa o SQL Server real) |
 | `ErpAdapter.Tenants.<UUID>.FilialId` | ID da filial (`IDGLOFILIAL`) no SQL Server para este tenant |
 | `ErpAdapter.Tenants.<UUID>.FullSyncHour` | Hora do dia (0-23) para rodar a carga total diária. Ex: `3` = 3h da manhã |
+| `ErpAdapter.Tenants.<UUID>.TabelaPrecoIdDefault` | ID da tabela de preço padrão do tenant (Ex: `1`) |
+| `ErpAdapter.Tenants.<UUID>.PermiteAlterarTabelaPreco` | `true` para permitir que o vendedor selecione outras tabelas no app, `false` para bloquear |
 
 ---
 

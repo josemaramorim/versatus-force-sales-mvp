@@ -87,11 +87,12 @@ Na pasta do projeto local do adaptador (`src/erp-adapter/Versatus.ForcaVendas.Er
   "ErpAdapter": {
     "CatalogExportIntervalSeconds": 300,
     "OrderImportIntervalSeconds": 10,
-    "UseSimulatedCatalog": false,
     "Tenants": {
       "00000000-0000-0000-0000-000000000001": {
         "FilialId": 1,
-        "FullSyncHour": 3
+        "FullSyncHour": 3,
+        "TabelaPrecoIdDefault": 1,
+        "PermiteAlterarTabelaPreco": true
       }
     }
   },
