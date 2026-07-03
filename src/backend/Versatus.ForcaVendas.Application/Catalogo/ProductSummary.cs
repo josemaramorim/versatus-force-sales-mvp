@@ -10,7 +10,8 @@ public sealed record ProductSummary(
     string Unit,
     decimal Price,
     decimal AvailableStock,
-    IReadOnlyList<PriceTableEntry>? PricesByTable = null);
+    IReadOnlyList<PriceTableEntry>? PricesByTable = null,
+    string? Categoria = null);
 
 public sealed record PriceTableEntry(
     int TabelaPrecoIdERP,

@@ -98,7 +98,8 @@ public sealed class RedisProductCatalogRepository(IConnectionMultiplexer redis) 
                                 p.SiglaUnidadeVenda,
                                 price,
                                 p.Saldo,
-                                pricesList);
+                                pricesList,
+                                p.Categoria ?? "Geral");
                         })
                         .ToList();
                 }
@@ -112,7 +113,7 @@ public sealed class RedisProductCatalogRepository(IConnectionMultiplexer redis) 
         return Array.Empty<ProductSummary>();
     }
 
-    private sealed record RedisProductItem(int ProdutoIdERP, string Descricao, string SiglaUnidadeVenda, decimal Saldo);
+    private sealed record RedisProductItem(int ProdutoIdERP, string Descricao, string SiglaUnidadeVenda, decimal Saldo, string? Categoria);
     private sealed record RedisPriceItem(
         int ProdutoIdERP, 
         int TabelaPrecoIdERP, 

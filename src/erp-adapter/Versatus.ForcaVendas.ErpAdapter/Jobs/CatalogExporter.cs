@@ -279,14 +279,17 @@ public sealed class CatalogExporter : BackgroundService
         // Produtos
         var produtosQuery = @"
             SELECT 
-                IDESTESTOQUE,
-                DESCRICAO,
-                COALESCE(SIGLAUNIDADEVENDA, 'UN') AS SIGLAUNIDADEVENDA,
-                COALESCE(SALDOATUALESTOQUE, 0) AS SALDOATUALESTOQUE,
-                COALESCE(DESCRICAOMARCA, '') AS DESCRICAOMARCA,
-                COALESCE(DESCRICAOFABRICANTE, '') AS DESCRICAOFABRICANTE
-            FROM VWRITEMESTOQUE
-            WHERE Ativo = 1 AND IDGLOFILIAL = @FilialId";
+                e.IDESTESTOQUE,
+                e.DESCRICAO,
+                COALESCE(e.SIGLAUNIDADEVENDA, 'UN') AS SIGLAUNIDADEVENDA,
+                COALESCE(e.SALDOATUALESTOQUE, 0) AS SALDOATUALESTOQUE,
+                COALESCE(e.DESCRICAOMARCA, '') AS DESCRICAOMARCA,
+                COALESCE(e.DESCRICAOFABRICANTE, '') AS DESCRICAOFABRICANTE,
+                COALESCE(eg.DESCRICAO, 'Geral') AS DESCRICAOGRUPO
+            FROM VWRITEMESTOQUE e
+            LEFT JOIN ESTPRODUTO ep ON e.IDESTPRODUTO = ep.IDESTPRODUTO
+            LEFT JOIN ESTGRUPO eg ON ep.IDESTGRUPO = eg.IDESTGRUPO
+            WHERE e.Ativo = 1 AND e.IDGLOFILIAL = @FilialId";
 
         if (ultimoSync.HasValue)
         {
@@ -297,9 +300,11 @@ public sealed class CatalogExporter : BackgroundService
                     COALESCE(e.SIGLAUNIDADEVENDA, 'UN') AS SIGLAUNIDADEVENDA,
                     COALESCE(e.SALDOATUALESTOQUE, 0) AS SALDOATUALESTOQUE,
                     COALESCE(e.DESCRICAOMARCA, '') AS DESCRICAOMARCA,
-                    COALESCE(e.DESCRICAOFABRICANTE, '') AS DESCRICAOFABRICANTE
+                    COALESCE(e.DESCRICAOFABRICANTE, '') AS DESCRICAOFABRICANTE,
+                    COALESCE(eg.DESCRICAO, 'Geral') AS DESCRICAOGRUPO
                 FROM VWRITEMESTOQUE e
                 INNER JOIN ESTPRODUTO ep ON e.IDESTPRODUTO = ep.IDESTPRODUTO
+                LEFT JOIN ESTGRUPO eg ON ep.IDESTGRUPO = eg.IDESTGRUPO
                 WHERE e.Ativo = 1 AND e.IDGLOFILIAL = @FilialId
                   AND (ep.DATAALTERACAO > @UltimoSync OR ep.DATAINCLUSAO > @UltimoSync)";
         }
@@ -326,7 +331,8 @@ public sealed class CatalogExporter : BackgroundService
                         AceitaDesconto = true,
                         DescontoMaximoPercentual = 15.00m,
                         Marca = reader.IsDBNull(4) ? null : reader.GetString(4),
-                        Fabricante = reader.IsDBNull(5) ? null : reader.GetString(5)
+                        Fabricante = reader.IsDBNull(5) ? null : reader.GetString(5),
+                        Categoria = ReadStringSafe(reader, 6, "Geral")
                     });
                 }
             }

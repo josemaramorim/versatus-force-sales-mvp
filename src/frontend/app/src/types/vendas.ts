@@ -5,6 +5,7 @@ export interface Produto {
   precoBase: number;
   precosPorTabela?: PriceTableEntry[];
   imagemUrl?: string;
+  categoria?: string;
 }
 
 export interface PriceTableEntry {

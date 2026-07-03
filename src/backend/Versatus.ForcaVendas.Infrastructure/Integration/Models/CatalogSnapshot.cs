@@ -45,6 +45,7 @@ public sealed class ProdutoCatalogDto
     public decimal DescontoMaximoPercentual { get; set; }
     public string? Marca { get; set; }
     public string? Fabricante { get; set; }
+    public string? Categoria { get; set; }
 }
 
 public sealed class TabelaPrecoCatalogDto

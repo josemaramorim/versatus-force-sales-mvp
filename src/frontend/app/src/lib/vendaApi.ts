@@ -112,6 +112,7 @@ interface ProductApiResponse {
   price: number
   availableStock: number
   pricesByTable?: PriceTableEntry[]
+  categoria?: string
 }
 
 export async function searchProdutos(q?: string, limit?: number): Promise<Produto[]> {
@@ -141,6 +142,7 @@ export async function searchProdutos(q?: string, limit?: number): Promise<Produt
       nome: p.name,
       precoBase: p.price,
       precosPorTabela: p.pricesByTable || [],
+      categoria: p.categoria || 'Geral'
     }))
 
     results.sort((a, b) => a.nome.localeCompare(b.nome))

@@ -24,7 +24,8 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter
+  ModalFooter,
+  Tooltip
 } from '@nextui-org/react'
 import { 
   Search, 
@@ -33,10 +34,11 @@ import {
   ChevronDown,
   FileText,
   DollarSign,
-  Boxes
+  Boxes,
+  Eye
 } from 'lucide-react'
 import { searchProdutos } from '@/lib/vendaApi'
-import { Produto } from '@/types/vendas'
+import { Produto, PriceTableEntry } from '@/types/vendas'
 import { Spinner } from '@nextui-org/react'
 
 const columns = [
@@ -153,7 +155,7 @@ export default function ProdutosPage() {
               isBordered: true,
               className: "bg-white"
             }}
-            description="Categoria: Bebidas"
+            description={produto.categoria ? `Categoria: ${produto.categoria}` : 'Categoria: Geral'}
             name={
               <button 
                 onClick={() => setSelectedProduct(produto)} 
@@ -172,9 +174,15 @@ export default function ProdutosPage() {
         )
       case "precoBase":
         return (
-          <p className="text-sm font-black text-slate-900 dark:text-white font-mono">
-            R$ {produto.precoBase.toFixed(2)}
-          </p>
+          <Tooltip content="Ver tabelas de preço" delay={500}>
+            <button 
+              onClick={() => setSelectedProduct(produto)}
+              className="text-sm font-black text-slate-900 dark:text-white font-mono hover:text-blue-500 transition-colors flex items-center gap-1.5 active:scale-95 group"
+            >
+              R$ {produto.precoBase.toFixed(2)}
+              <Eye className="h-3 w-3 text-slate-400 group-hover:text-blue-500 transition-colors" />
+            </button>
+          </Tooltip>
         )
       case "estoque":
         const hasStock = getProductStock(produto)
@@ -389,7 +397,7 @@ export default function ProdutosPage() {
                     <div className="flex-1">
                       <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Nome Comercial</label>
                       <p className="text-base font-black text-slate-900 dark:text-white leading-snug mt-0.5">{selectedProduct?.nome}</p>
-                      <p className="text-xs text-slate-400 font-bold mt-1">Categoria: Bebidas</p>
+                      <p className="text-xs text-slate-400 font-bold mt-1">Categoria: {selectedProduct?.categoria || 'Geral'}</p>
                     </div>
                   </div>
 
@@ -433,6 +441,79 @@ export default function ProdutosPage() {
                       <div className="flex items-center gap-1.5 mt-1 text-slate-700 dark:text-slate-300 text-sm font-bold">
                         <Boxes className="h-4 w-4 text-slate-400" />
                         <span>UN</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-100 dark:border-slate-800/60 my-4" />
+
+                  <div className="space-y-3">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Tabelas de Preço Vinculadas</label>
+                    <div className="max-h-[160px] overflow-y-auto pr-1">
+                      {/* Layout Mobile: cards empilhados */}
+                      <div className="flex flex-col gap-2 sm:hidden">
+                        {selectedProduct?.precosPorTabela && selectedProduct.precosPorTabela.length > 0 ? (
+                          selectedProduct.precosPorTabela.map((tabela: PriceTableEntry) => (
+                            <div 
+                              key={tabela.tabelaPrecoEstoqueIdERP}
+                              className="bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/60 rounded-xl p-3 flex items-center justify-between shadow-sm"
+                            >
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{tabela.descricao || 'Tabela de Preço'}</span>
+                                {tabela.isPromocional && (
+                                  <span className="w-fit text-[8px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-500 border border-rose-500/20 px-1.5 py-0.5 rounded-md mt-0.5">
+                                    Promoção
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-sm font-black font-mono text-blue-600 dark:text-blue-400">
+                                R$ {tabela.valorUnitario.toFixed(2)}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs font-medium text-slate-400 italic text-center py-2">Sem outras tabelas vinculadas.</p>
+                        )}
+                      </div>
+
+                      {/* Layout Tablet & Computadores: Tabela clássica */}
+                      <div className="hidden sm:block">
+                        {selectedProduct?.precosPorTabela && selectedProduct.precosPorTabela.length > 0 ? (
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                <th className="pb-2">Tabela</th>
+                                <th className="pb-2 text-center">Tipo</th>
+                                <th className="pb-2 text-right">Preço</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedProduct.precosPorTabela.map((tabela: PriceTableEntry) => (
+                                <tr key={tabela.tabelaPrecoEstoqueIdERP} className="border-b border-slate-100/50 dark:border-slate-800/30 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                  <td className="py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    {tabela.descricao || 'Tabela de Preço'}
+                                  </td>
+                                  <td className="py-2.5 text-center">
+                                    {tabela.isPromocional ? (
+                                      <span className="text-[8px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-500 border border-rose-500/20 px-1.5 py-0.5 rounded-md">
+                                        Promoção
+                                      </span>
+                                    ) : (
+                                      <span className="text-[8px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-1.5 py-0.5 rounded-md">
+                                        Normal
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 text-right text-xs font-black font-mono text-blue-600 dark:text-blue-400">
+                                    R$ {tabela.valorUnitario.toFixed(2)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-xs font-medium text-slate-400 italic text-center py-2">Sem outras tabelas vinculadas.</p>
+                        )}
                       </div>
                     </div>
                   </div>
