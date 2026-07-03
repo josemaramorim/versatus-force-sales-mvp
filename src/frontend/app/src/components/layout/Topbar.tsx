@@ -125,7 +125,9 @@ export function Topbar() {
               )}
 
               <span className="w-1 h-1 rounded-full bg-slate-700" />
-              <span className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-500 leading-none truncate">Filial: São Paulo</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-500 leading-none truncate">
+                {user?.companyName ? `Filial: ${user.companyName}` : 'Filial: São Paulo'}
+              </span>
             </div>
           </div>
         </div>

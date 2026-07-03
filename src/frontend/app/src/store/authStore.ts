@@ -5,6 +5,7 @@ interface AuthUser {
   userId: string
   username: string
   tenantId: string
+  companyName: string
 }
 
 interface AuthState {
@@ -23,6 +24,7 @@ function parseJwt(token: string): AuthUser | null {
       userId: payload.sub ?? '',
       username: payload.unique_name ?? payload.name ?? '',
       tenantId: payload.tenant_id ?? '',
+      companyName: payload.company_name ?? '',
     }
   } catch {
     return null

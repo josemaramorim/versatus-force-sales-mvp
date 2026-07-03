@@ -41,29 +41,30 @@ public static class AuthEndpoints
                 return Results.Unauthorized();
             }
 
-            var user = new DemoUser
+            var subscription = await subscriptionRepository.GetByTenantIdAsync(usuarioBanco.TenantId.ToString(), cancellationToken);
+            if (subscription is null || !subscription.IsActive)
+            {
+                return Results.StatusCode(StatusCodes.Status403Forbidden);
+            }
+
+            var user = new AuthenticatedUser
             {
                 UserId = usuarioBanco.Id.ToString(),
                 TenantId = usuarioBanco.TenantId.ToString(),
                 Username = usuarioBanco.Username,
                 Email = usuarioBanco.Email,
                 Role = usuarioBanco.Role,
+                CompanyName = subscription.CompanyName,
                 Password = ""
             };
-
-            var subscription = await subscriptionRepository.GetByTenantIdAsync(user.TenantId, cancellationToken);
-            if (subscription is null || !subscription.IsActive)
-            {
-                return Results.StatusCode(StatusCodes.Status403Forbidden);
-            }
 
             var activeSessions = await sessionStore.CountActiveAsync(user.TenantId, cancellationToken);
             if (!subscription.HasAvailableSeats(activeSessions))
             {
                 return Results.Problem(
-                    detail: "Limite de usuarios simultaneos atingido para este tenant.",
-                    statusCode: StatusCodes.Status403Forbidden,
-                    title: "Concurrent user limit reached");
+                     detail: "Limite de usuarios simultaneos atingido para este tenant.",
+                     statusCode: StatusCodes.Status403Forbidden,
+                     title: "Concurrent user limit reached");
             }
 
             var tokenPair = tokenService.Generate(user);
@@ -97,6 +98,7 @@ public static class AuthEndpoints
             IJwtTokenService tokenService,
             Versatus.ForcaVendas.Domain.Auth.IUsuarioRepository usuarioRepository,
             IRefreshTokenStore refreshTokenStore,
+            ITenantSubscriptionRepository subscriptionRepository,
             CancellationToken cancellationToken) =>
         {
             var errors = request.Validate();
@@ -122,13 +124,16 @@ public static class AuthEndpoints
                 return Results.Unauthorized();
             }
 
-            var user = new DemoUser
+            var subscription = await subscriptionRepository.GetByTenantIdAsync(usuarioBanco.TenantId.ToString(), cancellationToken);
+
+            var user = new AuthenticatedUser
             {
                 UserId = usuarioBanco.Id.ToString(),
                 TenantId = usuarioBanco.TenantId.ToString(),
                 Username = usuarioBanco.Username,
                 Email = usuarioBanco.Email,
                 Role = usuarioBanco.Role,
+                CompanyName = subscription?.CompanyName ?? string.Empty,
                 Password = ""
             };
 

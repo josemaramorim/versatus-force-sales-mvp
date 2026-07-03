@@ -9,12 +9,12 @@ namespace Versatus.ForcaVendas.Api.Auth;
 
 public interface IJwtTokenService
 {
-    TokenPair Generate(DemoUser user);
+    TokenPair Generate(AuthenticatedUser user);
 }
 
 public sealed class JwtTokenService(IOptions<AuthOptions> options) : IJwtTokenService
 {
-    public TokenPair Generate(DemoUser user)
+    public TokenPair Generate(AuthenticatedUser user)
     {
         var jwtOptions = options.Value.Jwt;
         var now = DateTimeOffset.UtcNow;
@@ -28,6 +28,7 @@ public sealed class JwtTokenService(IOptions<AuthOptions> options) : IJwtTokenSe
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.UniqueName, user.Username),
             new("tenant_id", user.TenantId),
+            new("company_name", user.CompanyName),
             new(System.Security.Claims.ClaimTypes.Role, user.Role),
             new(JwtRegisteredClaimNames.Jti, sessionId)
         };

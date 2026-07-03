@@ -5,7 +5,7 @@ public sealed class AuthOptions
     public const string SectionName = "Auth";
 
     public JwtOptions Jwt { get; init; } = new();
-    public List<DemoUser> Users { get; init; } = [];
+    public List<AuthenticatedUser> Users { get; init; } = [];
 }
 
 public sealed class JwtOptions
@@ -19,12 +19,13 @@ public sealed class JwtOptions
     public int SessionTimeoutMinutes { get; init; } = 20;
 }
 
-public sealed class DemoUser
+public sealed class AuthenticatedUser
 {
     public string UserId { get; init; } = string.Empty;
     public string TenantId { get; init; } = string.Empty;
     public string Username { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public string Role { get; init; } = "vendedor";
+    public string CompanyName { get; init; } = string.Empty;
     public string Password { get; init; } = string.Empty;
 }
