@@ -526,9 +526,10 @@ export default function NovaVendaPage() {
         isOpen={isConfirmLeaveOpen} 
         onClose={handleCancelLeave}
         backdrop="blur"
+        placement="center"
         classNames={{
           backdrop: "bg-slate-950/60 backdrop-blur-md",
-          base: "border border-white/10 bg-slate-900/90 text-white rounded-3xl p-4 shadow-2xl z-[99999]",
+          base: "border border-white/10 bg-slate-900/90 text-white rounded-3xl p-4 shadow-2xl z-[99999] mx-4",
         }}
       >
         <ModalContent>
@@ -548,18 +549,18 @@ export default function NovaVendaPage() {
                   Deseja realmente abandonar a operação?
                 </p>
               </ModalBody>
-              <ModalFooter className="flex items-center gap-3 justify-center pt-2">
+              <ModalFooter className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center pt-2 w-full">
                 <Button 
                   variant="flat" 
                   onPress={handleCancelLeave}
-                  className="px-6 py-4 bg-slate-800/80 hover:bg-slate-800 text-slate-300 font-bold rounded-xl active:scale-95 transition-transform"
+                  className="w-full sm:w-auto px-6 py-4 bg-slate-800/80 hover:bg-slate-800 text-slate-300 font-bold rounded-xl active:scale-95 transition-transform"
                 >
                   Permanecer no Pedido
                 </Button>
                 <Button 
                   color="danger" 
                   onPress={handleConfirmLeave}
-                  className="px-6 py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl active:scale-95 transition-transform uppercase tracking-wider text-xs"
+                  className="w-full sm:w-auto px-6 py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl active:scale-95 transition-transform uppercase tracking-wider text-xs"
                 >
                   Abandonar Pedido
                 </Button>
