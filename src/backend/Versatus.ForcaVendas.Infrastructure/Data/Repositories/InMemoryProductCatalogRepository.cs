@@ -30,7 +30,7 @@ public sealed class InMemoryProductCatalogRepository(IConnectionMultiplexer redi
             var cached = db.StringGet(cacheKey);
             if (cached.HasValue)
             {
-                var cachedProducts = JsonSerializer.Deserialize<List<ProductSummary>>(cached!);
+                var cachedProducts = JsonSerializer.Deserialize<List<ProductSummary>>((string)cached!);
                 if (cachedProducts is not null)
                 {
                     return Task.FromResult((IReadOnlyList<ProductSummary>)cachedProducts);

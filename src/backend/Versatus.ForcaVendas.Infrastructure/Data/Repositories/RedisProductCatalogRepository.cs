@@ -27,13 +27,13 @@ public sealed class RedisProductCatalogRepository(IConnectionMultiplexer redis) 
 
             if (prodJson.HasValue)
             {
-                var redisProducts = JsonSerializer.Deserialize<List<RedisProductItem>>(prodJson!, new JsonSerializerOptions
+                var redisProducts = JsonSerializer.Deserialize<List<RedisProductItem>>((string)prodJson!, new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
 
                 var redisPrices = priceJson.HasValue 
-                    ? JsonSerializer.Deserialize<List<RedisPriceItem>>(priceJson!, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+                    ? JsonSerializer.Deserialize<List<RedisPriceItem>>((string)priceJson!, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
                     : [];
 
                 if (redisProducts is not null && redisProducts.Count > 0)
@@ -45,7 +45,7 @@ public sealed class RedisProductCatalogRepository(IConnectionMultiplexer redis) 
                     {
                         try
                         {
-                            var tenantParams = JsonSerializer.Deserialize<TenantParametersDto>(tenantParamsJson!, new JsonSerializerOptions
+                            var tenantParams = JsonSerializer.Deserialize<TenantParametersDto>((string)tenantParamsJson!, new JsonSerializerOptions
                             {
                                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                             });

@@ -23,7 +23,7 @@ public sealed class RedisClientCatalogRepository(IConnectionMultiplexer redis) :
             var json = await db.StringGetAsync(key);
             if (json.HasValue)
             {
-                var redisItems = JsonSerializer.Deserialize<List<RedisClientItem>>(json!, new JsonSerializerOptions
+                var redisItems = JsonSerializer.Deserialize<List<RedisClientItem>>((string)json!, new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
