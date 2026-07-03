@@ -31,6 +31,7 @@ public class PedidosContractTests : IClassFixture<WebApplicationFactory<Program>
     {
         _factory = factory.WithWebHostBuilder(builder =>
         {
+            builder.UseSetting("DatabaseProvider", "InMemory");
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<ISessionStore>();

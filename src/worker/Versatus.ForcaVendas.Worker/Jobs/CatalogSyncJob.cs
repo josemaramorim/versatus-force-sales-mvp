@@ -169,7 +169,7 @@ public sealed class CatalogSyncJob : BackgroundService
         }
         try
         {
-            return JsonSerializer.Deserialize<List<T>>(json!, _jsonOptions) ?? new List<T>();
+            return JsonSerializer.Deserialize<List<T>>((string)json!, _jsonOptions) ?? new List<T>();
         }
         catch (Exception ex)
         {

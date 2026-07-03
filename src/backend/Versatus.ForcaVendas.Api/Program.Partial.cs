@@ -151,8 +151,14 @@ public partial class Program
     /// </summary>
     internal static void AddDataServices(WebApplicationBuilder builder)
     {
+        var dbProvider = builder.Configuration["DatabaseProvider"] ?? "Npgsql";
         builder.Services.AddDbContext<PedidosDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        {
+            if (dbProvider == "Npgsql")
+            {
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+            }
+        });
 
         builder.Services.AddSingleton<IProductCatalogRepository, RedisProductCatalogRepository>();
         builder.Services.AddSingleton<IClientCatalogRepository, RedisClientCatalogRepository>();
