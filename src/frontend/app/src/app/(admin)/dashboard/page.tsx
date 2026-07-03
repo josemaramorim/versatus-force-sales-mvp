@@ -112,7 +112,15 @@ export default function DashboardPage() {
   const ticketMedio = pedidos.length > 0 ? totalValue / pedidos.length : 0
 
   // 3. Pedidos Pendentes
-  const pendingOrders = pedidos.filter(p => p.status === 'pendente_sync' || p.status === 'erro_sync' || p.status === 'rascunho' || p.status === 'pendente')
+  const pendingOrders = pedidos.filter(p => 
+    p.status === 'pendente_sync' || 
+    p.status === 'erro_sync' || 
+    p.status === 'rascunho' || 
+    p.status === 'pendente' || 
+    p.status === 'enviado' || 
+    p.status === 'erro' || 
+    p.status === 'offline'
+  )
   const pendingOrdersCount = pendingOrders.length
 
   const activeKpis = [
