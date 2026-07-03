@@ -126,19 +126,20 @@ Para implantar a aplicação no servidor do cliente, gere o pacote de publicaç�
 
 2. Gere o pacote de publicação em modo Release. Você tem duas opções de publicação:
 
-   * **Opção A: Publicação Autossuficiente (Recomendado)**
-     Esta opção embutirá o próprio runtime do .NET 10 dentro da pasta de publicação. O ERP Adapter funcionará no servidor do cliente **mesmo que eles não tenham o .NET instalado**!
+   * **Opção A: Publicação Autossuficiente como Arquivo Único (Altamente Recomendado)**
+     Esta opção embutirá o próprio runtime do .NET 10 e todas as dependências nativas (como o driver do SQL Server) dentro de um **único arquivo executável `.exe`**. Isso evita erros de arquivos ausentes (como a pasta `runtimes`) ao copiar os arquivos para o cliente!
      ```powershell
-     dotnet publish -c Release -r win-x64 --self-contained true -o ./publish
+     dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o ./publish
      ```
+     *Com esta opção, você só precisará copiar o arquivo `Versatus.ForcaVendas.ErpAdapter.exe` e os arquivos `appsettings*.json` para o servidor.*
    
    * **Opção B: Publicação Dependente do Framework**
-     Esta opção gera arquivos mais leves, mas exige que o servidor do cliente tenha o runtime do .NET 10.0 (x64) pré-instalado.
+     Esta opção gera múltiplos arquivos `.dll` mais leves, mas exige que o servidor do cliente tenha o runtime do .NET 10.0 (x64) pré-instalado.
      ```powershell
      dotnet publish -c Release -o ./publish
      ```
 
-Toda a aplicação compilada, incluindo o executável `Versatus.ForcaVendas.ErpAdapter.exe` (no Windows) ou `.dll` (no Linux/Windows) e o arquivo `appsettings.Production.json` estarão localizados na pasta `./publish/`.
+Toda a aplicação compilada e o arquivo `appsettings.Production.json` estarão localizados na pasta `./publish/`.
 
 ---
 
