@@ -6,6 +6,8 @@ export interface Produto {
   precosPorTabela?: PriceTableEntry[];
   imagemUrl?: string;
   categoria?: string;
+  saldo?: number;
+  unidade?: string;
 }
 
 export interface PriceTableEntry {

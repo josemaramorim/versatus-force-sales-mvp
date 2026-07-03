@@ -142,7 +142,9 @@ export async function searchProdutos(q?: string, limit?: number): Promise<Produt
       nome: p.name,
       precoBase: p.price,
       precosPorTabela: p.pricesByTable || [],
-      categoria: p.categoria || 'Geral'
+      categoria: p.categoria || 'Geral',
+      saldo: p.availableStock,
+      unidade: p.unit || 'UN'
     }))
 
     results.sort((a, b) => a.nome.localeCompare(b.nome))

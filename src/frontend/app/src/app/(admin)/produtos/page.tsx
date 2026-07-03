@@ -62,9 +62,7 @@ const sortFilterLabels: Record<string, string> = {
 }
 
 function getProductStock(produto: Produto): boolean {
-  // Stable deterministic stock status based on product properties
-  const score = (produto.nome.charCodeAt(0) + produto.sku.charCodeAt(produto.sku.length - 1)) % 3;
-  return score !== 0; // ~66% available, 33% out of stock
+  return (produto.saldo ?? 0) > 0;
 }
 
 export default function ProdutosPage() {
@@ -186,10 +184,13 @@ export default function ProdutosPage() {
         )
       case "estoque":
         const hasStock = getProductStock(produto)
+        const currentStock = produto.saldo ?? 0
         return (
           <div className="flex items-center gap-2">
             <div className={`h-2 w-2 rounded-full ${hasStock ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`} />
-            <p className="text-xs font-bold text-slate-500">{hasStock ? 'Disponível' : 'Esgotado'}</p>
+            <p className="text-xs font-bold text-slate-500">
+              {hasStock ? `${currentStock} ${produto.unidade || 'UN'}` : 'Esgotado'}
+            </p>
           </div>
         )
       default:
