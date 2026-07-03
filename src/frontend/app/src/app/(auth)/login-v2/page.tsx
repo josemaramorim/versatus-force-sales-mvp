@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { login } from '@/lib/auth'
+import { login, clearOfflineDatabase } from '@/lib/auth'
 import { Loader2, AlertCircle, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect } from 'react'
@@ -26,7 +26,12 @@ export default function LoginV2Page() {
   const [serverError, setServerError] = useState<string | null>(null)
 
   // Avoid hydration mismatch
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    setMounted(true)
+    clearOfflineDatabase().catch((err) => {
+      console.error('[LoginV2Page] Erro ao limpar base local:', err)
+    })
+  }, [])
 
   const {
     register,

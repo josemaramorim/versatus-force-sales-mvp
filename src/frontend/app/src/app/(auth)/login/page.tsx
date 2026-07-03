@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { login } from '@/lib/auth'
+import { login, clearOfflineDatabase } from '@/lib/auth'
 import { Loader2, AlertCircle, Moon, Sun, Eye, EyeOff, Zap } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
@@ -33,7 +33,12 @@ export default function LoginPage() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
 
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    setMounted(true)
+    clearOfflineDatabase().catch((err) => {
+      console.error('[LoginPage] Erro ao limpar base local:', err)
+    })
+  }, [])
 
   const {
     register,

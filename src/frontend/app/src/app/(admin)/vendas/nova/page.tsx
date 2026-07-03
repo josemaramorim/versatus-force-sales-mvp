@@ -53,6 +53,79 @@ export default function NovaVendaPage() {
   const [isOnline, setIsOnline] = useState(true)
   const [condicoes, setCondicoes] = useState<CondicaoPagamento[]>([])
   const [tenantParameters, setTenantParameters] = useState<TenantParameters>({ tabelaPrecoIdDefault: 1, permiteAlterarTabelaPreco: true })
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Verifica se o formulário/pedido está modificado para proteção de navegação
+  const isDirty = useMemo(() => {
+    if (isSaving) return false
+    return selectedCliente !== null || items.length > 0 || observacoes.length > 0 || descontoGlobal !== 0 || acrescimoGlobal !== 0
+  }, [selectedCliente, items, observacoes, descontoGlobal, acrescimoGlobal, isSaving])
+
+  // 1. Interceptar reload, F5 ou fechamento de aba do navegador
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = 'Você tem alterações não salvas no pedido. Deseja realmente sair?'
+        return e.returnValue
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
+
+  // 2. Interceptar navegação do botão Voltar / Avançar do navegador (popstate)
+  useEffect(() => {
+    if (!isDirty) return
+
+    // Insere um estado dummy na pilha para consumir a ação de voltar
+    window.history.pushState(null, '', window.location.href)
+
+    const handlePopState = () => {
+      const confirmLeave = window.confirm(
+        'Você tem alterações não salvas no pedido. Se sair agora, perderá todas as informações digitadas. Deseja realmente sair?'
+      )
+
+      if (confirmLeave) {
+        router.back()
+      } else {
+        // Recoloca o estado dummy na pilha
+        window.history.pushState(null, '', window.location.href)
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [isDirty, router])
+
+  // 3. Interceptar cliques em links internos do Next.js (ex: sidebar)
+  useEffect(() => {
+    if (!isDirty) return
+
+    const handleAnchorClick = (e: MouseEvent) => {
+      let target = e.target as HTMLElement | null
+      while (target && target.tagName !== 'A') {
+        target = target.parentElement
+      }
+
+      if (target && target.tagName === 'A') {
+        const href = target.getAttribute('href')
+        if (href && href.startsWith('/') && href !== '/vendas/nova' && !href.startsWith('#')) {
+          e.preventDefault()
+          const confirmLeave = window.confirm(
+            'Você tem alterações não salvas no pedido. Se sair agora, perderá todas as informações digitadas. Deseja realmente sair?'
+          )
+          if (confirmLeave) {
+            router.push(href)
+          }
+        }
+      }
+    }
+
+    // Registra na fase de captura (true) para interceptar antes do roteador do Next.js processar o clique
+    document.addEventListener('click', handleAnchorClick, true)
+    return () => document.removeEventListener('click', handleAnchorClick, true)
+  }, [isDirty, router])
 
   useEffect(() => {
     getCondicoesPagamento()
@@ -113,6 +186,7 @@ export default function NovaVendaPage() {
     primeiroVencimento.setDate(primeiroVencimento.getDate() + (dias > 0 ? dias : 30))
 
     try {
+      setIsSaving(true)
       await criarPedidoApi({
         clienteId: selectedCliente.id,
         itens: items.map(i => ({
@@ -133,6 +207,7 @@ export default function NovaVendaPage() {
       })
       router.push('/pedidos')
     } catch {
+      setIsSaving(false)
       setSubmitError('Erro ao registrar pedido. Tente novamente.')
     } finally {
       setIsSubmitting(false)
