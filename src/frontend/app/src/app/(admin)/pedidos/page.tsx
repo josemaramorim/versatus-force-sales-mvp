@@ -20,7 +20,12 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  Pagination
+  Pagination,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter
 } from '@nextui-org/react'
 import { 
   Search, 
@@ -32,7 +37,8 @@ import {
   Trash2, 
   Download,
   ClipboardList,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react'
 
 const columns = [
@@ -102,6 +108,9 @@ const statusFilterLabels: Record<string, string> = {
 }
 
 export default function PedidosPage() {
+  const [isAlertOpen, setIsAlertOpen] = React.useState(false)
+  const [alertTitle, setAlertTitle] = React.useState('')
+  const [alertMessage, setAlertMessage] = React.useState('')
   const [filterValue, setFilterValue] = React.useState("")
   const [orders, setOrders] = React.useState<any[]>([])
   const [dateFilter, setDateFilter] = React.useState<'hoje' | 'ontem' | '7dias' | 'este-mes' | 'todos' | 'custom'>('hoje')
@@ -124,7 +133,9 @@ export default function PedidosPage() {
           console.error('Erro ao excluir pedido local:', err)
         }
       } else {
-        alert('Pedidos já integrados com o servidor não podem ser excluídos pelo vendedor.')
+        setAlertTitle('Operação Não Permitida')
+        setAlertMessage('Pedidos já integrados com o servidor não podem ser excluídos pelo vendedor.')
+        setIsAlertOpen(true)
       }
     } else if (actionKey === 'retentar') {
       const { syncPendingOrders } = await import('@/lib/syncQueue')
@@ -132,7 +143,7 @@ export default function PedidosPage() {
       const list = await listPedidosApi()
       setOrders(list.map(mapPedidoToRow))
     }
-  }, [])
+  }, [setAlertTitle, setAlertMessage, setIsAlertOpen])
 
   useEffect(() => {
     let mounted = true
@@ -219,7 +230,9 @@ export default function PedidosPage() {
   // Export to CSV Action
   const handleExportCSV = React.useCallback(() => {
     if (filteredOrders.length === 0) {
-      alert("Nenhum pedido para exportar.")
+      setAlertTitle('Aviso')
+      setAlertMessage('Nenhum pedido para exportar.')
+      setIsAlertOpen(true)
       return
     }
     const headers = ["ID Pedido", "Cliente", "Valor", "Status", "Data de Criacao"]
@@ -240,7 +253,7 @@ export default function PedidosPage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }, [filteredOrders])
+  }, [filteredOrders, setAlertTitle, setAlertMessage, setIsAlertOpen])
 
   const renderCell = React.useCallback((order: any, columnKey: React.Key) => {
     const cellValue = order[columnKey as keyof typeof order]
@@ -546,6 +559,45 @@ export default function PedidosPage() {
           </div>
         </CardBody>
       </Card>
+
+      {/* Modal de Alerta Customizado Estilizado */}
+      <Modal 
+        isOpen={isAlertOpen} 
+        onClose={() => setIsAlertOpen(false)}
+        backdrop="blur"
+        placement="center"
+        classNames={{
+          backdrop: "bg-slate-950/60 backdrop-blur-md",
+          base: "border border-white/10 bg-slate-900/90 text-white rounded-3xl p-4 shadow-2xl z-[99999] mx-4",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 items-center pb-2 text-center">
+                <div className="w-12 h-12 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center mb-2 animate-pulse">
+                  <AlertTriangle className="h-6 w-6 text-rose-500" />
+                </div>
+                <h3 className="text-xl font-black italic tracking-tight premium-title">{alertTitle}</h3>
+              </ModalHeader>
+              <ModalBody className="py-4 text-center leading-relaxed">
+                <p className="text-slate-400 font-medium text-sm italic">
+                  {alertMessage}
+                </p>
+              </ModalBody>
+              <ModalFooter className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center pt-2 w-full">
+                <Button 
+                  color="primary" 
+                  onPress={() => setIsAlertOpen(false)}
+                  className="w-full sm:w-auto px-6 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl active:scale-95 transition-transform uppercase tracking-wider text-xs"
+                >
+                  Entendido
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   )
 }
