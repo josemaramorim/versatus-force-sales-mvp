@@ -13,7 +13,8 @@ import {
   TrendingDown,
   Calendar,
   Zap,
-  Power
+  Power,
+  AlertTriangle
 } from 'lucide-react'
 import { 
   Button, 
@@ -110,6 +111,10 @@ export default function DashboardPage() {
   const totalValue = pedidos.reduce((sum, p) => sum + p.totalLiquido, 0)
   const ticketMedio = pedidos.length > 0 ? totalValue / pedidos.length : 0
 
+  // 3. Pedidos Pendentes
+  const pendingOrders = pedidos.filter(p => p.status === 'pendente_sync' || p.status === 'erro_sync' || p.status === 'rascunho' || p.status === 'pendente')
+  const pendingOrdersCount = pendingOrders.length
+
   const activeKpis = [
     {
       label: 'Pedidos Hoje',
@@ -128,6 +133,15 @@ export default function DashboardPage() {
       icon: TrendingUp,
       color: 'bg-emerald-600',
       shadow: 'shadow-emerald-500/20'
+    },
+    {
+      label: 'Pedidos Pendentes',
+      value: pendingOrdersCount.toString(),
+      delta: 'Aguardando rede ou ajuste',
+      trend: 'neutral',
+      icon: AlertTriangle,
+      color: pendingOrdersCount > 0 ? 'bg-rose-600 animate-pulse' : 'bg-slate-700/80',
+      shadow: pendingOrdersCount > 0 ? 'shadow-rose-500/20' : 'shadow-slate-500/5'
     },
     {
       label: 'Clientes Sincronizados',
@@ -188,7 +202,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Section */}
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {activeKpis.map((kpi) => (
           <Card key={kpi.label} className="premium-card p-2" radius="none" shadow="none">
             <CardBody className="p-8 space-y-6">
@@ -217,8 +231,8 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-8">
           <div className="flex items-center justify-between px-4">
                <h3 className="text-xl premium-title flex items-center gap-3">
-                  <span className="w-1.5 h-8 bg-blue-600 rounded-full" />
-                  Listagem de Pedidos
+                  <span className="w-1.5 h-8 bg-rose-500 rounded-full animate-pulse" />
+                  Atenção / Pedidos Pendentes
                </h3>
                <Button as={Link} href="/pedidos" variant="light" color="primary" size="sm" className="font-black uppercase tracking-widest text-[10px] bg-slate-950/20 px-4 h-10 rounded-2xl">
                  Ver Histórico <ChevronRight className="h-4 w-4" />
@@ -235,7 +249,7 @@ export default function DashboardPage() {
                 </tr>
              </thead>
               <tbody>
-                  {pedidos.slice(0, 4).map((order) => {
+                  {pendingOrders.slice(0, 5).map((order) => {
                     const statusColor = statusColorMap[order.status || ''] || 'warning';
                     const statusLabel = statusLabelMap[order.status || ''] || order.status || 'Pendente Sync';
                    return (
@@ -262,10 +276,11 @@ export default function DashboardPage() {
                      </tr>
                    )
                  })}
-                 {pedidos.length === 0 && (
+                 {pendingOrders.length === 0 && (
                    <tr>
-                     <td colSpan={4} className="px-8 py-8 text-center font-bold text-slate-500">
-                       Nenhum pedido recente.
+                     <td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium italic text-sm">
+                       <p className="text-emerald-500 font-bold mb-2">🎉 Tudo em ordem!</p>
+                       Nenhum pedido requer sua atenção no momento.
                      </td>
                    </tr>
                  )}
