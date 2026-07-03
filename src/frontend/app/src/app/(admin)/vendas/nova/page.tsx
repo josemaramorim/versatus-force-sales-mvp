@@ -57,12 +57,35 @@ export default function NovaVendaPage() {
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isOnline, setIsOnline] = useState(true)
-  const [condicoes, setCondicoes] = useState<CondicaoPagamento[]>([])
+   const [condicoes, setCondicoes] = useState<CondicaoPagamento[]>([])
   const [tenantParameters, setTenantParameters] = useState<TenantParameters>({ tabelaPrecoIdDefault: 1, permiteAlterarTabelaPreco: true })
   const [isSaving, setIsSaving] = useState(false)
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false)
   const [pendingUrl, setPendingUrl] = useState<string | null>(null)
   const [isPopStateNavigation, setIsPopStateNavigation] = useState(false)
+  const [editingItem, setEditingItem] = useState<ItemPedido | null>(null)
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
+  const [itemIdToDelete, setItemIdToDelete] = useState<string | null>(null)
+
+  const itemToDelete = useMemo(() => items.find(i => i.id === itemIdToDelete), [items, itemIdToDelete])
+
+  function handleTriggerRemoveItem(id: string) {
+    setItemIdToDelete(id)
+    setIsConfirmDeleteOpen(true)
+  }
+
+  function handleConfirmRemoveItem() {
+    if (itemIdToDelete) {
+      setItems(prev => prev.filter(item => item.id !== itemIdToDelete))
+    }
+    setIsConfirmDeleteOpen(false)
+    setItemIdToDelete(null)
+  }
+
+  function handleCancelRemoveItem() {
+    setIsConfirmDeleteOpen(false)
+    setItemIdToDelete(null)
+  }
 
   // Verifica se o formulário/pedido está modificado para proteção de navegação
   const isDirty = useMemo(() => {
@@ -178,8 +201,9 @@ export default function NovaVendaPage() {
     setItems(prev => [item, ...prev])
   }
 
-  function handleRemoveItem(id: string) {
-    setItems(prev => prev.filter(item => item.id !== id))
+  function handleEditItem(item: ItemPedido) {
+    setItems(prev => prev.map(i => i.id === item.id ? item : i))
+    setEditingItem(null)
   }
 
   async function handleConfirmarPedido() {
@@ -291,7 +315,14 @@ export default function NovaVendaPage() {
                   </div>
 
                   <div className="p-4 lg:p-8 overflow-x-auto">
-                      <OrderTable items={items} onRemove={handleRemoveItem} /> 
+                      <OrderTable 
+                        items={items} 
+                        onRemove={handleTriggerRemoveItem} 
+                        onEdit={(item) => {
+                          setEditingItem(item)
+                          onOpen()
+                        }}
+                      /> 
                   </div>
               </div>
 
@@ -411,8 +442,13 @@ export default function NovaVendaPage() {
       {/* Item Modal (NextUI refactored) */}
       <ItemModal 
         isOpen={isOpen} 
-        onClose={onClose} 
+        onClose={() => {
+          setEditingItem(null)
+          onClose()
+        }} 
         onAdd={handleAddItem} 
+        onEdit={handleEditItem}
+        editingItem={editingItem}
         tenantParameters={tenantParameters}
       />
 
@@ -563,6 +599,55 @@ export default function NovaVendaPage() {
                   className="w-full sm:w-auto px-6 py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl active:scale-95 transition-transform uppercase tracking-wider text-xs"
                 >
                   Abandonar Pedido
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de Confirmação de Exclusão de Item Estilizado */}
+      <Modal 
+        isOpen={isConfirmDeleteOpen} 
+        onClose={handleCancelRemoveItem}
+        backdrop="blur"
+        placement="center"
+        classNames={{
+          backdrop: "bg-slate-950/60 backdrop-blur-md",
+          base: "border border-white/10 bg-slate-900/90 text-white rounded-3xl p-4 shadow-2xl z-[99999] mx-4",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 items-center pb-2 text-center">
+                <div className="w-12 h-12 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center mb-2 animate-bounce">
+                  <Trash2 className="h-6 w-6 text-rose-500" />
+                </div>
+                <h3 className="text-xl font-black italic tracking-tight premium-title">Excluir Item do Pedido?</h3>
+              </ModalHeader>
+              <ModalBody className="py-4 text-center leading-relaxed">
+                <p className="text-slate-400 font-medium text-sm italic">
+                  Você está prestes a remover o produto <strong className="text-slate-200">{itemToDelete?.nome}</strong> do seu pedido.
+                </p>
+                <p className="text-rose-500/80 font-bold text-xs uppercase tracking-wider mt-2">
+                  Esta ação não pode ser desfeita. Confirmar exclusão?
+                </p>
+              </ModalBody>
+              <ModalFooter className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center pt-2 w-full">
+                <Button 
+                  variant="flat" 
+                  onPress={handleCancelRemoveItem}
+                  className="w-full sm:w-auto px-6 py-4 bg-slate-800/80 hover:bg-slate-800 text-slate-300 font-bold rounded-xl active:scale-95 transition-transform"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  color="danger" 
+                  onPress={handleConfirmRemoveItem}
+                  className="w-full sm:w-auto px-6 py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl active:scale-95 transition-transform uppercase tracking-wider text-xs"
+                >
+                  Confirmar Exclusão
                 </Button>
               </ModalFooter>
             </>

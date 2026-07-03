@@ -48,10 +48,12 @@ interface ItemModalProps {
   isOpen: boolean
   onClose: () => void
   onAdd: (item: ItemPedido) => void
+  onEdit?: (item: ItemPedido) => void
+  editingItem?: ItemPedido | null
   tenantParameters: TenantParameters
 }
 
-export function ItemModal({ isOpen, onClose, onAdd, tenantParameters }: ItemModalProps) {
+export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantParameters }: ItemModalProps) {
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null)
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [productInputValue, setProductInputValue] = useState('')
@@ -129,17 +131,37 @@ export function ItemModal({ isOpen, onClose, onAdd, tenantParameters }: ItemModa
 
   useEffect(() => {
     if (isOpen) {
-      reset({
-        quantidade: 1,
-        valorDesconto: 0,
-        valorAcrescimo: 0,
-        naturezaOperacao: '5102',
-      })
-      setSelectedProduto(null)
-      setProductInputValue('')
-      setSelectedTabelaId(tenantParameters?.tabelaPrecoIdDefault || 1)
+      if (editingItem) {
+        const prod = produtos.find(p => p.id === editingItem.produtoId)
+        setSelectedProduto(prod || null)
+        setProductInputValue(editingItem.nome)
+        
+        const tabEntry = prod?.precosPorTabela?.find(p => p.tabelaPrecoEstoqueIdERP === editingItem.tabelaPrecoEstoqueIdERP)
+        setSelectedTabelaId(tabEntry?.tabelaPrecoIdERP || tenantParameters?.tabelaPrecoIdDefault || 1)
+
+        reset({
+          produtoId: editingItem.produtoId,
+          quantidade: editingItem.quantidade,
+          valorUnitario: editingItem.valorUnitario,
+          valorDesconto: editingItem.valorDesconto,
+          valorAcrescimo: editingItem.valorAcrescimo || 0,
+          naturezaOperacao: editingItem.naturezaOperacao,
+        })
+      } else {
+        reset({
+          produtoId: '',
+          quantidade: 1,
+          valorUnitario: 0,
+          valorDesconto: 0,
+          valorAcrescimo: 0,
+          naturezaOperacao: '5102',
+        })
+        setSelectedProduto(null)
+        setProductInputValue('')
+        setSelectedTabelaId(tenantParameters?.tabelaPrecoIdDefault || 1)
+      }
     }
-  }, [isOpen, reset, tenantParameters])
+  }, [isOpen, reset, tenantParameters, editingItem, produtos])
 
   function handleProductChange(id: React.Key | null) {
     const produto = produtos.find((p) => p.id === id)
@@ -195,7 +217,7 @@ export function ItemModal({ isOpen, onClose, onAdd, tenantParameters }: ItemModa
     if (!selectedProduto) return
 
     const newItem: ItemPedido = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: editingItem ? editingItem.id : Math.random().toString(36).substring(2, 9),
       produtoId: selectedProduto.id,
       sku: selectedProduto.sku,
       nome: selectedProduto.nome,
@@ -206,10 +228,14 @@ export function ItemModal({ isOpen, onClose, onAdd, tenantParameters }: ItemModa
       naturezaOperacao: values.naturezaOperacao,
       total: totalItem,
       imagemUrl: selectedProduto.imagemUrl,
-      tabelaPrecoEstoqueIdERP: selectedTabelaEntry?.tabelaPrecoEstoqueIdERP,
+      tabelaPrecoEstoqueIdERP: selectedTabelaEntry?.tabelaPrecoEstoqueIdERP || (editingItem?.produtoId === selectedProduto.id ? editingItem.tabelaPrecoEstoqueIdERP : undefined),
     }
 
-    onAdd(newItem)
+    if (editingItem && onEdit) {
+      onEdit(newItem)
+    } else {
+      onAdd(newItem)
+    }
     onClose()
   }
 
@@ -233,7 +259,9 @@ export function ItemModal({ isOpen, onClose, onAdd, tenantParameters }: ItemModa
                     <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20">
                          <Package className="h-6 w-6 text-white" />
                     </div>
-                    <h2 className="text-2xl font-black italic tracking-tighter text-slate-900 dark:text-white">Gerenciar Item</h2>
+                    <h2 className="text-2xl font-black italic tracking-tighter text-slate-900 dark:text-white">
+                      {editingItem ? 'Editar Item' : 'Gerenciar Item'}
+                    </h2>
                 </div>
                 <Button isIconOnly variant="flat" radius="full" onPress={onClose} className="bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700">
                     <X size={24} />
@@ -425,7 +453,7 @@ export function ItemModal({ isOpen, onClose, onAdd, tenantParameters }: ItemModa
                     form="add-item-form"
                     className="w-full py-10 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl shadow-2xl shadow-blue-500/20 dark:shadow-blue-900/40 transition-all uppercase tracking-[0.2em] text-xs italic tracking-tighter transform active:scale-95 shadow-inner"
                 >
-                    Confirmar e Salvar Item
+                    {editingItem ? 'Salvar Alterações' : 'Confirmar e Salvar Item'}
                 </Button>
               </form>
             </ModalBody>

@@ -12,9 +12,10 @@ import {
 interface OrderTableProps {
   items: ItemPedido[]
   onRemove: (id: string) => void
+  onEdit?: (item: ItemPedido) => void
 }
 
-export function OrderTable({ items, onRemove }: OrderTableProps) {
+export function OrderTable({ items, onRemove, onEdit }: OrderTableProps) {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-slate-950/20 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
@@ -75,7 +76,13 @@ export function OrderTable({ items, onRemove }: OrderTableProps) {
                 </td>
                 <td className="px-4 py-3.5 text-center last:rounded-r-2xl">
                   <div className="flex items-center justify-center gap-2">
-                      <Button isIconOnly variant="light" size="sm" className="h-9 w-9 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all">
+                      <Button 
+                          isIconOnly 
+                          variant="light" 
+                          size="sm" 
+                          onPress={() => onEdit?.(item)}
+                          className="h-9 w-9 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all"
+                      >
                           <Edit2 className="h-4.5 w-4.5" />
                       </Button>
                       <Button 
@@ -114,16 +121,27 @@ export function OrderTable({ items, onRemove }: OrderTableProps) {
                 <div className="text-[9px] text-slate-500 font-black tracking-[0.2em] mt-2 uppercase leading-none">SKU: {item.sku}</div>
                 <div className="text-[9px] text-blue-500 font-black tracking-wider mt-1 uppercase leading-none">{item.naturezaOperacao}</div>
               </div>
-              <Button 
-                isIconOnly 
-                variant="light" 
-                size="sm" 
-                color="danger"
-                onPress={() => onRemove(item.id)}
-                className="h-10 w-10 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all shrink-0"
-              >
-                <Trash2 className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button 
+                  isIconOnly 
+                  variant="light" 
+                  size="sm" 
+                  onPress={() => onEdit?.(item)}
+                  className="h-10 w-10 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all"
+                >
+                  <Edit2 className="h-5 w-5" />
+                </Button>
+                <Button 
+                  isIconOnly 
+                  variant="light" 
+                  size="sm" 
+                  color="danger"
+                  onPress={() => onRemove(item.id)}
+                  className="h-10 w-10 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
 
             <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 flex items-center justify-between">
