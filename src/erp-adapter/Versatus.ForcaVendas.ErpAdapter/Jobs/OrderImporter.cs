@@ -274,7 +274,11 @@ public sealed class OrderImporter : BackgroundService
         using var conn = new SqlConnection(erpConnectionString);
         await conn.OpenAsync();
 
-        // 1. Verificar se já existe a venda importada por Código de Integração (Deduplicação / Idempotência)
+        // 1. Buscar limites das colunas no banco de dados para evitar String or Binary Truncation
+        var mobVendaLimits = await GetColumnMaxLengthsAsync(conn, null, "MOBVENDA");
+        var mobVendaItemLimits = await GetColumnMaxLengthsAsync(conn, null, "MOBVENDAITEM");
+
+        // 2. Verificar se já existe a venda importada por Código de Integração (Deduplicação / Idempotência)
         using (var checkCmd = new SqlCommand("SELECT COUNT(*) FROM MOBVENDA WHERE CODIGOINTEGRACAO = @CodigoIntegracao AND IDGLOFILIAL = @FilialId", conn))
         {
             checkCmd.Parameters.AddWithValue("@CodigoIntegracao", order.PedidoId.ToString());
@@ -329,21 +333,22 @@ public sealed class OrderImporter : BackgroundService
                 cmd.Parameters.AddWithValue("@IDMOBVENDA", idMobVenda);
                 cmd.Parameters.AddWithValue("@IDGLOFILIAL", filialId);
                 cmd.Parameters.AddWithValue("@IDMOBCLIENTE", order.Payload.ClienteIdERP);
-                cmd.Parameters.AddWithValue("@NOMEPRECLIENTE", clienteNome.Length > 100 ? clienteNome.Substring(0, 100) : clienteNome);
+                cmd.Parameters.AddWithValue("@NOMEPRECLIENTE", SafeSubstring(clienteNome, "NOMEPRECLIENTE", mobVendaLimits, 100));
                 cmd.Parameters.AddWithValue("@IDMOBCONDICAOPAGAMENTO", order.Payload.CondicaoPagamentoIdERP);
                 cmd.Parameters.AddWithValue("@DATAEMISSAO", dataEmissao);
                 cmd.Parameters.AddWithValue("@VALORTOTAL", order.Payload.ValorFinal);
                 cmd.Parameters.AddWithValue("@DESCONTO", order.Payload.ValorTotalDesconto);
                 cmd.Parameters.AddWithValue("@ACRESCIMO", order.Payload.ValorTotalAcrescimo);
-                cmd.Parameters.AddWithValue("@NOMEUSUARIO", "ForcaVendas");
-                cmd.Parameters.AddWithValue("@CHAVEDISPOSITIVO", "Web");
+                cmd.Parameters.AddWithValue("@NOMEUSUARIO", SafeSubstring("ForcaVendas", "NOMEUSUARIO", mobVendaLimits, 10));
+                cmd.Parameters.AddWithValue("@CHAVEDISPOSITIVO", SafeSubstring("Web", "CHAVEDISPOSITIVO", mobVendaLimits, 5));
                 cmd.Parameters.AddWithValue("@ORCAMENTO", order.Payload.Orcamento ? 1 : 0);
-                cmd.Parameters.AddWithValue("@OBSERVACAO", (object?)order.Payload.Observacao ?? DBNull.Value);
+                var obsVal = order.Payload.Observacao;
+                cmd.Parameters.AddWithValue("@OBSERVACAO", obsVal != null ? (object)SafeSubstring(obsVal, "OBSERVACAO", mobVendaLimits, 250) : DBNull.Value);
                 cmd.Parameters.AddWithValue("@EXPORTADA", 0);
                 cmd.Parameters.AddWithValue("@PROCESSADA", 0);
                 cmd.Parameters.AddWithValue("@IDGLOCOMISSIONADO", 1); // Padrão comissionado
                 cmd.Parameters.AddWithValue("@VALORFRETE", order.Payload.ValorFrete);
-                cmd.Parameters.AddWithValue("@CODIGOINTEGRACAO", order.PedidoId.ToString());
+                cmd.Parameters.AddWithValue("@CODIGOINTEGRACAO", SafeSubstring(order.PedidoId.ToString(), "CODIGOINTEGRACAO", mobVendaLimits, 50));
 
                 await cmd.ExecuteNonQueryAsync();
             }
@@ -378,7 +383,7 @@ public sealed class OrderImporter : BackgroundService
                     cmd.Parameters.AddWithValue("@DESCONTO", item.ValorDesconto);
                     cmd.Parameters.AddWithValue("@ACRESCIMO", item.ValorAcrescimo);
                     cmd.Parameters.AddWithValue("@VALORTOTAL", item.ValorFinal);
-                    cmd.Parameters.AddWithValue("@SIGLAUNIDADE", item.SiglaUnidade);
+                    cmd.Parameters.AddWithValue("@SIGLAUNIDADE", SafeSubstring(item.SiglaUnidade, "SIGLAUNIDADE", mobVendaItemLimits, 6, "UN"));
 
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -606,6 +611,51 @@ public sealed class OrderImporter : BackgroundService
                 }
             };
         }
+    }
+
+    private async Task<Dictionary<string, int>> GetColumnMaxLengthsAsync(SqlConnection conn, SqlTransaction? transaction, string tableName)
+    {
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            using (var cmd = new SqlCommand(@"
+                SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = @TableName AND CHARACTER_MAXIMUM_LENGTH IS NOT NULL AND CHARACTER_MAXIMUM_LENGTH > 0", conn, transaction))
+            {
+                cmd.Parameters.AddWithValue("@TableName", tableName);
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        result[reader.GetString(0)] = reader.GetInt32(1);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Nao foi possivel consultar limites de colunas para tabela {TableName}: {Message}", tableName, ex.Message);
+        }
+        return result;
+    }
+
+    private string SafeSubstring(string? val, string columnName, Dictionary<string, int> limits, int fallbackLimit, string defaultVal = "")
+    {
+        var str = val ?? defaultVal;
+        int maxLen = fallbackLimit;
+        if (limits.TryGetValue(columnName, out var dbLimit) && dbLimit > 0)
+        {
+            maxLen = dbLimit;
+        }
+
+        if (str.Length > maxLen)
+        {
+            _logger.LogWarning("Dados excedem o tamanho da coluna {Column}. Valor original '{Original}' (tamanho {OriginalLength}) sera truncado para {MaxLength} caracteres.", 
+                columnName, str, str.Length, maxLen);
+            return str.Substring(0, maxLen);
+        }
+        return str;
     }
 
     private class PendingResultItem

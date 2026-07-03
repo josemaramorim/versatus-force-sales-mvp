@@ -410,7 +410,7 @@ export default function NovaVendaPage() {
                       </div>
                       <div className="pt-10 border-t border-slate-50 dark:border-slate-800 leading-none">
                            <div className="flex flex-col space-y-6 leading-none">
-                              <span className="text-4xl lg:text-6xl font-black font-mono tracking-tighter text-blue-500 italic text-center leading-none">R$ {totalFinal.toFixed(2)}</span>
+                              <span className="text-4xl lg:text-6xl font-black font-mono tracking-tighter text-blue-500 italic text-center leading-none">{totalFinal.toFixed(2)}</span>
                               <span className="text-[8px] font-black text-slate-400 dark:text-slate-700 uppercase tracking-[0.4em] text-center leading-none italic">Versatus.Net • MVP-06</span>
                           </div>
                       </div>
