@@ -124,10 +124,19 @@ Para implantar a aplicação no servidor do cliente, gere o pacote de publicaç�
    cd "c:\Pasta de Trabalho\Projetos\Analises\Versatus.Net\versatus-force-sales-mvp\src\erp-adapter\Versatus.ForcaVendas.ErpAdapter"
    ```
 
-2. Execute o comando de compilação e publicação em modo Release:
-   ```powershell
-   dotnet publish -c Release -o ./publish
-   ```
+2. Gere o pacote de publicação em modo Release. Você tem duas opções de publicação:
+
+   * **Opção A: Publicação Autossuficiente (Recomendado)**
+     Esta opção embutirá o próprio runtime do .NET 10 dentro da pasta de publicação. O ERP Adapter funcionará no servidor do cliente **mesmo que eles não tenham o .NET instalado**!
+     ```powershell
+     dotnet publish -c Release -r win-x64 --self-contained true -o ./publish
+     ```
+   
+   * **Opção B: Publicação Dependente do Framework**
+     Esta opção gera arquivos mais leves, mas exige que o servidor do cliente tenha o runtime do .NET 10.0 (x64) pré-instalado.
+     ```powershell
+     dotnet publish -c Release -o ./publish
+     ```
 
 Toda a aplicação compilada, incluindo o executável `Versatus.ForcaVendas.ErpAdapter.exe` (no Windows) ou `.dll` (no Linux/Windows) e o arquivo `appsettings.Production.json` estarão localizados na pasta `./publish/`.
 
@@ -234,4 +243,14 @@ Após iniciar o serviço, verifique se tudo está funcionando conforme o esperad
   1. No arquivo `appsettings.Production.json` do ERP Adapter local, certifique-se de que a chave `Integration.Ftp.Password` foi preenchida com a **senha real** do usuário `versatus` que você definiu no painel ICP (e não com o texto de exemplo `"SUA_SENHA_SFTPGO_DEFINIDA_NO_ICP"`).
   2. Confirme se o usuário `versatus` está devidamente cadastrado no **SFTPGo** no painel ICP e se ele possui permissão para acessar a pasta `/integration-sync`.
   3. Certifique-se de que não há espaços extras ou caracteres incorretos na senha no arquivo de configuração do ERP Adapter.
+
+### Erro: `You must install .NET to run this application` ao iniciar o executável
+* **Causa:** O computador/servidor local não possui o runtime do .NET 10 instalado para rodar a aplicação compilada de forma dependente do framework.
+* **Como resolver:**
+  1. **Recomendado (Publicação Autossuficiente)**: Recompile a aplicação no seu computador local usando a flag `--self-contained true` para embutir o runtime do .NET na própria pasta:
+     ```powershell
+     dotnet publish -c Release -r win-x64 --self-contained true -o ./publish
+     ```
+     Depois, limpe a pasta destino no servidor, copie os arquivos novos e inicie o `.bat`.
+  2. **Alternativa (Instalação manual)**: Baixe e instale o **.NET 10.0 Runtime (x64)** no servidor do cliente a partir do site oficial da Microsoft: https://dotnet.microsoft.com/pt-br/download/dotnet/10.0 (escolha a opção *Run console apps - x64*).
 
