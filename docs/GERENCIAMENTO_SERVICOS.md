@@ -6,10 +6,27 @@ Este documento descreve como gerenciar os processos e serviços em background da
 
 ## 1. Os Serviços do Ecossistema
 
-A aplicação é composta por três serviços principais em C# (.NET 8/10):
-1.  **API Gateway (`Versatus.ForcaVendas.Api`)**: Interface principal que atende o frontend e gerencia as conexões de banco de dados e autenticação.
-2.  **Worker (`Versatus.ForcaVendas.Worker`)**: Executa em background gerenciando o processamento assíncrono (RabbitMQ/FTP) e cache do Redis.
-3.  **ERP Adapter (`Versatus.ForcaVendas.ErpAdapter`)**: Conecta o sistema local à base de dados legada do SQL Server da filial.
+A aplicação **Versatus Force Sales** é composta por quatro componentes principais que trabalham de forma coordenada:
+
+1.  **Frontend (`Next.js / React`)**:
+    *   **O que é**: A interface visual (aplicativo web responsivo) acessada pelos vendedores em smartphones, tablets ou computadores.
+    *   **Tecnologia**: Next.js, React, TailwindCSS / NextUI.
+    *   **Função**: Exibir o catálogo de produtos/preços, gerenciar a seleção de clientes, registrar novos pedidos de venda (mesmo offline) e exibir o histórico de pedidos.
+
+2.  **API Gateway (`Versatus.ForcaVendas.Api`)**:
+    *   **O que é**: O backend principal da aplicação que expõe os endpoints HTTP/REST.
+    *   **Tecnologia**: C# .NET 10 (ASP.NET Core).
+    *   **Função**: Atender às requisições do Frontend, validar regras de negócio, gerenciar a autenticação e autorização dos usuários, e gravar/ler dados diretamente no banco de dados operacional (**PostgreSQL**).
+
+3.  **Worker (`Versatus.ForcaVendas.Worker`)**:
+    *   **O que é**: Um serviço de processamento assíncrono em segundo plano (background service) rodando na nuvem.
+    *   **Tecnologia**: C# .NET 10.
+    *   **Função**: Escutar e processar filas de mensagens do **RabbitMQ**, além de gerenciar a sincronização do catálogo de produtos e clientes direto no banco de cache (**Redis**).
+
+4.  **ERP Adapter (`Versatus.ForcaVendas.ErpAdapter`)**:
+    *   **O que é**: Um serviço integrador executado localmente (on-premise) na infraestrutura ou rede interna do cliente.
+    *   **Tecnologia**: C# .NET 10.
+    *   **Função**: Conecta-se diretamente ao banco de dados **SQL Server** do ERP legado da filial para extrair dados de catálogo (clientes, produtos, tabelas de preço e condições de pagamento) e enviá-los para a nuvem via FTP/SFTP, além de baixar novos pedidos da nuvem e inseri-los no SQL Server local.
 
 ---
 
