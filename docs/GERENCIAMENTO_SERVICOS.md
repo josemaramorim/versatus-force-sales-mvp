@@ -240,3 +240,24 @@ Caso prefira usar comandos de texto, abra o terminal na pasta raiz do projeto e 
 #### 3. Os contêineres subiram, mas os serviços em C# (.NET) dão erro de conexão
 *   **Causa:** Se você zerou os dados do banco Docker usando `docker-compose down -v`, a estrutura de tabelas sumiu. Os microsserviços em execução (.NET) podem se perder.
 *   **Solução:** Sempre que apagar os volumes do Docker, pare os serviços rodando em C# (.NET) e inicie-os novamente para que eles refaçam as migrações automáticas de banco de dados (`database migrations`) durante a inicialização.
+
+---
+
+## 5. Fluxo de Criação de Tenant e Sincronização de Catálogo (Alimentação do Redis)
+
+Quando um novo Tenant é criado (por exemplo, `00000000-0000-0000-0000-000000000003`), o fluxo para que o catálogo de produtos e clientes seja carregado com sucesso no banco de cache do **Redis** depende de dois serviços específicos atuando de forma coordenada:
+
+### 1. ERP Adapter (`Versatus.ForcaVendas.ErpAdapter`)
+* **Papel**: Exportar os dados do ERP legado local e enviá-los para a nuvem.
+* **Ações necessárias**: 
+  1. No arquivo `appsettings.json` (ou `appsettings.Production.json`) da instalação local do cliente, configure o novo UUID de tenant no array `Auth:Tenants` e as configurações específicas de filial em `ErpAdapter:Tenants`.
+  2. Ao inicializar o serviço do **ERP Adapter**, ele lerá o banco local (SQL Server), gerará os arquivos JSON com o catálogo do novo tenant e fará o upload via SFTP para o servidor (SFTPGo) na nuvem sob o diretório:
+     `/integration-sync/00000000-0000-0000-0000-000000000003/catalogo`
+
+### 2. Worker (`Versatus.ForcaVendas.Worker`)
+* **Papel**: Consumir os arquivos de integração e popular o Redis.
+* **Ações necessárias**:
+  1. O serviço **Worker** deve estar em execução na nuvem (VPS).
+  2. Ele monitora constantemente o diretório SFTP por novos arquivos de catálogo. Ao detectar o upload feito pelo **ERP Adapter** para a nova pasta de tenant, o Worker faz a leitura desses arquivos JSON e popula os dados diretamente nas chaves correspondentes no **Redis** (`catalogo:00000000-0000-0000-0000-000000000003:*`).
+
+Desta forma, para que o catálogo da nova tenant passe a constar e ser disponibilizado via cache no aplicativo, o **ERP Adapter** precisa rodar localmente para exportar e subir as informações, e o **Worker** precisa estar no ar na nuvem para processar esse upload e alimentar o Redis.
