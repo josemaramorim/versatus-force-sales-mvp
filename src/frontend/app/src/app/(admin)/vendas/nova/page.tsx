@@ -21,7 +21,8 @@ import {
   Zap,
   CheckCircle2,
   Settings,
-  CreditCard
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react'
 import { 
   Button, 
@@ -34,7 +35,12 @@ import {
   Textarea,
   Tooltip,
   useDisclosure,
-  Avatar
+  Avatar,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter
 } from '@nextui-org/react'
 import { clsx } from 'clsx'
 
@@ -54,12 +60,34 @@ export default function NovaVendaPage() {
   const [condicoes, setCondicoes] = useState<CondicaoPagamento[]>([])
   const [tenantParameters, setTenantParameters] = useState<TenantParameters>({ tabelaPrecoIdDefault: 1, permiteAlterarTabelaPreco: true })
   const [isSaving, setIsSaving] = useState(false)
+  const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false)
+  const [pendingUrl, setPendingUrl] = useState<string | null>(null)
+  const [isPopStateNavigation, setIsPopStateNavigation] = useState(false)
 
   // Verifica se o formulário/pedido está modificado para proteção de navegação
   const isDirty = useMemo(() => {
     if (isSaving) return false
     return selectedCliente !== null || items.length > 0 || observacoes.length > 0 || descontoGlobal !== 0 || acrescimoGlobal !== 0
   }, [selectedCliente, items, observacoes, descontoGlobal, acrescimoGlobal, isSaving])
+
+  function handleConfirmLeave() {
+    setIsConfirmLeaveOpen(false)
+    setIsSaving(true)
+    if (isPopStateNavigation) {
+      router.back()
+    } else if (pendingUrl) {
+      router.push(pendingUrl)
+    }
+  }
+
+  function handleCancelLeave() {
+    setIsConfirmLeaveOpen(false)
+    setPendingUrl(null)
+    if (isPopStateNavigation) {
+      window.history.pushState(null, '', window.location.href)
+      setIsPopStateNavigation(false)
+    }
+  }
 
   // 1. Interceptar reload, F5 ou fechamento de aba do navegador
   useEffect(() => {
@@ -82,21 +110,13 @@ export default function NovaVendaPage() {
     window.history.pushState(null, '', window.location.href)
 
     const handlePopState = () => {
-      const confirmLeave = window.confirm(
-        'Você tem alterações não salvas no pedido. Se sair agora, perderá todas as informações digitadas. Deseja realmente sair?'
-      )
-
-      if (confirmLeave) {
-        router.back()
-      } else {
-        // Recoloca o estado dummy na pilha
-        window.history.pushState(null, '', window.location.href)
-      }
+      setIsPopStateNavigation(true)
+      setIsConfirmLeaveOpen(true)
     }
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [isDirty, router])
+  }, [isDirty])
 
   // 3. Interceptar cliques em links internos do Next.js (ex: sidebar)
   useEffect(() => {
@@ -112,12 +132,9 @@ export default function NovaVendaPage() {
         const href = target.getAttribute('href')
         if (href && href.startsWith('/') && href !== '/vendas/nova' && !href.startsWith('#')) {
           e.preventDefault()
-          const confirmLeave = window.confirm(
-            'Você tem alterações não salvas no pedido. Se sair agora, perderá todas as informações digitadas. Deseja realmente sair?'
-          )
-          if (confirmLeave) {
-            router.push(href)
-          }
+          setPendingUrl(href)
+          setIsPopStateNavigation(false)
+          setIsConfirmLeaveOpen(true)
         }
       }
     }
@@ -125,7 +142,7 @@ export default function NovaVendaPage() {
     // Registra na fase de captura (true) para interceptar antes do roteador do Next.js processar o clique
     document.addEventListener('click', handleAnchorClick, true)
     return () => document.removeEventListener('click', handleAnchorClick, true)
-  }, [isDirty, router])
+  }, [isDirty])
 
   useEffect(() => {
     getCondicoesPagamento()
@@ -503,6 +520,54 @@ export default function NovaVendaPage() {
           </Button>
         </div>
       </div>
+
+      {/* Modal de Confirmação de Abandono Estilizado */}
+      <Modal 
+        isOpen={isConfirmLeaveOpen} 
+        onClose={handleCancelLeave}
+        backdrop="blur"
+        classNames={{
+          backdrop: "bg-slate-950/60 backdrop-blur-md",
+          base: "border border-white/10 bg-slate-900/90 text-white rounded-3xl p-4 shadow-2xl z-[99999]",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 items-center pb-2 text-center">
+                <div className="w-12 h-12 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center mb-2 animate-pulse">
+                  <AlertTriangle className="h-6 w-6 text-rose-500" />
+                </div>
+                <h3 className="text-xl font-black italic tracking-tight premium-title">Alterações não Salvas!</h3>
+              </ModalHeader>
+              <ModalBody className="py-4 text-center leading-relaxed">
+                <p className="text-slate-400 font-medium text-sm italic">
+                  Você iniciou o preenchimento de um pedido. Se sair desta tela agora, todos os itens e dados informados serão perdidos permanentemente.
+                </p>
+                <p className="text-rose-500/80 font-bold text-xs uppercase tracking-wider mt-2">
+                  Deseja realmente abandonar a operação?
+                </p>
+              </ModalBody>
+              <ModalFooter className="flex items-center gap-3 justify-center pt-2">
+                <Button 
+                  variant="flat" 
+                  onPress={handleCancelLeave}
+                  className="px-6 py-4 bg-slate-800/80 hover:bg-slate-800 text-slate-300 font-bold rounded-xl active:scale-95 transition-transform"
+                >
+                  Permanecer no Pedido
+                </Button>
+                <Button 
+                  color="danger" 
+                  onPress={handleConfirmLeave}
+                  className="px-6 py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl active:scale-95 transition-transform uppercase tracking-wider text-xs"
+                >
+                  Abandonar Pedido
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   )
 }
