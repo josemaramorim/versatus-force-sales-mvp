@@ -313,6 +313,10 @@ export function ItemModal({ isOpen, onClose, onAdd, tenantParameters }: ItemModa
                           trigger: "h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-6",
                           value: "text-lg font-bold text-slate-800 dark:text-slate-200"
                         }}
+                        popoverProps={{
+                          radius: "lg",
+                          className: "p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999]",
+                        }}
                       >
                         {(selectedProduto.precosPorTabela || []).map((p) => (
                           <SelectItem key={p.tabelaPrecoIdERP.toString()} value={p.tabelaPrecoIdERP.toString()}>
