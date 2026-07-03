@@ -4,6 +4,28 @@ Este documento descreve como gerenciar os processos e serviços em background da
 
 ---
 
+## 🗺️ Sumário
+
+* [1. Os Serviços do Ecossistema](#1-os-serviços-do-ecossistema) — Papel e tecnologias de cada componente.
+* [2. Comandos do PowerShell (Windows)](#2-comandos-do-powershell-windows) — Como listar e encerrar serviços locais.
+  * [2.1. Listar Serviços em Execução](#21-listar-serviços-em-execução)
+  * [2.2. Parar/Encerrar Todos os Serviços](#22-pararencerrar-todos-os-serviços-recomendado-antes-de-novos-builds)
+  * [2.3. Parar um Serviço Específico](#23-parar-um-serviço-específico)
+* [3. Como Inicializar os Serviços](#3-como-inicializar-os-serviços) — Inicialização interativa ou em segundo plano.
+  * [3.1. Modo Interativo (Terminal Aberto)](#31-modo-interativo-terminal-aberto)
+  * [3.2. Modo Background (Sem travar o terminal)](#32-modo-background-executar-sem-travar-o-terminal)
+* [4. Guia do Docker para Leigos](#4-guia-do-docker-para-leigos) — Entendendo a infraestrutura local.
+  * [4.1. O que é o Docker?](#41-o-que-é-o-docker-e-por-que-usamos)
+  * [4.2. Pré-requisito Fundamental: Docker Desktop](#42-pré-requisito-fundamental-docker-desktop)
+  * [4.3. Os 4 Serviços Rodando no Docker e Credenciais](#43-os-4-serviços-rodando-no-docker-e-suas-credenciais)
+  * [4.4. Gerenciando Pelo Docker Desktop (Modo Visual)](#44-gerenciando-pelo-docker-desktop-modo-visual---recomendado-para-leigos)
+  * [4.5. Gerenciando Pelo Terminal](#45-gerenciando-pelo-terminal-powershell-ou-cmd-na-raiz-do-projeto)
+  * [4.6. Comandos de Limpeza e Manutenção](#46-comandos-de-limpeza-e-manutenção-do-sistema)
+  * [4.7. Solução de Problemas Comuns (Troubleshooting)](#47-solução-de-problemas-comuns-troubleshooting)
+* [5. Fluxo de Criação de Tenant e Sincronização de Catálogo (Alimentação do Redis)](#5-fluxo-de-criação-de-tenant-e-sincronização-de-catálogo-alimentação-do-redis) — Como o cache do Redis é atualizado.
+
+---
+
 ## 1. Os Serviços do Ecossistema
 
 A aplicação **Versatus Force Sales** é composta por quatro componentes principais que trabalham de forma coordenada:
