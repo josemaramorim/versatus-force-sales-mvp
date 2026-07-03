@@ -369,7 +369,6 @@ export default function ProdutosPage() {
       >
         <ModalContent>
           {(onClose) => {
-            const hasStock = selectedProduct ? getProductStock(selectedProduct) : false;
             return (
               <>
                 <ModalHeader className="flex gap-3 items-center">
@@ -398,50 +397,6 @@ export default function ProdutosPage() {
                       <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Nome Comercial</label>
                       <p className="text-base font-black text-slate-900 dark:text-white leading-snug mt-0.5">{selectedProduct?.nome}</p>
                       <p className="text-xs text-slate-400 font-bold mt-1">Categoria: {selectedProduct?.categoria || 'Geral'}</p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100 dark:border-slate-800/60 my-2" />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Código SKU</label>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-slate-800 dark:text-slate-200">
-                        <FileText className="h-3.5 w-3.5 text-slate-400" />
-                        <span className="text-sm font-bold font-mono uppercase">{selectedProduct?.sku}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Disponibilidade</label>
-                      <div className="mt-1">
-                        <Chip 
-                          className="capitalize font-black text-[9px] tracking-widest px-2" 
-                          color={hasStock ? "success" : "danger"} 
-                          size="sm" 
-                          variant="flat"
-                        >
-                          {hasStock ? 'Disponível' : 'Esgotado'}
-                        </Chip>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100 dark:border-slate-800/60 my-2" />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Preço de Tabela (Base)</label>
-                      <div className="flex items-center gap-1 mt-0.5 text-blue-600 dark:text-blue-400 text-lg font-black font-mono">
-                        <DollarSign className="h-4 w-4" />
-                        <span>{selectedProduct ? selectedProduct.precoBase.toFixed(2) : '0.00'}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Unidade Comercial</label>
-                      <div className="flex items-center gap-1.5 mt-1 text-slate-700 dark:text-slate-300 text-sm font-bold">
-                        <Boxes className="h-4 w-4 text-slate-400" />
-                        <span>UN</span>
-                      </div>
                     </div>
                   </div>
 
