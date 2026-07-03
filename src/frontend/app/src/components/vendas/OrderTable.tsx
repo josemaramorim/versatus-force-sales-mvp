@@ -36,16 +36,16 @@ export function OrderTable({ items, onRemove }: OrderTableProps) {
             <tr>
               <th className="px-8 pb-4 italic">Produtos / Identificação</th>
               <th className="px-8 pb-4 text-center uppercase">Qtd.</th>
-              <th className="px-8 pb-4 text-right uppercase">Unit.</th>
-              <th className="px-8 pb-4 text-right uppercase">Desc.</th>
-              <th className="px-8 pb-4 text-right uppercase">Total</th>
+              <th className="px-8 pb-4 text-right uppercase">Unit. (R$)</th>
+              <th className="px-8 pb-4 text-right uppercase">Desc. (R$)</th>
+              <th className="px-8 pb-4 text-right uppercase">Total (R$)</th>
               <th className="px-8 pb-4 text-center uppercase">Ações</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="group italic">
-                <td className="px-8 py-8 first:rounded-l-[2rem]">
+                <td className="px-8 py-5 first:rounded-l-[2rem]">
                   <div className="flex items-center gap-4">
                       <Avatar 
                           src={item.imagemUrl} 
@@ -61,19 +61,19 @@ export function OrderTable({ items, onRemove }: OrderTableProps) {
                       </div>
                   </div>
                 </td>
-                <td className="px-8 py-8 text-center font-mono font-black text-slate-400 text-base uppercase tracking-tight">
+                <td className="px-8 py-5 text-center font-mono font-black text-slate-500 dark:text-slate-400 text-sm uppercase tracking-tight">
                   {item.quantidade} x
                 </td>
-                <td className="px-8 py-8 text-right font-mono text-slate-500 text-sm opacity-60">
-                  R$ {item.valorUnitario.toFixed(2)}
+                <td className="px-8 py-5 text-right font-mono text-slate-800 dark:text-slate-200 text-sm">
+                  {item.valorUnitario.toFixed(2)}
                 </td>
-                <td className="px-8 py-8 text-right font-mono text-amber-500/70 text-xs font-black">
-                  - R$ {item.valorDesconto.toFixed(2)}
+                <td className={`px-8 py-5 text-right font-mono text-xs font-black ${item.valorDesconto > 0 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-600'}`}>
+                  {item.valorDesconto > 0 ? `-${item.valorDesconto.toFixed(2)}` : '0.00'}
                 </td>
-                <td className="px-8 py-8 text-right font-mono text-blue-500 font-black text-2xl tracking-tighter leading-none pr-8">
-                  R$ {item.total.toFixed(2)}
+                <td className="px-8 py-5 text-right font-mono text-blue-600 dark:text-blue-400 font-black text-base tracking-tight pr-8">
+                  {item.total.toFixed(2)}
                 </td>
-                <td className="px-8 py-8 text-center last:rounded-r-[2rem]">
+                <td className="px-8 py-5 text-center last:rounded-r-[2rem]">
                   <div className="flex items-center justify-center gap-2">
                       <Button isIconOnly variant="light" size="sm" className="h-10 w-10 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all">
                           <Edit2 className="h-5 w-5" />
@@ -129,7 +129,7 @@ export function OrderTable({ items, onRemove }: OrderTableProps) {
             <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Preço & Qtd</span>
-                <span className="text-xs font-bold text-slate-500 font-mono">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 font-mono">
                   {item.quantidade} x R$ {item.valorUnitario.toFixed(2)}
                 </span>
                 {item.valorDesconto > 0 && (
@@ -140,7 +140,7 @@ export function OrderTable({ items, onRemove }: OrderTableProps) {
               </div>
               <div className="text-right flex flex-col items-end">
                 <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">Total Linha</span>
-                <span className="text-xl font-black font-mono text-blue-500 italic">
+                <span className="text-base font-black font-mono text-blue-600 dark:text-blue-400 italic">
                   R$ {item.total.toFixed(2)}
                 </span>
               </div>
