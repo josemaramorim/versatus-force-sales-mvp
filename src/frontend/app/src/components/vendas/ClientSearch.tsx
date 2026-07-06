@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Autocomplete, AutocompleteItem, Avatar } from '@nextui-org/react'
 import { searchClientes } from '@/lib/vendaApi'
-import { Cliente } from '@/types/vendas'
+import { Cliente, PreCliente } from '@/types/vendas'
 import { Search, RefreshCw } from 'lucide-react'
 import { syncCatalogLocal } from '@/lib/syncCatalog'
+import { PreClienteModal } from './PreClienteModal'
 
 interface ClientSearchProps {
-  onSelect: (cliente: Cliente) => void
+  onSelect: (cliente: Cliente, preCliente?: PreCliente) => void
   selectedId?: string | null
 }
 
@@ -16,6 +17,7 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [inputValue, setInputValue] = useState('')
+  const [isPreClienteOpen, setIsPreClienteOpen] = useState(false)
 
   useEffect(() => {
     searchClientes(undefined, 100000)
@@ -45,6 +47,13 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
     const selectedCliente = clientes.find((c) => c.id === selectedId)
     const isShowingSelected = selectedCliente && selectedCliente.nome === inputValue
 
+    const placeholder: Cliente = {
+      id: 'NEW_CLIENT_PLACEHOLDER',
+      nome: '[+] Novo Cliente (Pré-Cadastro)',
+      documento: 'Clique para pré-cadastrar',
+      areaVenda: ''
+    }
+
     let result: typeof clientes
 
     if (!cleanedInput || isShowingSelected) {
@@ -53,26 +62,46 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
       if (selectedId && !sliced.some((c) => c.id === selectedId) && selectedCliente) {
         sliced.push(selectedCliente)
       }
-      return sliced
+      result = sliced
+    } else {
+      // Search active: show ALL matching results (no limit) so no client is hidden
+      result = clientes.filter((c) => {
+        const cleanedNome = clean(c.nome)
+        const cleanedDoc = clean(c.documento)
+        return cleanedNome.includes(cleanedInput) || cleanedDoc.includes(cleanedInput)
+      })
     }
 
-    // Search active: show ALL matching results (no limit) so no client is hidden
-    result = clientes.filter((c) => {
-      const cleanedNome = clean(c.nome)
-      const cleanedDoc = clean(c.documento)
-      return cleanedNome.includes(cleanedInput) || cleanedDoc.includes(cleanedInput)
-    })
-
-    return result
+    return [placeholder, ...result]
   }, [clientes, inputValue, selectedId])
 
   const onSelectionChange = (id: React.Key | null) => {
+    if (id === 'NEW_CLIENT_PLACEHOLDER') {
+      setIsPreClienteOpen(true)
+      // Reset input value so it doesn't get locked with the placeholder value
+      setInputValue('')
+      return
+    }
+
     const cliente = clientes.find((c) => c.id === id)
     if (cliente) {
       onSelect(cliente)
     } else {
       onSelect(null as any) // pass null if cleared
     }
+  }
+
+  const handlePreClienteSave = (preCliente: PreCliente) => {
+    const mockId = `NEW_CLIENT_${Date.now()}`
+    const mockCliente: Cliente = {
+      id: mockId,
+      nome: `[Novo] ${preCliente.nome}`,
+      documento: preCliente.documento,
+      areaVenda: 'Pré-Cadastro'
+    }
+
+    setClientes((prev) => [mockCliente, ...prev])
+    onSelect(mockCliente, preCliente)
   }
 
   const handleSync = async () => {
@@ -128,10 +157,10 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
                 <Avatar 
                   radius="lg" 
                   size="md" 
-                  name={cliente.nome.charAt(0)}
-                  color="primary"
+                  name={cliente.id === 'NEW_CLIENT_PLACEHOLDER' ? '+' : cliente.nome.charAt(0)}
+                  color={cliente.id === 'NEW_CLIENT_PLACEHOLDER' ? 'success' : 'primary'}
                   isBordered
-                  className="bg-blue-600 text-white font-black shrink-0"
+                  className={`${cliente.id === 'NEW_CLIENT_PLACEHOLDER' ? 'bg-emerald-500 text-white font-black' : 'bg-blue-600 text-white font-black'} shrink-0`}
                 />
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className="text-sm font-black italic text-slate-900 dark:text-white leading-tight break-words">{cliente.nome}</span>
@@ -154,6 +183,13 @@ export function ClientSearch({ onSelect, selectedId }: ClientSearchProps) {
         <RefreshCw className={`h-6 w-6 ${isSyncing ? 'animate-spin text-blue-500' : ''}`} />
         <span className="text-[8px] font-black tracking-tighter uppercase mt-1 leading-none">Sync</span>
       </button>
+
+      <PreClienteModal
+        isOpen={isPreClienteOpen}
+        onClose={() => setIsPreClienteOpen(false)}
+        onSave={handlePreClienteSave}
+        existingClientes={clientes}
+      />
     </div>
   )
 }

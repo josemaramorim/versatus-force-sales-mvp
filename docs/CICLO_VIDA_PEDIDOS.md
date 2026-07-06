@@ -35,25 +35,37 @@ Este documento descreve o fluxo completo de sincronização de pedidos de venda 
 
 ## 2. Descrição Detalhada dos Status
 
-### 2.1. Rascunho (ou Aguardando Rede)
+Aqui estão as explicações de todos os status de pedido mapeados no ecossistema e visualizados na tela de Histórico de Pedidos:
+
+### 2.1. Rascunho (`rascunho`)
 *   **Onde fica:** Apenas no dispositivo físico do vendedor (IndexedDB do navegador/celular).
-*   **O que significa:** O vendedor criou e salvou o pedido, mas o dispositivo está offline ou ainda não transmitiu a informação para a nuvem.
-*   **Responsabilidade:** Aplicativo móvel (Frontend PWA) e fila de sincronização local (`syncQueue.ts`).
+*   **O que significa:** O vendedor criou e salvou o pedido localmente, mas o dispositivo está offline ou o envio automático ainda não foi iniciado.
+*   **Ações possíveis:** Pode ser editado ou excluído localmente ("Excluir Rascunho").
 
-### 2.2. Enviado
-*   **Onde fica:** Banco de dados PostgreSQL da nuvem e arquivos JSON temporários no FTP.
-*   **O que significa:** O pedido foi transmitido com sucesso à API central da nuvem e colocado na fila do FTP. O integrador **ErpAdapter** já baixou o arquivo e inseriu o cabeçalho, itens e parcelas nas tabelas `MOBVENDA`, `MOBVENDAITEM` e `MOBVENDAPARCELA` do banco de dados do ERP.
-*   **Responsabilidade:** API da nuvem (recebimento) e `ErpAdapter` (gravação nas tabelas do ERP legado).
-*   **Nota Importante:** O pedido permanece como **"Enviado"** até que o faturamento físico seja realizado pela empresa na retaguarda.
+### 2.2. Aguardando Rede (`pendente_sync`) ou Offline (`offline`)
+*   **Onde fica:** Fila de sincronização do dispositivo físico.
+*   **O que significa:** O pedido foi finalizado pelo vendedor e aguarda a detecção automática de conexão de rede pelo app para ser enviado à API Gateway na nuvem.
+*   **Ações possíveis:** Pode ser excluído localmente caso a sincronização ainda não tenha ocorrido.
 
-### 2.3. Processado (Faturado)
+### 2.3. Enviado (`enviado`)
+*   **Onde fica:** Banco de dados PostgreSQL da nuvem e arquivos JSON temporários no diretório FTP.
+*   **O que significa:** O pedido foi transmitido com sucesso à API central da nuvem e colocado na pasta do FTP para importação na filial.
+*   **Ações possíveis:** Visualizar, exportar PDF. Não pode ser excluído pelo vendedor.
+
+### 2.4. Pendente (`pendente`)
+*   **Onde fica:** Banco de dados do ERP legado local (`PROCESSADA = 0`).
+*   **O que significa:** O integrador **ErpAdapter** local baixou o arquivo e gravou as informações nas tabelas `MOBVENDA`, `MOBVENDAITEM` e `MOBVENDAPARCELA`. O pedido está aguardando a análise de crédito ou o faturamento físico (emissão de Nota Fiscal) pelo faturista da retaguarda.
+*   **Ações possíveis:** Visualizar, exportar PDF.
+
+### 2.5. Processado (`processado`)
 *   **Onde fica:** Gravado permanentemente no banco PostgreSQL e atualizado no app do vendedor.
-*   **O que significa:** O setor de faturamento (ou sistema automatizado) do ERP Versatus faturou a venda, emitiu a Nota Fiscal, gravou o número do documento fiscal (`IDVENDOCUMENTO`) e atualizou a flag de controle no banco de dados (`PROCESSADA = 1`). O `ErpAdapter` identificou essa finalização e notificou o sistema principal.
-*   **Responsabilidade:** Setor de Faturamento/Expedição da Empresa (dentro do ERP Versatus legado) e posterior sincronização automática pelo `ErpAdapter`.
+*   **O que significa:** O setor de faturamento do ERP Versatus emitiu a Nota Fiscal para a venda, gravou o número do documento fiscal (`IDVENDOCUMENTO`) e atualizou a flag de controle no banco de dados (`PROCESSADA = 1`). O `ErpAdapter` identificou essa finalização e sincronizou o resultado de volta à nuvem.
+*   **Ações possíveis:** Visualizar, exportar PDF.
 
-### 2.4. Rejeitado ERP (Erro de Integração/Estoque)
-*   **O que significa:** Ocorreu alguma rejeição física ou lógica no ERP ao tentar inserir o pedido (como falta de estoque real no momento da importação estrita, cliente bloqueado por análise de crédito ou erros de regras tributárias).
-*   **Responsabilidade:** ERP Versatus/ErpAdapter. O erro retorna com o detalhe do motivo do bloqueio para o vendedor.
+### 2.6. Rejeitado ERP (`erro`) ou Erro de Estoque (`erro_sync`)
+*   **Onde fica:** Banco de dados local ou na nuvem com indicação detalhada de erro.
+*   **O que significa:** Ocorreu alguma rejeição física ou lógica no ERP ao tentar inserir ou faturar o pedido (como falta de estoque real no momento da importação estrita, cliente bloqueado por análise de crédito ou erros de regras tributárias).
+*   **Ações possíveis:** Visualizar motivo do erro, tentar enviar novamente ("Tentar Enviar Novamente"), excluir rascunho/registro local.
 
 ---
 

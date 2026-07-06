@@ -17,6 +17,8 @@ public sealed class OrderExportPayload
 public sealed class OrderExportData
 {
     public int ClienteIdERP { get; set; }
+    public bool IsNovoCliente { get; set; }
+    public PreClienteExportDto? PreCliente { get; set; }
     public int CondicaoPagamentoIdERP { get; set; }
     public string DataEmissao { get; set; } = string.Empty; // yyyy-MM-dd
     public string? Observacao { get; set; }
@@ -51,4 +53,19 @@ public sealed class OrderParcelaExportDto
     public int FormaCobrancaIdERP { get; set; }
     public decimal Valor { get; set; }
     public string Vencimento { get; set; } = string.Empty; // yyyy-MM-dd
+}
+
+public sealed class PreClienteExportDto
+{
+    public string Nome { get; set; } = string.Empty;
+    public string Documento { get; set; } = string.Empty;
+    public string? Telefone { get; set; }
+    public string? Email { get; set; }
+    public string? Logradouro { get; set; }
+    public string? Numero { get; set; }
+    public string? Complemento { get; set; }
+    public string? Bairro { get; set; }
+    public string? Cidade { get; set; }
+    public string? Uf { get; set; }
+    public string? Cep { get; set; }
 }

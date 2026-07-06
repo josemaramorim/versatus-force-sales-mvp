@@ -135,7 +135,7 @@ export default function DashboardPage() {
     },
     {
       label: 'Ticket Médio',
-      value: `R$ ${ticketMedio.toFixed(2)}`,
+      value: `${ticketMedio.toFixed(2)}`,
       delta: `${pedidos.length} pedidos no total`,
       trend: 'neutral',
       icon: TrendingUp,
@@ -205,7 +205,7 @@ export default function DashboardPage() {
           className="h-16 px-10 font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-blue-500/40 bg-blue-600 transition-all hover:scale-105 active:scale-95 italic"
           startContent={<Plus className="h-5 w-5" />}
         >
-          Iniciar Nova Venda
+          Iniciar Novo Pedido
         </Button>
       </div>
 
@@ -273,7 +273,7 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-8 py-8 text-right">
                            <span className="text-xl font-black font-mono text-slate-900 dark:text-white tracking-tighter">
-                             R$ {order.totalLiquido.toFixed(2)}
+                             {order.totalLiquido.toFixed(2)}
                            </span>
                         </td>
                         <td className="px-8 py-8 text-center">

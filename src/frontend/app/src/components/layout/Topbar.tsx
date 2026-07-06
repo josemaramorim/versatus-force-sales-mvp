@@ -95,7 +95,7 @@ export function Topbar() {
             <Zap className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm lg:text-xl font-black italic tracking-tighter leading-none truncate pr-2">Módulo de Venda</h2>
+            <h2 className="text-sm lg:text-xl font-black italic tracking-tighter leading-none truncate pr-2">Módulo de Pedido</h2>
             <div className="flex items-center gap-2 mt-2">
               {isOnline ? (
                 <>

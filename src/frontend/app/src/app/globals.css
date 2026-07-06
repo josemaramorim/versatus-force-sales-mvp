@@ -8,6 +8,11 @@
   --radius-3xl: 1.5rem;
   --radius-4xl: 2.5rem;
   --radius-5xl: 3rem;
+
+  --color-content1: var(--content1);
+  --color-content2: var(--content2);
+  --color-content3: var(--content3);
+  --color-content4: var(--content4);
 }
 
 @layer components {
@@ -45,12 +50,22 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 248, 250, 252;
   --background-end-rgb: 255, 255, 255;
+
+  --content1: #ffffff;
+  --content2: #f8fafc;
+  --content3: #f1f5f9;
+  --content4: #e2e8f0;
 }
 
 .dark {
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 2, 6, 23;
   --background-end-rgb: 15, 23, 42;
+
+  --content1: #0f172a;
+  --content2: #1e293b;
+  --content3: #334155;
+  --content4: #475569;
 }
 
 body {
@@ -81,4 +96,29 @@ body {
 }
 .dark ::-webkit-scrollbar-thumb {
   background: #334155;
+}
+
+/* Fix transparent NextUI dropdowns, popovers, and listboxes in Tailwind v4 */
+div[data-slot="content"],
+div[role="menu"],
+div[role="listbox"],
+ul[data-slot="listbox"],
+ul[data-slot="menu"],
+[data-slot="popover"] {
+  background-color: var(--content1) !important;
+  color: rgb(var(--foreground-rgb)) !important;
+  border: 1px solid var(--content2) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark div[data-slot="content"],
+.dark div[role="menu"],
+.dark div[role="listbox"],
+.dark ul[data-slot="listbox"],
+.dark ul[data-slot="menu"],
+.dark [data-slot="popover"] {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
 }

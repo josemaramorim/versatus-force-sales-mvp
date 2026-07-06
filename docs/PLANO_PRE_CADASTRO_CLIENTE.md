@@ -38,25 +38,25 @@ Este documento centraliza as especificações técnicas, a matriz de tarefas e o
 
 ## 📋 PARTE 2: Checklist de Tarefas
 
-- [ ] **Git e Inicialização**
-  - [ ] Criar a branch de funcionalidade `feature/pre-cadastro-cliente` a partir da `develop`.
-- [ ] **Passo 1: Frontend App (PWA)**
-  - [ ] Adicionar interface `PreCliente` e atualizar `CriarPedidoPayload` no arquivo [vendas.ts](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/src/types/vendas.ts).
-  - [ ] Criar modal `PreClienteModal` e opção `[+] Novo Cliente` no autocomplete em [ClientSearch.tsx](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/src/components/vendas/ClientSearch.tsx), adicionando a validação de nome/documento duplicado no IndexedDB.
-  - [ ] Adaptar a lógica da tela principal em [nova/page.tsx](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/src/app/(admin)/vendas/nova/page.tsx) para controlar o estado do pré-cliente e integrá-lo com a fila de sincronização offline.
-- [ ] **Passo 2: Backend API (Postgres)**
-  - [ ] Atualizar entidade no arquivo [Pedido.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Domain/Pedidos/Pedido.cs).
-  - [ ] Adicionar campos no Fluent API em [PedidosDbContext.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Infrastructure/Data/PedidosDbContext.cs) e gerar a Migration do Entity Framework.
-  - [ ] Modificar DTO de sincronização no arquivo [OrderExportPayload.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Infrastructure/Integration/Models/OrderExportPayload.cs).
-  - [ ] Validar duplicidade (Nome ou CPF/CNPJ) no Redis antes de registrar o pedido em [CriarPedidoCommand.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoCommand.cs).
-- [ ] **Passo 3: ERP Adapter (.NET Worker)**
-  - [ ] Integrar inserção em `MOBPRECLIENTE` (sequenciamento ID manual) e pedido em `MOBVENDA` na mesma transação atômica em [OrderImporter.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/Jobs/OrderImporter.cs).
-  - [ ] Adaptar loop de retorno e envio de payload ao FTP em [OrderImporter.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/Jobs/OrderImporter.cs).
-  - [ ] Implementar a regra de deleção local em `MOBPRECLIENTE` **apenas após** o sucesso do upload FTP.
-  - [ ] Atualizar o processador de resultados na API da nuvem para trocar o ID do cliente temporário para o ID oficial final do ERP e limpar o JSON temporário.
-- [ ] **Passo 4: Validação Final**
-  - [ ] Executar testes de integração na API.
-  - [ ] Realizar teste manual de fluxo completo (Venda -> Inserção SQL Server -> Faturamento -> Limpeza SQL/Postgres -> Atualização do status no PWA).
+- [x] **Git e Inicialização**
+  - [x] Criar a branch de funcionalidade `feature/pre-cadastro-cliente` a partir da `develop`.
+- [x] **Passo 1: Frontend App (PWA)**
+  - [x] Adicionar interface `PreCliente` e atualizar `CriarPedidoPayload` no arquivo [vendas.ts](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/src/types/vendas.ts).
+  - [x] Criar modal `PreClienteModal` e opção `[+] Novo Cliente` no autocomplete em [ClientSearch.tsx](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/src/components/vendas/ClientSearch.tsx), adicionando a validação de nome/documento duplicado no IndexedDB.
+  - [x] Adaptar a lógica da tela principal em [nova/page.tsx](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/src/app/(admin)/vendas/nova/page.tsx) para controlar o estado do pré-cliente e integrá-lo com a fila de sincronização offline.
+- [/] **Passo 2: Backend API (Postgres)**
+  - [x] Atualizar entidade no arquivo [Pedido.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Domain/Pedidos/Pedido.cs).
+  - [x] Adicionar campos no Fluent API em [PedidosDbContext.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Infrastructure/Data/PedidosDbContext.cs) e gerar a Migration do Entity Framework.
+  - [x] Modificar DTO de sincronização no arquivo [OrderExportPayload.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Infrastructure/Integration/Models/OrderExportPayload.cs).
+  - [x] Validar duplicidade (Nome ou CPF/CNPJ) no Redis antes de registrar o pedido em [CriarPedidoCommand.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Api/Pedidos/CriarPedidoCommand.cs).
+- [x] **Passo 3: ERP Adapter (.NET Worker)**
+  - [x] Integrar inserção em `MOBPRECLIENTE` (sequenciamento ID manual) e pedido em `MOBVENDA` na mesma transação atômica em [OrderImporter.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/Jobs/OrderImporter.cs).
+  - [x] Adaptar loop de retorno e envio de payload ao FTP em [OrderImporter.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/Jobs/OrderImporter.cs).
+  - [x] Implementar a regra de deleção local em `MOBPRECLIENTE` **apenas após** o sucesso do upload FTP.
+  - [x] Atualizar o processador de resultados na API da nuvem para trocar o ID do cliente temporário para o ID oficial final do ERP e limpar o JSON temporário.
+- [x] **Passo 4: Validação Final**
+  - [x] Executar testes de integração na API.
+  - [x] Realizar teste manual de fluxo completo (Venda -> Inserção SQL Server -> Faturamento -> Limpeza SQL/Postgres -> Atualização do status no PWA).
 
 ---
 

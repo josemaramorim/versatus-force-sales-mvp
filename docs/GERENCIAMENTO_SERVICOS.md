@@ -23,6 +23,7 @@ Este documento descreve como gerenciar os processos e serviços em background da
   * [4.6. Comandos de Limpeza e Manutenção](#46-comandos-de-limpeza-e-manutenção-do-sistema)
   * [4.7. Solução de Problemas Comuns (Troubleshooting)](#47-solução-de-problemas-comuns-troubleshooting)
 * [5. Fluxo de Criação de Tenant e Sincronização de Catálogo (Alimentação do Redis)](#5-fluxo-de-criação-de-tenant-e-sincronização-de-catálogo-alimentação-do-redis) — Como o cache do Redis é atualizado.
+* [6. Configuração para Execução Local de Desenvolvimento (Ambiente Misto)](#6-configuração-para-execução-local-de-desenvolvimento-ambiente-misto) — Como apontar os serviços locais para o Docker e para o SQL Server local.
 
 ---
 
@@ -283,3 +284,83 @@ Quando um novo Tenant é criado (por exemplo, `00000000-0000-0000-0000-000000000
   2. Ele monitora constantemente o diretório SFTP por novos arquivos de catálogo. Ao detectar o upload feito pelo **ERP Adapter** para a nova pasta de tenant, o Worker faz a leitura desses arquivos JSON e popula os dados diretamente nas chaves correspondentes no **Redis** (`catalogo:00000000-0000-0000-0000-000000000003:*`).
 
 Desta forma, para que o catálogo da nova tenant passe a constar e ser disponibilizado via cache no aplicativo, o **ERP Adapter** precisa rodar localmente para exportar e subir as informações, e o **Worker** precisa estar no ar na nuvem para processar esse upload e alimentar o Redis.
+
+---
+
+## 6. Configuração para Execução Local de Desenvolvimento (Ambiente Misto)
+
+Se você está rodando os contêineres Docker (PostgreSQL, Redis, RabbitMQ e FTP) e deseja rodar os serviços locais .NET (`dotnet run`) de forma que eles consumam a infraestrutura do Docker e se integrem com o seu **SQL Server local do Windows**, siga estas instruções de configuração.
+
+### 6.1. Como funciona o redirecionamento
+Como os contêineres Docker expõem suas portas na máquina Windows, suas aplicações locais conseguem enxergá-los usando **`localhost`**. Ao mesmo tempo, como as aplicações locais rodam nativamente no seu Windows, elas se conectam diretamente com o SQL Server local através do endereço do servidor (instância do SQL Server do Windows).
+
+### 6.2. Arquivos `appsettings` de Desenvolvimento
+
+#### A. API (`Versatus.ForcaVendas.Api`)
+Edite o arquivo `appsettings.Development.json` na pasta do projeto da API. Garanta que as chaves de conexão apontem para `localhost` com as credenciais do Docker:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=forca_vendas_dev;Username=postgres;Password=Mudar@!123",
+    "Redis": "localhost:6379,abortConnect=false",
+    "RabbitMQ": "amqp://fvs:fvs_dev_pass@localhost:5672/"
+  },
+  "Integration": {
+    "Transport": "Ftp",
+    "Ftp": {
+      "Host": "localhost",
+      "Port": 21,
+      "UseSftp": false,
+      "Username": "test",
+      "Password": "test",
+      "BasePath": "/integration-sync"
+    }
+  },
+  "Messaging": {
+    "BrokerUrl": "amqp://fvs:fvs_dev_pass@localhost:5672/"
+  }
+}
+```
+
+#### B. Worker (`Versatus.ForcaVendas.Worker`)
+Edite o arquivo `appsettings.Development.json` na pasta do Worker. Certifique-se de que a conexão do PostgreSQL e do Redis apontem para o Docker local:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=forca_vendas_dev;Username=postgres;Password=Mudar@!123",
+    "Redis": "localhost:6379,abortConnect=false"
+  }
+}
+```
+
+#### C. Adaptador ERP (`Versatus.ForcaVendas.ErpAdapter`)
+No ERP Adapter, edite o arquivo `appsettings.json` (ou `appsettings.Development.json` se criado). Aponte o banco de dados para a instância local do seu SQL Server no Windows e o FTP para o Docker (`localhost`):
+
+```json
+{
+  "ConnectionStrings": {
+    "ErpDatabase": "Server=DESKTOP-PA7RCSD\\SQLEXPRESS2008;Database=versatus;User Id=sa;Password=SUA_SENHA_DO_SQL;TrustServerCertificate=True;"
+  },
+  "Integration": {
+    "Transport": "Ftp",
+    "Ftp": {
+      "Host": "localhost",
+      "Port": 21,
+      "UseSftp": false,
+      "Username": "test",
+      "Password": "test",
+      "BasePath": "/integration-sync"
+    }
+  }
+}
+```
+
+### 6.3. Como Executar os Serviços
+1. Verifique no Docker Desktop se os 4 contêineres estão **ligados** (indicador verde).
+2. Verifique se o serviço do seu **SQL Server local** está rodando no Windows.
+3. Inicie os três serviços via terminal ou PowerShell:
+   * **API**: `dotnet run --project src/backend/Versatus.ForcaVendas.Api`
+   * **Worker**: `dotnet run --project src/worker/Versatus.ForcaVendas.Worker`
+   * **ERP Adapter**: `dotnet run --project src/erp-adapter/Versatus.ForcaVendas.ErpAdapter`

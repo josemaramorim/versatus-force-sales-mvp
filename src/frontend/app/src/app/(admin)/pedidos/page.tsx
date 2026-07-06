@@ -25,7 +25,8 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter
+  ModalFooter,
+  Spinner
 } from '@nextui-org/react'
 import { 
   Search, 
@@ -38,7 +39,8 @@ import {
   Download,
   ClipboardList,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react'
 
 const columns = [
@@ -72,7 +74,7 @@ const statusLabelMap: Record<string, string> = {
   offline: "Offline",
 }
 
-import { listPedidosApi, PedidoSummary } from '@/lib/vendaApi'
+import { listPedidosApi, PedidoSummary, getPedidoApi, DetalhePedido } from '@/lib/vendaApi'
 import { db } from '@/lib/offlineDb'
 
 function mapPedidoToRow(p: PedidoSummary) {
@@ -80,7 +82,7 @@ function mapPedidoToRow(p: PedidoSummary) {
     id: p.pedidoId.substring(0, 8).toUpperCase(),
     pedidoId: p.pedidoId,
     cliente: p.clienteId,
-    total: `R$ ${Number(p.totalLiquido).toFixed(2)}`,
+    total: `${Number(p.totalLiquido).toFixed(2)}`,
     status: p.status || 'rascunho',
     data: new Date(p.criadoEm).toLocaleString('pt-BR'),
     rawCriadoEm: p.criadoEm,
@@ -120,9 +122,12 @@ export default function PedidosPage() {
   const [page, setPage] = React.useState(1)
   const itemsPerPage = 10
 
+  const [viewingOrder, setViewingOrder] = React.useState<DetalhePedido | null>(null)
+  const [isViewOpen, setIsViewOpen] = React.useState(false)
+
   const handleAction = React.useCallback(async (actionKey: React.Key, order: any) => {
     if (actionKey === 'excluir') {
-      const isLocal = order.status === 'erro_sync' || order.status === 'pendente_sync' || order.pedidoId.startsWith('off_')
+      const isLocal = order.status === 'rascunho' || order.status === 'erro_sync' || order.status === 'pendente_sync' || order.status === 'offline' || order.pedidoId.startsWith('off_')
       if (isLocal && db) {
         try {
           console.log('[Offline Action] Removendo pedido local:', order.pedidoId)
@@ -142,8 +147,33 @@ export default function PedidosPage() {
       await syncPendingOrders()
       const list = await listPedidosApi()
       setOrders(list.map(mapPedidoToRow))
+    } else if (actionKey === 'visualizar') {
+      try {
+        const fullOrder = await getPedidoApi(order.pedidoId)
+        setViewingOrder(fullOrder)
+        setIsViewOpen(true)
+      } catch (err) {
+        console.error('Erro ao buscar detalhes do pedido:', err)
+        setAlertTitle('Erro')
+        setAlertMessage('Não foi possível carregar os detalhes do pedido.')
+        setIsAlertOpen(true)
+      }
+    } else if (actionKey === 'exportar') {
+      try {
+        const fullOrder = await getPedidoApi(order.pedidoId)
+        setViewingOrder(fullOrder)
+        setIsViewOpen(true)
+        setTimeout(() => {
+          window.print()
+        }, 350)
+      } catch (err) {
+        console.error('Erro ao exportar PDF:', err)
+        setAlertTitle('Erro')
+        setAlertMessage('Não foi possível carregar os detalhes para exportar o PDF.')
+        setIsAlertOpen(true)
+      }
     }
-  }, [setAlertTitle, setAlertMessage, setIsAlertOpen])
+  }, [setAlertTitle, setAlertMessage, setIsAlertOpen, setViewingOrder, setIsViewOpen, setOrders])
 
   useEffect(() => {
     let mounted = true
@@ -593,6 +623,191 @@ export default function PedidosPage() {
                 >
                   Entendido
                 </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      {/* Modal de Visualização de Detalhes do Pedido */}
+      <Modal 
+        isOpen={isViewOpen} 
+        onClose={() => setIsViewOpen(false)}
+        size="2xl"
+        backdrop="blur"
+        scrollBehavior="inside"
+        classNames={{
+          backdrop: "bg-slate-950/60 backdrop-blur-md",
+          base: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-0 shadow-2xl text-slate-900 dark:text-slate-100",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20">
+                    <ClipboardList className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black italic tracking-tighter text-slate-900 dark:text-white leading-none">
+                      Detalhes do Pedido
+                    </h2>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2">Visualização e Impressão</p>
+                  </div>
+                </div>
+                <Button isIconOnly variant="flat" radius="full" onPress={onClose} className="bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700">
+                  <X className="h-5 w-5" />
+                </Button>
+              </ModalHeader>
+
+              <ModalBody className="p-6 overflow-y-auto">
+                {viewingOrder ? (
+                  <>
+                    <style dangerouslySetInnerHTML={{__html: `
+                      @media print {
+                        body * {
+                          visibility: hidden !important;
+                        }
+                        #printable-area, #printable-area * {
+                          visibility: visible !important;
+                        }
+                        #printable-area {
+                          position: absolute !important;
+                          left: 0 !important;
+                          top: 0 !important;
+                          width: 100% !important;
+                          background: white !important;
+                          color: black !important;
+                        }
+                        .dark #printable-area {
+                          background: white !important;
+                          color: black !important;
+                        }
+                        .print-hidden {
+                          display: none !important;
+                        }
+                      }
+                    `}} />
+                    
+                    <div id="printable-area" className="space-y-8 p-2">
+                      {/* Invoice/Order Header */}
+                      <div className="flex justify-between items-start border-b-2 border-slate-200 dark:border-slate-800 pb-6">
+                        <div>
+                          <h3 className="text-xl font-black italic tracking-tighter text-blue-500">Versatus Force Sales</h3>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Comprovante de Pedido</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black font-mono text-slate-900 dark:text-white">ID: {viewingOrder.id.substring(0, 8).toUpperCase()}</p>
+                          <p className="text-[10px] text-slate-500 font-bold mt-1">{new Date(viewingOrder.criadoEm).toLocaleString('pt-BR')}</p>
+                        </div>
+                      </div>
+
+                      {/* Customer Info */}
+                      <div className="bg-slate-50 dark:bg-slate-950/40 p-5 rounded-2xl border border-slate-150 dark:border-slate-800/80">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Cliente</p>
+                        <h4 className="text-base font-black text-slate-800 dark:text-slate-200 italic">{viewingOrder.clienteNome}</h4>
+                        <p className="text-[10px] text-slate-400 font-mono mt-1">Código ID: {viewingOrder.clienteId}</p>
+                      </div>
+
+                      {/* Items Table */}
+                      <div className="space-y-4">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Itens do Pedido</p>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-slate-200 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                                <th className="pb-3">Sku</th>
+                                <th className="pb-3">Produto</th>
+                                <th className="pb-3 text-center">Qtd</th>
+                                <th className="pb-3 text-right">Unitário</th>
+                                <th className="pb-3 text-right">Desconto</th>
+                                <th className="pb-3 text-right">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {viewingOrder.itens.map((item, idx) => (
+                                <tr key={idx} className="border-b border-slate-100 dark:border-slate-900/60 text-xs font-semibold text-slate-700 dark:text-slate-350">
+                                  <td className="py-4 font-mono text-[10px]">{item.sku}</td>
+                                  <td className="py-4 font-black italic">{item.nome}</td>
+                                  <td className="py-4 text-center font-mono">{item.quantidade}</td>
+                                  <td className="py-4 text-right font-mono">{item.precoUnitario.toFixed(2)}</td>
+                                  <td className="py-4 text-right font-mono">{item.desconto.toFixed(2)}</td>
+                                  <td className="py-4 text-right font-mono font-black text-slate-900 dark:text-white">{item.total.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                              {viewingOrder.itens.length === 0 && (
+                                <tr>
+                                  <td colSpan={6} className="py-6 text-center text-xs text-slate-400 font-bold italic">
+                                    Nenhum item listado ou carregado localmente.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Financial Summary */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+                        <div className="space-y-4 text-xs font-bold text-slate-500">
+                          {viewingOrder.condicaoPagamento && (
+                            <div>
+                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Condição de Pagto</span>
+                              <span className="font-black text-slate-800 dark:text-slate-200 capitalize italic">{viewingOrder.condicaoPagamento.condicaoPagamentoId} ({viewingOrder.condicaoPagamento.formaPagamento})</span>
+                            </div>
+                          )}
+                          {viewingOrder.observacao && (
+                            <div>
+                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Observações</span>
+                              <span className="italic block text-slate-600 dark:text-slate-400">{viewingOrder.observacao}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-3 font-mono text-[10px] font-black uppercase tracking-wider text-slate-400 md:text-right flex flex-col justify-end">
+                          <div className="flex justify-between md:justify-end md:gap-8">
+                            <span>Subtotal Bruto</span>
+                            <span className="text-slate-700 dark:text-slate-300">{viewingOrder.totalBruto.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between md:justify-end md:gap-8 text-amber-500/80">
+                            <span>Desconto Total</span>
+                            <span>- {viewingOrder.totalDesconto.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between md:justify-end md:gap-8 text-blue-500 border-t border-slate-200 dark:border-slate-800 pt-3 text-sm">
+                            <span>Total Líquido</span>
+                            <span className="text-xl font-black">{viewingOrder.totalLiquido.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-40 flex items-center justify-center">
+                    <Spinner size="lg" />
+                  </div>
+                )}
+              </ModalBody>
+
+              <ModalFooter className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 print-hidden">
+                <Button 
+                  variant="flat" 
+                  radius="lg" 
+                  onPress={onClose}
+                  className="font-bold text-xs"
+                >
+                  Fechar
+                </Button>
+                {viewingOrder && (
+                  <Button 
+                    color="primary" 
+                    radius="lg"
+                    startContent={<Download className="h-4 w-4" />}
+                    onPress={() => window.print()}
+                    className="font-black uppercase tracking-wider text-xs bg-blue-600 hover:bg-blue-500 text-white"
+                  >
+                    Imprimir / PDF
+                  </Button>
+                )}
               </ModalFooter>
             </>
           )}

@@ -1,5 +1,5 @@
 import api from './api'
-import { Cliente, Produto, TabelaPreco, CondicaoPagamento, TabelaPrecoMetadata, TenantParameters, PriceTableEntry } from '@/types/vendas'
+import { Cliente, Produto, TabelaPreco, CondicaoPagamento, TabelaPrecoMetadata, TenantParameters, PriceTableEntry, PreCliente } from '@/types/vendas'
 import { db, type OfflinePedido } from './offlineDb'
 
 // ─── Response shapes matching backend serialization ───────────────────────
@@ -29,6 +29,8 @@ export interface PedidoCriado {
 
 export interface CriarPedidoPayload {
   clienteId: string
+  isNovoCliente?: boolean
+  preCliente?: PreCliente
   itens: {
     produtoId: string
     sku: string
@@ -358,13 +360,15 @@ export async function criarPedidoApi(payload: CriarPedidoPayload): Promise<Pedid
     const totalDesconto = payload.itens.reduce((acc, item) => acc + item.desconto, 0)
     const totalLiquido = totalBruto - totalDesconto
 
-    const cliente = await localDb.clientes.get(payload.clienteId)
-    const clienteNome = cliente?.nome || 'Cliente Local'
+    const cliente = payload.isNovoCliente ? null : await localDb.clientes.get(payload.clienteId)
+    const clienteNome = payload.isNovoCliente && payload.preCliente ? `[Novo] ${payload.preCliente.nome}` : (cliente?.nome || 'Cliente Local')
 
     const offlinePedido: OfflinePedido = {
       id: pedidoId,
       clienteId: payload.clienteId,
       clienteNome: clienteNome,
+      isNovoCliente: payload.isNovoCliente,
+      preCliente: payload.preCliente,
       itens: payload.itens,
       condicaoPagamento: payload.condicaoPagamento,
       observacao: payload.observacao,
@@ -475,6 +479,116 @@ export async function getTenantParameters(): Promise<TenantParameters> {
     if (localDb) {
       const cached = await localDb.tenantParameters.toArray()
       return cached[0] || { tabelaPrecoIdDefault: 1, permiteAlterarTabelaPreco: true }
+    }
+    throw error
+  }
+}
+
+export interface DetalhePedido {
+  id: string
+  clienteId: string
+  clienteNome: string
+  criadoEm: string
+  status: string
+  totalBruto: number
+  totalDesconto: number
+  totalLiquido: number
+  observacao?: string
+  itens: {
+    produtoId: string
+    sku: string
+    nome: string
+    quantidade: number
+    precoUnitario: number
+    desconto: number
+    total: number
+  }[]
+  condicaoPagamento?: {
+    condicaoPagamentoId: string
+    primeiroVencimento: string
+    formaPagamento: string
+  }
+}
+
+export async function getPedidoApi(id: string): Promise<DetalhePedido> {
+  const localDb = db
+  const isOffline = typeof window !== 'undefined' && !navigator.onLine
+
+  if (localDb) {
+    const local = await localDb.pedidos.get(id)
+    if (local && (isOffline || local.itens.length > 0)) {
+      return {
+        id: local.id,
+        clienteId: local.clienteId,
+        clienteNome: local.clienteNome,
+        criadoEm: local.criadoEm,
+        status: local.status,
+        totalBruto: local.itens.reduce((acc, i) => acc + (i.quantidade * i.precoUnitario), 0),
+        totalDesconto: local.itens.reduce((acc, i) => acc + i.desconto, 0),
+        totalLiquido: local.totalLiquido,
+        observacao: local.observacao,
+        itens: local.itens.map(i => ({
+          produtoId: i.produtoId,
+          sku: i.sku,
+          nome: i.nome,
+          quantidade: i.quantidade,
+          precoUnitario: i.precoUnitario,
+          desconto: i.desconto,
+          total: (i.quantidade * i.precoUnitario) - i.desconto
+        })),
+        condicaoPagamento: local.condicaoPagamento
+      }
+    }
+  }
+
+  try {
+    const { data } = await api.get<any>(`/pedidos/${id}`)
+    
+    let clienteNome = data.clienteId
+    if (localDb) {
+      const cli = await localDb.clientes.get(data.clienteId)
+      if (cli) clienteNome = cli.nome
+    }
+
+    return {
+      id: data.pedidoId,
+      clienteId: data.clienteId,
+      clienteNome: clienteNome,
+      criadoEm: data.criadoEm,
+      status: data.status,
+      totalBruto: data.totalBruto,
+      totalDesconto: data.totalDesconto,
+      totalLiquido: data.totalLiquido,
+      observacao: data.observacao,
+      itens: data.itens.map((i: any) => ({
+        produtoId: i.produtoId,
+        sku: i.sku,
+        nome: i.nome,
+        quantidade: i.quantidade,
+        precoUnitario: i.precoUnitario,
+        desconto: i.desconto,
+        total: i.total
+      })),
+      condicaoPagamento: data.condicaoPagamento
+    }
+  } catch (error) {
+    if (localDb) {
+      const local = await localDb.pedidos.get(id)
+      if (local) {
+        return {
+          id: local.id,
+          clienteId: local.clienteId,
+          clienteNome: local.clienteNome,
+          criadoEm: local.criadoEm,
+          status: local.status,
+          totalBruto: local.totalLiquido,
+          totalDesconto: 0,
+          totalLiquido: local.totalLiquido,
+          observacao: local.observacao,
+          itens: [],
+          condicaoPagamento: local.condicaoPagamento
+        }
+      }
     }
     throw error
   }

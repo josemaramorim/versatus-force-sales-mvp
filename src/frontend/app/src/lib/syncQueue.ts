@@ -51,6 +51,8 @@ export async function syncPendingOrders(): Promise<void> {
         // Preparar payload conforme a API espera (sem campos extras do PWA)
         const payload = {
           clienteId: order.clienteId,
+          isNovoCliente: order.isNovoCliente,
+          preCliente: order.preCliente,
           itens: order.itens.map((i) => ({
             produtoId: i.produtoId,
             sku: i.sku,

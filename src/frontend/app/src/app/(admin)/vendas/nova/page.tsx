@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ClientSearch } from '@/components/vendas/ClientSearch'
 import { OrderTable } from '@/components/vendas/OrderTable'
 import { ItemModal } from '@/components/vendas/ItemModal'
-import { ItemPedido, Cliente, CondicaoPagamento, TenantParameters } from '@/types/vendas'
+import { ItemPedido, Cliente, CondicaoPagamento, TenantParameters, PreCliente } from '@/types/vendas'
 import { criarPedidoApi, getCondicoesPagamento, getTenantParameters } from '@/lib/vendaApi'
 import { 
   Plus, 
@@ -48,11 +48,47 @@ export default function NovaVendaPage() {
   const router = useRouter()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null)
+  const [preCliente, setPreCliente] = useState<PreCliente | null>(null)
   const [items, setItems] = useState<ItemPedido[]>([])
+
+  const handleSelectCliente = (cliente: Cliente, pCliente?: PreCliente) => {
+    setSelectedCliente(cliente)
+    setPreCliente(pCliente || null)
+  }
   const [observacoes, setObservacoes] = useState('')
   const [condicaoPagamento, setCondicaoPagamento] = useState('avento')
-  const [descontoGlobal, setDescontoGlobal] = useState(0)
-  const [acrescimoGlobal, setAcrescimoGlobal] = useState(0)
+  const [descontoGlobalInput, setDescontoGlobalInput] = useState("0.00")
+  const [acrescimoGlobalInput, setAcrescimoGlobalInput] = useState("0.00")
+
+  const descontoGlobal = useMemo(() => {
+    const val = parseFloat(descontoGlobalInput)
+    return isNaN(val) ? 0 : val
+  }, [descontoGlobalInput])
+
+  const acrescimoGlobal = useMemo(() => {
+    const val = parseFloat(acrescimoGlobalInput)
+    return isNaN(val) ? 0 : val
+  }, [acrescimoGlobalInput])
+
+  const handleDecimalChange = (value: string, setter: (val: string) => void) => {
+    let val = value.replace(/,/g, '.')
+    val = val.replace(/[^0-9.]/g, '')
+    const parts = val.split('.')
+    if (parts.length > 2) {
+      val = parts[0] + '.' + parts.slice(1).join('')
+    }
+    setter(val)
+  }
+
+  const handleDecimalBlur = (value: string, setter: (val: string) => void) => {
+    const parsed = parseFloat(value)
+    if (isNaN(parsed)) {
+      setter("0.00")
+    } else {
+      setter(parsed.toFixed(2))
+    }
+  }
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -229,7 +265,9 @@ export default function NovaVendaPage() {
     try {
       setIsSaving(true)
       await criarPedidoApi({
-        clienteId: selectedCliente.id,
+        clienteId: preCliente ? 'NEW' : selectedCliente.id,
+        isNovoCliente: preCliente ? true : undefined,
+        preCliente: preCliente || undefined,
         itens: items.map(i => ({
           produtoId: i.produtoId,
           sku: i.sku,
@@ -265,7 +303,7 @@ export default function NovaVendaPage() {
                   <ShoppingCart className="h-6 w-6 text-white" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-2xl lg:text-4xl premium-title leading-none truncate pr-2">Nova Operação</h1>
+                <h1 className="text-2xl lg:text-4xl premium-title leading-none truncate pr-2">Novo Pedido</h1>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] lg:tracking-[0.4em] text-slate-500 mt-2 italic">Versatus Force Sales v2.0</p>
               </div>
           </div>
@@ -287,7 +325,7 @@ export default function NovaVendaPage() {
                           <label className="premium-label tracking-[0.4em]">Busca de Cliente Solicitante</label>
                           <ClientSearch 
                             selectedId={selectedCliente?.id} 
-                            onSelect={setSelectedCliente} 
+                            onSelect={handleSelectCliente} 
                           />
                       </div>
                       <div className="w-full md:w-64 space-y-6 leading-none">  
@@ -382,18 +420,22 @@ export default function NovaVendaPage() {
                       <div className="space-y-4 leading-none text-center">
                           <label className="premium-label tracking-widest opacity-50 block italic text-[9px]">Desc. Geral</label>
                           <input 
-                            type="number" 
-                            value={descontoGlobal} 
-                            onChange={(e) => setDescontoGlobal(Number(e.target.value))}
+                            type="text" 
+                            inputMode="decimal"
+                            value={descontoGlobalInput} 
+                            onChange={(e) => handleDecimalChange(e.target.value, setDescontoGlobalInput)}
+                            onBlur={() => handleDecimalBlur(descontoGlobalInput, setDescontoGlobalInput)}
                             className="w-full h-14 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-emerald-500 font-black text-center shadow-inner text-sm italic"
                           />
                       </div>
                       <div className="space-y-4 leading-none text-center">
                           <label className="premium-label tracking-widest opacity-50 block italic text-[9px]">Acresc. Geral</label>
                           <input 
-                            type="number" 
-                            value={acrescimoGlobal}
-                            onChange={(e) => setAcrescimoGlobal(Number(e.target.value))}
+                            type="text" 
+                            inputMode="decimal"
+                            value={acrescimoGlobalInput}
+                            onChange={(e) => handleDecimalChange(e.target.value, setAcrescimoGlobalInput)}
+                            onBlur={() => handleDecimalBlur(acrescimoGlobalInput, setAcrescimoGlobalInput)}
                             className="w-full h-14 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-rose-500 font-mono text-rose-500 font-black text-center shadow-inner text-sm italic"
                           />
                       </div>
@@ -402,11 +444,11 @@ export default function NovaVendaPage() {
                   <div className="pt-10 border-t border-slate-50 dark:border-slate-800 space-y-6 leading-none">
                       <div className="flex items-center justify-between font-mono text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none italic">
                           <span>Subtotal Bruto</span>
-                          <span className="text-slate-600 dark:text-slate-500">R$ {subtotal.toFixed(2)}</span>
+                          <span className="text-slate-600 dark:text-slate-500">{subtotal.toFixed(2)}</span>
                       </div>
                       <div className="flex items-center justify-between font-mono text-amber-500/60 text-[10px] font-black uppercase tracking-widest leading-none italic">
                           <span>Desconto Total</span>
-                          <span className="text-amber-500">- R$ {(descontoGlobal + (items.reduce((acc, i) => acc + i.valorDesconto, 0))).toFixed(2)}</span>
+                          <span className="text-amber-500">- {(descontoGlobal + (items.reduce((acc, i) => acc + i.valorDesconto, 0))).toFixed(2)}</span>
                       </div>
                       <div className="pt-10 border-t border-slate-50 dark:border-slate-800 leading-none">
                            <div className="flex flex-col space-y-6 leading-none">
@@ -419,7 +461,7 @@ export default function NovaVendaPage() {
                         fullWidth 
                         size="lg"
                         isLoading={isSubmitting}
-                        className="mt-8 py-8 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl shadow-2xl shadow-blue-500/40 transition-all uppercase tracking-[0.2em] text-xs italic tracking-tighter transform active:scale-95"
+                        className="mt-8 py-8 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-3xl shadow-2xl shadow-blue-500/40 transition-all uppercase tracking-wider text-sm transform active:scale-95"
                         onPress={handleConfirmarPedido}
                       >
                         Confirmar Pedido
@@ -503,20 +545,24 @@ export default function NovaVendaPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-3 text-center">
-                <label className="premium-label tracking-widest opacity-50 block italic text-[9px]">Desc. Geral (R$)</label>
+                <label className="premium-label tracking-widest opacity-50 block italic text-[9px]">Desc. Geral</label>
                 <input 
-                  type="number" 
-                  value={descontoGlobal} 
-                  onChange={(e) => setDescontoGlobal(Number(e.target.value))}
+                  type="text" 
+                  inputMode="decimal"
+                  value={descontoGlobalInput} 
+                  onChange={(e) => handleDecimalChange(e.target.value, setDescontoGlobalInput)}
+                  onBlur={() => handleDecimalBlur(descontoGlobalInput, setDescontoGlobalInput)}
                   className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-emerald-500 font-black text-center shadow-inner text-sm italic"
                 />
               </div>
               <div className="space-y-3 text-center">
-                <label className="premium-label tracking-widest opacity-50 block italic text-[9px]">Acresc. Geral (R$)</label>
+                <label className="premium-label tracking-widest opacity-50 block italic text-[9px]">Acresc. Geral</label>
                 <input 
-                  type="number" 
-                  value={acrescimoGlobal}
-                  onChange={(e) => setAcrescimoGlobal(Number(e.target.value))}
+                  type="text" 
+                  inputMode="decimal"
+                  value={acrescimoGlobalInput}
+                  onChange={(e) => handleDecimalChange(e.target.value, setAcrescimoGlobalInput)}
+                  onBlur={() => handleDecimalBlur(acrescimoGlobalInput, setAcrescimoGlobalInput)}
                   className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-rose-500 font-mono text-rose-500 font-black text-center shadow-inner text-sm italic"
                 />
               </div>
@@ -525,11 +571,11 @@ export default function NovaVendaPage() {
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-4 font-mono text-[9px] font-black uppercase tracking-wider italic text-slate-400">
               <div className="flex items-center justify-between">
                 <span>Subtotal Bruto</span>
-                <span className="text-slate-600 dark:text-slate-500">R$ {subtotal.toFixed(2)}</span>
+                <span className="text-slate-600 dark:text-slate-500">{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between text-amber-500/80">
                 <span>Desconto Total</span>
-                <span>- R$ {(descontoGlobal + (items.reduce((acc, i) => acc + i.valorDesconto, 0))).toFixed(2)}</span>
+                <span>- {(descontoGlobal + (items.reduce((acc, i) => acc + i.valorDesconto, 0))).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -540,7 +586,7 @@ export default function NovaVendaPage() {
           <div className="flex flex-col">
             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Pedido</span>
             <span className="text-2xl font-black font-mono text-blue-500 italic leading-none">
-              R$ {totalFinal.toFixed(2)}
+              {totalFinal.toFixed(2)}
             </span>
             <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase leading-none">
               {items.length} {items.length === 1 ? 'item' : 'itens'}

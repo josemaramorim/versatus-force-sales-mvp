@@ -14,7 +14,9 @@ public sealed record CriarPedidoCommand(
     string ClienteId,
     IReadOnlyList<CriarPedidoItemRequest> Itens,
     CriarPedidoCondicaoPagamentoRequest CondicaoPagamento,
-    string? Observacao = null) : IRequest<CriarPedidoResult>;
+    string? Observacao = null,
+    bool? IsNovoCliente = null,
+    CriarPreClienteRequest? PreCliente = null) : IRequest<CriarPedidoResult>;
 
 public sealed record CriarPedidoResult(Guid PedidoId, string Status, int ItensCount, int ParcelasCount, decimal TotalBruto, decimal TotalDesconto, decimal TotalLiquido);
 
@@ -86,6 +88,9 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
             TotalDesconto = totalDesconto,
             TotalLiquido = totalLiquido,
             Observacao = request.Observacao,
+            IsNovoCliente = request.IsNovoCliente ?? false,
+            NomePreCliente = request.PreCliente?.Nome,
+            PreClienteJson = request.PreCliente != null ? System.Text.Json.JsonSerializer.Serialize(request.PreCliente) : null,
             Itens = itens,
             Parcelas = parcelas
         };
@@ -115,6 +120,21 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
                     Payload = new OrderExportData
                     {
                         ClienteIdERP = ParseErpId(pedido.ClienteId, "cli-"),
+                        IsNovoCliente = pedido.IsNovoCliente,
+                        PreCliente = request.PreCliente != null ? new PreClienteExportDto
+                        {
+                            Nome = request.PreCliente.Nome,
+                            Documento = request.PreCliente.Documento,
+                            Telefone = request.PreCliente.Telefone,
+                            Email = request.PreCliente.Email,
+                            Logradouro = request.PreCliente.Logradouro,
+                            Numero = request.PreCliente.Numero,
+                            Complemento = request.PreCliente.Complemento,
+                            Bairro = request.PreCliente.Bairro,
+                            Cidade = request.PreCliente.Cidade,
+                            Uf = request.PreCliente.Uf,
+                            Cep = request.PreCliente.Cep
+                        } : null,
                         CondicaoPagamentoIdERP = ParseErpId(request.CondicaoPagamento.ResolveCondicaoPagamentoId(), "cond-"),
                         DataEmissao = pedido.CriadoEm.ToString("yyyy-MM-dd"),
                         Observacao = pedido.Observacao,

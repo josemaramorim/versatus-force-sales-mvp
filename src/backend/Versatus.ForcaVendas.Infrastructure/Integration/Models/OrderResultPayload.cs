@@ -21,5 +21,6 @@ public sealed class OrderResultData
     public string Resultado { get; set; } = string.Empty; // "processado" | "erro"
     public string? DocumentoVendaId { get; set; }
     public string? MotivoRejeicao { get; set; }
+    public int? ClienteIdERP { get; set; }
     public Guid SourceEventId { get; set; }
 }

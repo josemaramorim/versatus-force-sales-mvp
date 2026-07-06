@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Versatus.ForcaVendas.Api.Middleware;
 using Versatus.ForcaVendas.Infrastructure.Data;
+using Versatus.ForcaVendas.Application.Catalogo;
 
 namespace Versatus.ForcaVendas.Api.Pedidos;
 
@@ -13,6 +14,7 @@ public static class PedidosEndpoints
             ITenantContext tenantContext,
             CriarPedidoRequest request,
             IMediator mediator,
+            IClientCatalogRepository clientCatalogRepository,
             CancellationToken cancellationToken) =>
         {
             if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
@@ -26,12 +28,32 @@ public static class PedidosEndpoints
                 return Results.ValidationProblem(errors);
             }
 
+            if (request.IsNovoCliente == true && request.PreCliente != null)
+            {
+                var searchRequest = new CatalogSearchRequest(tenantContext.TenantId, string.Empty, 100000);
+                var existingClients = await clientCatalogRepository.SearchClientsAsync(searchRequest, cancellationToken);
+
+                string Clean(string s) => new string(s.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+
+                var cleanNome = Clean(request.PreCliente.Nome);
+                var cleanDoc = Clean(request.PreCliente.Documento);
+
+                var duplicate = existingClients.Any(c => Clean(c.Nome) == cleanNome || Clean(c.Documento) == cleanDoc);
+                if (duplicate)
+                {
+                    errors["preCliente"] = new[] { "Cliente já cadastrado no catálogo com este Nome ou CPF/CNPJ!" };
+                    return Results.ValidationProblem(errors);
+                }
+            }
+
             var result = await mediator.Send(new CriarPedidoCommand(
                 tenantContext.TenantId,
                 request.ClienteId,
                 request.Itens,
                 request.CondicaoPagamento,
-                request.Observacao), cancellationToken);
+                request.Observacao,
+                request.IsNovoCliente,
+                request.PreCliente), cancellationToken);
 
             return Results.Created($"/pedidos/{result.PedidoId}", new CriarPedidoResponse(
                 result.PedidoId,

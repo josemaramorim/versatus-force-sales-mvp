@@ -62,7 +62,7 @@ export function OfflineBanner() {
     offline: {
       bg: 'bg-amber-500/90 dark:bg-amber-500/80 border-amber-400/40 text-slate-950',
       icon: <WifiOff className="h-4 w-4 shrink-0" />,
-      text: 'Modo Offline Ativo. Vendas serão salvas localmente no dispositivo.',
+      text: 'Modo Offline Ativo. Pedidos serão salvos localmente no dispositivo.',
     },
     online_syncing: {
       bg: 'bg-blue-600/90 dark:bg-blue-600/80 border-blue-500/40 text-white',

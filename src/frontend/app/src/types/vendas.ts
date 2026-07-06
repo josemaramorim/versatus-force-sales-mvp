@@ -87,3 +87,17 @@ export interface CondicaoPagamento {
   formaCobrancaIdERP: number;
   usarMesComercial: boolean;
 }
+
+export interface PreCliente {
+  nome: string;
+  documento: string;
+  telefone?: string;
+  email?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
+  cep?: string;
+}

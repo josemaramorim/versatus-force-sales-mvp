@@ -59,6 +59,30 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
   const [productInputValue, setProductInputValue] = useState('')
   const [selectedTabelaId, setSelectedTabelaId] = useState<number>(tenantParameters?.tabelaPrecoIdDefault || 1)
 
+  const [valorUnitarioInput, setValorUnitarioInput] = useState("0.00")
+  const [valorDescontoInput, setValorDescontoInput] = useState("0.00")
+
+  const handleDecimalChange = (value: string, setter: (val: string) => void) => {
+    let val = value.replace(/,/g, '.')
+    val = val.replace(/[^0-9.]/g, '')
+    const parts = val.split('.')
+    if (parts.length > 2) {
+      val = parts[0] + '.' + parts.slice(1).join('')
+    }
+    setter(val)
+  }
+
+  const handleDecimalBlur = (value: string, setter: (val: string) => void, fieldSetter: (val: number) => void) => {
+    const parsed = parseFloat(value)
+    if (isNaN(parsed)) {
+      setter("0.00")
+      fieldSetter(0)
+    } else {
+      setter(parsed.toFixed(2))
+      fieldSetter(parsed)
+    }
+  }
+
   useEffect(() => {
     searchProdutos(undefined, 100000)
       .then(setProdutos)
@@ -139,6 +163,9 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
         const tabEntry = prod?.precosPorTabela?.find(p => p.tabelaPrecoEstoqueIdERP === editingItem.tabelaPrecoEstoqueIdERP)
         setSelectedTabelaId(tabEntry?.tabelaPrecoIdERP || tenantParameters?.tabelaPrecoIdDefault || 1)
 
+        setValorUnitarioInput(editingItem.valorUnitario.toFixed(2))
+        setValorDescontoInput(editingItem.valorDesconto.toFixed(2))
+
         reset({
           produtoId: editingItem.produtoId,
           quantidade: editingItem.quantidade,
@@ -148,6 +175,8 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
           naturezaOperacao: editingItem.naturezaOperacao,
         })
       } else {
+        setValorUnitarioInput("0.00")
+        setValorDescontoInput("0.00")
         reset({
           produtoId: '',
           quantidade: 1,
@@ -195,11 +224,13 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
 
       setSelectedTabelaId(tabelaId)
       setValue('valorUnitario', precoFinal)
+      setValorUnitarioInput(precoFinal.toFixed(2))
       setProductInputValue(produto.nome)
     } else {
       setSelectedProduto(null)
       setValue('produtoId', '')
       setProductInputValue('')
+      setValorUnitarioInput("0.00")
     }
   }
 
@@ -209,6 +240,7 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
       const precoEncontrado = selectedProduto.precosPorTabela?.find(p => p.tabelaPrecoIdERP === tabelaId)
       if (precoEncontrado) {
         setValue('valorUnitario', precoEncontrado.valorUnitario)
+        setValorUnitarioInput(precoEncontrado.valorUnitario.toFixed(2))
       }
     }
   }
@@ -397,12 +429,19 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
                             )}
                           </div>
                           <Input
-                            {...field}
-                            value={field.value?.toString()}
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
+                            value={valorUnitarioInput}
                             variant="flat"
                             radius="lg"
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) => {
+                              handleDecimalChange(e.target.value, setValorUnitarioInput)
+                              const parsed = parseFloat(e.target.value.replace(/,/g, '.'))
+                              field.onChange(isNaN(parsed) ? 0 : parsed)
+                            }}
+                            onBlur={() => {
+                              handleDecimalBlur(valorUnitarioInput, setValorUnitarioInput, field.onChange)
+                            }}
                             classNames={{
                               inputWrapper: "h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-6",
                               input: "text-2xl font-black italic tracking-tighter text-slate-600 dark:text-slate-400 font-mono"
@@ -414,19 +453,26 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
                 </div>
 
                 <div className="space-y-4">
-                  <label className="premium-label tracking-[0.4em]">Desconto Item (R$)</label>
+                  <label className="premium-label tracking-[0.4em]">Desconto Item</label>
                   <Controller
                     name="valorDesconto"
                     control={control}
                     render={({ field }) => (
                       <Input
-                        {...field}
-                        value={field.value?.toString()}
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
+                        value={valorDescontoInput}
                         variant="flat"
                         radius="lg"
                         startContent={<BadgePercent className="h-6 w-6 text-amber-500" />}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          handleDecimalChange(e.target.value, setValorDescontoInput)
+                          const parsed = parseFloat(e.target.value.replace(/,/g, '.'))
+                          field.onChange(isNaN(parsed) ? 0 : parsed)
+                        }}
+                        onBlur={() => {
+                          handleDecimalBlur(valorDescontoInput, setValorDescontoInput, field.onChange)
+                        }}
                         classNames={{
                           inputWrapper: "h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-6",
                           input: "text-2xl font-black italic tracking-tighter text-amber-500 font-mono"
@@ -440,11 +486,11 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
                 <div className="pt-8 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div className="space-y-2">
                         <p className="premium-label italic opacity-50">Subtotal Bruto</p>
-                        <p className="text-xl font-bold font-mono text-slate-500 dark:text-slate-400 italic">R$ {subtotalItem.toFixed(2)}</p>
+                        <p className="text-xl font-bold font-mono text-slate-500 dark:text-slate-400 italic">{subtotalItem.toFixed(2)}</p>
                     </div>
                     <div className="text-right space-y-2">
                         <p className="premium-label tracking-[0.4em] text-blue-500">Valor Final Item</p>
-                        <p className="text-5xl font-black font-mono tracking-tighter text-blue-500 italic">R$ {totalItem.toFixed(2)}</p>
+                        <p className="text-5xl font-black font-mono tracking-tighter text-blue-500 italic">{totalItem.toFixed(2)}</p>
                     </div>
                 </div>
 

@@ -12,6 +12,9 @@ public sealed class Pedido
     public decimal TotalDesconto { get; set; }
     public decimal TotalLiquido { get; set; }
     public string? Observacao { get; set; }
+    public bool IsNovoCliente { get; set; }
+    public string? NomePreCliente { get; set; }
+    public string? PreClienteJson { get; set; }
 
     public PedidoStatus? Status { get; set; }
     public ICollection<PedidoItem> Itens { get; set; } = new List<PedidoItem>();

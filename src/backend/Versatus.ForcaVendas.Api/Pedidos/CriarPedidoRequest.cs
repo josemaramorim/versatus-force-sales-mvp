@@ -4,15 +4,36 @@ public sealed record CriarPedidoRequest(
     string ClienteId,
     IReadOnlyList<CriarPedidoItemRequest> Itens,
     CriarPedidoCondicaoPagamentoRequest CondicaoPagamento,
-    string? Observacao = null)
+    string? Observacao = null,
+    bool? IsNovoCliente = null,
+    CriarPreClienteRequest? PreCliente = null)
 {
     public Dictionary<string, string[]> Validate()
     {
         var errors = new Dictionary<string, string[]>();
 
-        if (string.IsNullOrWhiteSpace(ClienteId))
+        if (IsNovoCliente != true && string.IsNullOrWhiteSpace(ClienteId))
         {
             errors["clienteId"] = ["clienteId is required."];
+        }
+
+        if (IsNovoCliente == true)
+        {
+            if (PreCliente is null)
+            {
+                errors["preCliente"] = ["preCliente is required when isNovoCliente is true."];
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(PreCliente.Nome))
+                {
+                    errors["preCliente.nome"] = ["preCliente.nome is required."];
+                }
+                if (string.IsNullOrWhiteSpace(PreCliente.Documento))
+                {
+                    errors["preCliente.documento"] = ["preCliente.documento is required."];
+                }
+            }
         }
 
         if (Itens is null || Itens.Count == 0)
@@ -120,3 +141,17 @@ public sealed record CriarPedidoCondicaoPagamentoRequest(
         return QuantidadeParcelas?.Trim() ?? string.Empty;
     }
 }
+
+public sealed record CriarPreClienteRequest(
+    string Nome,
+    string Documento,
+    string? Telefone = null,
+    string? Email = null,
+    string? Logradouro = null,
+    string? Numero = null,
+    string? Complemento = null,
+    string? Bairro = null,
+    string? Cidade = null,
+    string? Uf = null,
+    string? Cep = null
+);

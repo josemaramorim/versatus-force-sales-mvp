@@ -20,7 +20,7 @@ import { useUIStore } from '@/store/uiStore'
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', color: 'text-blue-500' },
-  { icon: ShoppingCart, label: 'Nova Venda', href: '/vendas/nova', color: 'text-indigo-500' },
+  { icon: ShoppingCart, label: 'Novo Pedido', href: '/vendas/nova', color: 'text-indigo-500' },
   { icon: ClipboardList, label: 'Pedidos', href: '/pedidos', color: 'text-emerald-500' },
   { icon: Users, label: 'Clientes', href: '/clientes', color: 'text-purple-500' },
   { icon: Package, label: 'Produtos', href: '/produtos', color: 'text-amber-500' },

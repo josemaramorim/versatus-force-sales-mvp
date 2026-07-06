@@ -177,6 +177,44 @@ public class PedidosTests : IClassFixture<WebApplicationFactory<Program>>
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task Post_pedidos_novo_cliente_creates_pedido_with_pre_cliente()
+    {
+        var client = _factory.CreateClient();
+        var token = await LoginAsync(client, "admin@demo1.versatus.com", "Mudar@!123");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+
+        var request = new CriarPedidoRequest(
+            ClienteId: "temp-cli-99",
+            Itens:
+            [
+                new CriarPedidoItemRequest("prod-001", "SKU-001", "Produto 1", 1, 100m, 0m)
+            ],
+            CondicaoPagamento: new CriarPedidoCondicaoPagamentoRequest("1", DateTime.UtcNow.Date.AddDays(7), "boleto"),
+            Observacao: "Pre cliente test",
+            IsNovoCliente: true,
+            PreCliente: new CriarPreClienteRequest(
+                Nome: "Pre Cliente Teste",
+                Documento: "12345678900",
+                Telefone: "(11) 99999-9999",
+                Email: "precliente@teste.com"
+            ));
+
+        var response = await client.PostAsJsonAsync("/pedidos", request);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var created = await response.Content.ReadFromJsonAsync<CreatePedidoResponse>();
+        created.Should().NotBeNull();
+
+        var id = Guid.Parse(created!.PedidoId);
+        var get = await client.GetAsync($"/pedidos/{id}");
+        get.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await get.Content.ReadFromJsonAsync<GetPedidoResponse>();
+        body.Should().NotBeNull();
+        body!.ClienteId.Should().Be("temp-cli-99");
+    }
+
     private static async Task<LoginResponse> LoginAsync(HttpClient client, string email, string password)
     {
         var loginResponse = await client.PostAsJsonAsync("/auth/login", new LoginRequest(email, password));

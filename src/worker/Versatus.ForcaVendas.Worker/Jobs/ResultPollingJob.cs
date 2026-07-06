@@ -148,6 +148,15 @@ public sealed class ResultPollingJob : BackgroundService
                     : $"{pedido.Observacao} | Rejeitado pelo ERP: {result.Payload.MotivoRejeicao}";
             }
 
+            if (sucesso && pedido.IsNovoCliente && result.Payload.ClienteIdERP.HasValue && result.Payload.ClienteIdERP.Value > 0)
+            {
+                var oldClienteId = pedido.ClienteId;
+                pedido.ClienteId = "cli-" + result.Payload.ClienteIdERP.Value;
+                pedido.PreClienteJson = null;
+                _logger.LogInformation("Pedido {PedidoId} (Novo Cliente) teve seu cliente temporario {OldClienteId} resolvido para o ID oficial {NewClienteId} do ERP.",
+                    pedido.Id, oldClienteId, pedido.ClienteId);
+            }
+
             _logger.LogInformation("Pedido {PedidoId} atualizado de status {OldStatus} para {NewStatus} com sucesso={Sucesso}.",
                 pedido.Id, oldStatus, pedido.StatusId, sucesso);
         }

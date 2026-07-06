@@ -1,10 +1,12 @@
 import Dexie, { type Table } from 'dexie';
-import { Cliente, Produto, TabelaPreco, CondicaoPagamento, TabelaPrecoMetadata, TenantParameters } from '@/types/vendas';
+import { Cliente, Produto, TabelaPreco, CondicaoPagamento, TabelaPrecoMetadata, TenantParameters, PreCliente } from '@/types/vendas';
 
 export interface OfflinePedido {
   id: string; // UUID gerado no frontend
   clienteId: string;
   clienteNome: string;
+  isNovoCliente?: boolean;
+  preCliente?: PreCliente;
   itens: {
     produtoId: string;
     sku: string;
