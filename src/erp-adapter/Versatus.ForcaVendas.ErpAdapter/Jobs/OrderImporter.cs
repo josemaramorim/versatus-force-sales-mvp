@@ -440,6 +440,10 @@ public sealed class OrderImporter : BackgroundService
 
             // 4. Inserir na MOBVENDA (Cabeçalho do Pedido)
             var dataEmissao = DateTime.TryParse(order.Payload.DataEmissao, out var dt) ? dt : DateTime.Now;
+            if (dataEmissao.Date > DateTime.Today)
+            {
+                dataEmissao = DateTime.Today; // Previne trava de venda futura devido a diferença de fuso horário
+            }
             using (var cmd = new SqlCommand(@"
                 INSERT INTO MOBVENDA (
                     IDMOBVENDA, IDGLOFILIAL, IDMOBCLIENTE, NOMEPRECLIENTE, IDMOBCONDICAOPAGAMENTO, 
