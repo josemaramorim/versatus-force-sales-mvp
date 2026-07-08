@@ -28,6 +28,7 @@ Entregar rapidamente um fluxo ponta a ponta para demonstracao ao cliente:
 - [docs/GERENCIAMENTO_SERVICOS.md](docs/GERENCIAMENTO_SERVICOS.md) — Gerenciamento dos serviços locais e guia Docker para desenvolvimento
 - [docs/CONFIGURACAO_TENANTS.md](docs/CONFIGURACAO_TENANTS.md) — Configuração de tenants e empresas
 - [docs/CICLO_VIDA_PEDIDOS.md](docs/CICLO_VIDA_PEDIDOS.md) — Fluxo e ciclo de vida dos pedidos
+- [docs/PLANO_VERSAO_APLICACOES.md](docs/PLANO_VERSAO_APLICACOES.md) — Plano técnico e prompt de IA para implementação de controle automático de versões
 
 ## Governanca GitHub
 
