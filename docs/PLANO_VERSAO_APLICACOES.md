@@ -6,12 +6,13 @@ Este documento reúne o **Plano de Implementação**, o **Diagrama de Arquitetur
 
 ## 🗺️ Sumário
 1. [🎯 Objetivo](#-objetivo)
-2. [📐 Diagrama de Arquitetura](#-diagrama-de-arquitetura)
-3. [📋 Checklist de Tarefas (Backlog)](#-checklist-de-tarefas-backlog)
-4. [📂 Detalhes dos Arquivos a Modificar/Criar (Proposed Changes)](#-detalhes-dos-arquivos-a-modificarcriar-proposed-changes)
-5. [🤖 Prompt de Execução para Inteligências Artificiais](#-prompt-de-execução-para-inteligências-artificiais)
-6. [📄 Código de Referência e Estruturas](#-código-de-referência-e-estruturas)
-7. [🧪 Plano de Verificação (Verification Plan)](#-plano-de-verificação-verification-plan)
+2. [🏷️ Estratégia de Tags Git (Versionamento Semântico)](#-estratégia-de-tags-git-versionamento-semântico)
+3. [📐 Diagrama de Arquitetura](#-diagrama-de-arquitetura)
+4. [📋 Checklist de Tarefas (Backlog)](#-checklist-de-tarefas-backlog)
+5. [📂 Detalhes dos Arquivos a Modificar/Criar (Proposed Changes)](#-detalhes-dos-arquivos-a-modificarcriar-proposed-changes)
+6. [🤖 Prompt de Execução para Inteligências Artificiais](#-prompt-de-execução-para-inteligências-artificiais)
+7. [📄 Código de Referência e Estruturas](#-código-de-referência-e-estruturas)
+8. [🧪 Plano de Verificação (Verification Plan)](#-plano-de-verificação-verification-plan)
 
 ---
 
@@ -21,48 +22,106 @@ Implementar o controle e a exibição de versão automatizados para todo o ecoss
 
 ---
 
+## 🏷️ Estratégia de Tags Git (Versionamento Semântico)
+
+> [!IMPORTANT]
+> Antes de qualquer compilação ou deploy, o repositório **deve ter pelo menos uma tag Git** criada. Sem ela, `git describe --tags` retornará apenas o hash do commit (ex: `09a8a86`), sem número de versão legível.
+
+### Quem cria as tags?
+As tags são criadas pelo **responsável pelo projeto** (desenvolvedor líder ou PO) no momento em que uma versão estável é entregue ou publicada em produção. Não é automático — é uma decisão deliberada de "marcar" um ponto de lançamento.
+
+### Padrão adotado: SemVer 2.0
+O projeto adota o formato `vMAJOR.MINOR.PATCH`:
+- **MAJOR** — Mudança de contrato de integração incompatível com versões anteriores
+- **MINOR** — Nova funcionalidade entregue e compatível com versões anteriores
+- **PATCH** — Correção de bug em produção sem quebrar funcionalidades existentes
+
+### Como a versão aparece nas aplicações
+
+| Contexto do Build | Versão Exibida na App |
+|---|---|
+| Compilado exatamente sobre uma tag | `v1.1.1+main` |
+| 3 commits após a última tag | `v1.1.1-3-g09a8a86+develop` |
+| Sem tags no repositório | `09a8a86+develop` |
+
+> O separador `+branch` ao final segue o padrão **SemVer 2.0** de metadados de build, claramente separando a identificação de versão estável dos metadados de ramo.
+
+### Como criar a primeira tag (passo obrigatório antes do deploy)
+```bash
+# Na branch main, após a compilação final estar estável:
+git checkout main
+git tag v1.0.0 -m "MVP: primeira versão estável entregue ao cliente"
+git push origin v1.0.0
+```
+
+### Tabela de evolução de tags sugeridas
+
+| Tag | Quando criar |
+|---|---|
+| `v1.0.0` | Entrega do MVP ao primeiro cliente |
+| `v1.1.0` | Nova funcionalidade: Pré-Cadastro de Cliente |
+| `v1.1.1` | Correção: Ajuste de fuso horário Cuiabá/Brasília |
+| `v1.2.0` | Nova funcionalidade: Sistema de Versionamento Automático |
+
+---
+
 ## 📐 Diagrama de Arquitetura
 
 ```mermaid
 graph TD
-    Git[Git Metadata: Tags/Commit/Branch] -->|.NET Build Target| DLL[.dll Assembly Metadata]
-    Git -->|Node.js child_process| Next[Next.js Client-Side Env]
+    Dev[Desenvolvedor cria Tag Git] -->|git tag vX.Y.Z + git push| Repo[Repositório GitHub]
+    Repo -->|git describe --always| Build
+
+    subgraph Build[Tempo de Compilação/Build]
+        MSBuild[.NET MSBuild Target] --> DLL[Assembly InformationalVersion]
+        NodeBuild[Next.js next.config.ts] --> EnvVar[NEXT_PUBLIC_APP_VERSION]
+    end
+
     DLL -->|AssemblyInformationalVersion| API[API Gateway]
     DLL -->|AssemblyInformationalVersion| Worker[Worker Service]
     DLL -->|AssemblyInformationalVersion| Adapter[ERP Adapter]
-    
-    API -->|GET /api/version| FrontView[Frontend UI]
-    Next -->|process.env.NEXT_PUBLIC_APP_VERSION| FrontView
+
+    API -->|GET /api/version| Frontend[Frontend UI]
+    EnvVar -->|process.env.NEXT_PUBLIC_APP_VERSION| Frontend
+    Adapter -->|--version CLI arg| Suporte[Equipe de Suporte]
 ```
 
 ---
 
 ## 📋 Checklist de Tarefas (Backlog)
 
+### Pré-requisito: Criar a tag inicial no Git
+*   **[ ] T0. Criar e publicar a tag `v1.0.0` no repositório**
+    *   Verificar que a branch `main` está atualizada e estável.
+    *   Executar: `git checkout main && git tag v1.0.0 -m "MVP: primeira versão estável" && git push origin v1.0.0`
+
 ### 1. Backend & Microsserviços (.NET Core)
 *   **[ ] T1.1. Injeção de Metadados via `.csproj` (MSBuild)**
     *   Editar os arquivos `.csproj` da API, Worker e ERP Adapter.
-    *   Incluir o `Target` que obtém a versão via comando Git (`git describe --tags --always --dirty` e `git rev-parse --abbrev-ref HEAD`) e injeta no parâmetro `<InformationalVersion>`.
+    *   Incluir o `Target` que obtém a versão via `git describe --tags --always` e a branch via `git rev-parse --abbrev-ref HEAD`.
+    *   Injetar no parâmetro `<InformationalVersion>` usando o separador `+branch` (padrão SemVer 2.0).
 *   **[ ] T1.2. Endpoint de Versão na API (`GET /api/version`)**
     *   Criar o endpoint sob a rota `/api/version` (rota anônima/sem autenticação JWT).
-    *   Fazer o endpoint ler o metadado `AssemblyInformationalVersion` da API e retornar em formato JSON (contendo: nome da app, versão do git + build time, ambiente e versão do .NET).
+    *   Fazer o endpoint ler o metadado `AssemblyInformationalVersion` e retornar em formato JSON.
 *   **[ ] T1.3. Argumento CLI e Logs no Worker**
-    *   Ajustar o `Program.cs` do Worker para exibir a versão no console durante a inicialização.
-    *   Ajustar a captura de argumentos de linha de comando (`args`). Se o comando for executado com `-v` ou `--version`, escrever a versão no console e finalizar o processo imediatamente (`return`).
+    *   Ajustar o `Program.cs` do Worker para exibir a versão no console/logger durante a inicialização.
+    *   Interceptar `-v` ou `--version`: exibir versão e encerrar imediatamente.
 *   **[ ] T1.4. Argumento CLI e Logs no ERP Adapter**
     *   Ajustar o `Program.cs` do ERP Adapter para exibir a versão no log ao iniciar.
-    *   Interceptar argumentos e, ao receber `-v` ou `--version`, imprimir a versão e encerrar imediatamente.
+    *   Interceptar `-v` ou `--version`: exibir versão e encerrar imediatamente.
+    *   **Especialmente importante**: o ERP Adapter roda localmente no cliente — o `--version` permite à equipe de suporte confirmar qual versão está instalada remotamente sem acesso ao servidor.
 
 ### 2. Frontend (Next.js & React)
 *   **[ ] T2.1. Injeção da Versão no `next.config.ts`**
-    *   Importar `execSync` e rodar a busca do Git no arquivo de configuração do Next.
-    *   Injetar a versão calculada na chave global de variáveis de ambiente: `env: { NEXT_PUBLIC_APP_VERSION: ... }`.
+    *   Importar `execSync` e rodar `git describe` no arquivo de configuração do Next.
+    *   Injetar a versão calculada na chave global: `env: { NEXT_PUBLIC_APP_VERSION: ... }`.
+    *   Garantir fallback `1.0.0-dev` para ambientes de build sem Git disponível.
 *   **[ ] T2.2. Exibição da Versão no Login**
     *   Modificar a página de Login para exibir as versões de forma discreta na parte inferior.
-    *   Chamar a API de versão de forma assíncrona. Exibir: `App: {versao_front} • API: {versao_api}`.
+    *   Exibir: `App: {versao_front} • API: {versao_api}`. Mostrar `Indisponível` se a API não responder.
 *   **[ ] T2.3. Exibição da Versão na Área Logada (Sidebar)**
-    *   Modificar a barra lateral do dashboard para ler a variável de ambiente do frontend e fazer a chamada de busca da versão da API.
-    *   Exibir as versões abaixo do menu lateral de forma elegante.
+    *   Modificar a barra lateral do dashboard para exibir as versões do frontend e da API.
+    *   Exibir versões abaixo do menu lateral de forma sutil e elegante.
 
 ---
 
@@ -73,24 +132,22 @@ graph TD
 #### [MODIFY] [Versatus.ForcaVendas.Api.csproj](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Api/Versatus.ForcaVendas.Api.csproj)
 #### [MODIFY] [Versatus.ForcaVendas.Worker.csproj](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/worker/Versatus.ForcaVendas.Worker/Versatus.ForcaVendas.Worker.csproj)
 #### [MODIFY] [Versatus.ForcaVendas.ErpAdapter.csproj](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/Versatus.ForcaVendas.ErpAdapter.csproj)
-* Incluir o Target `<Target Name="PopulateVersionInfo" BeforeTargets="BeforeBuild">` antes do fechamento de `</Project>`.
-* Esse target executa comandos Git e injeta o resultado na propriedade `<InformationalVersion>` do compilador. (Ver exemplo de código na Seção 6).
+* Incluir o Target `<Target Name="PopulateVersionInfo" BeforeTargets="BeforeBuild">` antes do fechamento de `</Project>`. (Ver exemplo de código na Seção 7).
+* O separador entre versão e branch usa `+` (padrão SemVer 2.0) e não `-` para evitar duplicidade com commits intermediários do `git describe`.
 
 ---
 
 ### 2. API Gateway (`Versatus.ForcaVendas.Api`)
 
 #### [NEW] [VersionEndpoints.cs](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/backend/Versatus.ForcaVendas.Api/Version/VersionEndpoints.cs)
-* Criar uma rota pública/anônima (sem necessidade de login) `GET /api/version`.
-* Deve obter a versão do Assembly:
-  `var version = typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "1.0.0-unknown";`
+* Criar rota pública/anônima `GET /api/version` (sem autenticação JWT).
 * Retorna um objeto JSON:
   ```json
   {
     "appName": "Versatus Force Sales API",
-    "version": "v1.0.2-3-g09a8a86-develop (Build: 2026-07-08 01:10:00 UTC)",
+    "version": "v1.1.1-3-g09a8a86+develop (Build: 2026-07-08 12:00:00 UTC)",
     "environment": "Production",
-    "dotnetVersion": ".NET 10.0"
+    "dotnetVersion": ".NET 10.0.x"
   }
   ```
 
@@ -100,26 +157,24 @@ graph TD
 
 #### [MODIFY] [Program.cs (Worker)](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/worker/Versatus.ForcaVendas.Worker/Program.cs)
 #### [MODIFY] [Program.cs (ErpAdapter)](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/Program.cs)
-* **Log de Inicialização**: Assim que o serviço subir, imprimir no console/logger:
-  `LogInformation("Inicializando [NomeApp] - Versão: {Version}", version)`
-* **Argumento CLI**: Adicionar interceptação dos argumentos de entrada `args`. Se o comando for executado passando `-v` ou `--version`, ele imprime a versão do build no console (`Console.WriteLine`) e encerra o processo imediatamente (`return`).
+* **Log de Inicialização**: `LogInformation("Inicializando {App} - Versão: {Version}", appName, version)`
+* **Argumento CLI** (`-v` / `--version`): imprime versão no console e encerra imediatamente.
+  * No cliente: `Versatus.ForcaVendas.ErpAdapter.exe --version` → exibe `v1.1.1+main (Build: 2026-07-08 UTC)`
 
 ---
 
 ### 4. Frontend Web App (Next.js)
 
 #### [MODIFY] [next.config.ts](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/next.config.ts)
-* Utilizar a biblioteca nativa `child_process` para rodar `git describe` e expor a versão em tempo de build através da chave de ambiente do Next: `env: { NEXT_PUBLIC_APP_VERSION: ... }`. (Ver exemplo de código na Seção 6).
+* Usar `execSync` para capturar a versão do Git em tempo de build.
+* Fallback: `'1.0.0-dev'` caso o ambiente de build não tenha Git disponível (Docker clean build, CI sem `.git`).
 
 #### [MODIFY] [Sidebar.tsx](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/src/components/layout/Sidebar.tsx)
-* Ao carregar a tela, fazer uma chamada assíncrona para o endpoint `GET /api/version` da API.
-* Exibir de forma sutil no rodapé da barra lateral:
-  * **Frontend**: `v1.0.2-develop`
-  * **Backend**: `v1.0.2-develop`
-* Se a chamada falhar, mostrar `Backend: Indisponível`.
+* Exibir no rodapé: `Front: v1.1.1+develop • API: v1.1.1+main`
+* Se a chamada à API falhar: `API: Indisponível`
 
 #### [MODIFY] [page.tsx (Login)](file:///c:/Pasta%20de%20Trabalho/Projetos/Analises/Versatus.Net/versatus-force-sales-mvp/src/frontend/app/src/app/login/page.tsx)
-* Exibir a versão do frontend e da API logo abaixo do formulário de login de forma minimalista.
+* Exibir versão do frontend e da API abaixo do formulário de login de forma discreta e minimalista.
 
 ---
 
@@ -128,78 +183,174 @@ graph TD
 > Copie e cole o prompt abaixo no console da IA de desenvolvimento (ex: Claude, Gemini, ChatGPT) para que ela realize todo o trabalho de forma autônoma.
 
 ```text
-Você é um desenvolvedor sênior encarregado de implementar um controle automático de versão no projeto. Não altere chaves de negócio ou lógicas de funcionamento, apenas integre a captura e exibição de versão.
+Você é um desenvolvedor sênior encarregado de implementar um controle automático de versão no projeto Versatus Force Sales MVP. Não altere chaves de negócio ou lógicas de funcionamento, apenas integre a captura e exibição de versão. Siga EXATAMENTE os passos abaixo, sem pular nenhum.
 
-Siga exatamente os passos abaixo:
+=== CONTEXTO IMPORTANTE ===
+- O projeto usa .NET Core (API, Worker, ERP Adapter) + Next.js (Frontend)
+- A versão é extraída do Git em tempo de compilação usando a tag mais recente
+- Se não existir tag no repositório, o comando `git tag v1.0.0 -m "MVP" && git push origin v1.0.0` deve ser executado primeiro
+- A versão segue SemVer 2.0. O separador entre versão e branch é `+` (não `-`)
+- Exemplo de versão esperada: `v1.1.1-3-g09a8a86+develop (Build: 2026-07-08 12:00:00 UTC)`
 
-1. MODIFICAR OS ARQUIVOS .CSPROJ DO BACKEND
-Edite os seguintes arquivos:
+=== PASSO 1: VERIFICAR/CRIAR TAG INICIAL ===
+Execute no terminal:
+  git tag
+Se não houver nenhuma tag listada, execute:
+  git checkout main
+  git tag v1.0.0 -m "MVP: primeira versão estável"
+  git push origin v1.0.0
+
+=== PASSO 2: MODIFICAR OS ARQUIVOS .CSPROJ DO BACKEND ===
+Edite os três arquivos abaixo, inserindo o Target MSBuild antes do fechamento </Project>:
 - src/backend/Versatus.ForcaVendas.Api/Versatus.ForcaVendas.Api.csproj
 - src/worker/Versatus.ForcaVendas.Worker/Versatus.ForcaVendas.Worker.csproj
 - src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/Versatus.ForcaVendas.ErpAdapter.csproj
 
-Insira o Target do MSBuild antes do final da tag </Project>:
-<Target Name="PopulateVersionInfo" BeforeTargets="BeforeBuild">
-  <Exec Command="git describe --tags --always --dirty" ConsoleToMSBuild="true" IgnoreExitCode="true">
-    <Output TaskParameter="ConsoleOutput" PropertyName="GitVersion" />
-  </Exec>
-  <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true">
-    <Output TaskParameter="ConsoleOutput" PropertyName="GitBranch" />
-  </Exec>
-  <PropertyGroup>
-    <ActualVersion Condition="'$(GitVersion)' != ''">$(GitVersion)</ActualVersion>
-    <ActualVersion Condition="'$(GitVersion)' == ''">1.0.0-dev</ActualVersion>
-    <ActualVersion Condition="'$(GitBranch)' != ''">$(ActualVersion)-$(GitBranch)</ActualVersion>
-    <Version>$(ActualVersion)</Version>
-    <InformationalVersion>$(ActualVersion) (Build: $([System.DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")) UTC)</InformationalVersion>
-  </PropertyGroup>
-</Target>
+Código a inserir antes de </Project>:
+  <Target Name="PopulateVersionInfo" BeforeTargets="BeforeBuild">
+    <Exec Command="git describe --tags --always" ConsoleToMSBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitVersion" />
+    </Exec>
+    <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitBranch" />
+    </Exec>
+    <PropertyGroup>
+      <ActualVersion Condition="'$(GitVersion)' != ''">$(GitVersion.Trim())</ActualVersion>
+      <ActualVersion Condition="'$(GitVersion)' == ''">1.0.0-unknown</ActualVersion>
+      <GitBranchClean Condition="'$(GitBranch)' != ''">$(GitBranch.Trim())</GitBranchClean>
+      <GitBranchClean Condition="'$(GitBranch)' == ''">local</GitBranchClean>
+      <Version>$(ActualVersion)</Version>
+      <InformationalVersion>$(ActualVersion)+$(GitBranchClean) (Build: $([System.DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")) UTC)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
 
-2. CRIAR O ENDPOINT DE VERSÃO NA API
-Crie o arquivo "src/backend/Versatus.ForcaVendas.Api/Version/VersionEndpoints.cs" com uma rota pública "GET /api/version" (mapeado sem autenticação). Ele deve obter a versão do Assembly:
-var version = typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "1.0.0-unknown";
-Retorne um objeto JSON contendo:
+=== PASSO 3: CRIAR O ENDPOINT DE VERSÃO NA API ===
+Crie o arquivo "src/backend/Versatus.ForcaVendas.Api/Version/VersionEndpoints.cs":
+
+using System.Reflection;
+using System.Runtime.InteropServices;
+public static class VersionEndpoints
 {
-  "appName": "Versatus Force Sales API",
-  "version": version,
-  "environment": builder.Environment.EnvironmentName,
-  "dotnetVersion": System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+    public static IEndpointRouteBuilder MapVersionEndpoints(this IEndpointRouteBuilder app)
+    {
+        app.MapGet("/api/version", () =>
+        {
+            var version = typeof(VersionEndpoints).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion ?? "1.0.0-unknown";
+            return Results.Ok(new
+            {
+                appName = "Versatus Force Sales API",
+                version,
+                environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
+                dotnetVersion = RuntimeInformation.FrameworkDescription
+            });
+        }).AllowAnonymous();
+        return app;
+    }
 }
-Registre esse endpoint no mapeamento de rotas em Program.cs.
 
-3. CONFIGURAR CLI E LOGS DO WORKER E ERP ADAPTER
-Edite:
+Em seguida, registre o endpoint no Program.cs da API adicionando:
+  app.MapVersionEndpoints();
+
+=== PASSO 4: CONFIGURAR CLI E LOGS DO WORKER E ERP ADAPTER ===
+Edite o início do Program.cs de AMBOS os serviços:
 - src/worker/Versatus.ForcaVendas.Worker/Program.cs
 - src/erp-adapter/Versatus.ForcaVendas.ErpAdapter/Program.cs
 
-Em ambos os arquivos, logo no início do fluxo principal de Program.cs (antes do build/run do host):
-Verifique se args contém "-v" ou "--version". Se sim, escreva o valor do InformationalVersion no Console e faça um retorno imediato (encerrando a execução).
-Imprima também a versão no logger no momento em que o serviço iniciar (no construtor ou no início do serviço de background).
+Adicione logo no início (antes de qualquer builder ou host):
+  var version = typeof(Program).Assembly
+      .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
+      ?.InformationalVersion ?? "1.0.0-unknown";
 
-4. CONFIGURAR NEXT.JS DO FRONTEND
-Edite "src/frontend/app/next.config.ts".
-Importe "child_process" de forma segura. Execute "git describe --tags --always --dirty" e "git rev-parse --abbrev-ref HEAD" de forma síncrona.
-Injete o resultado em process.env.NEXT_PUBLIC_APP_VERSION adicionando a chave "env" no objeto "nextConfig". Caso ocorra erro ao rodar os comandos do git (ex: máquina sem git), defina um fallback como "1.0.0-dev".
+  if (args.Contains("-v") || args.Contains("--version"))
+  {
+      Console.WriteLine(version);
+      return;
+  }
 
-5. EXIBIR AS VERSÕES NO FRONTEND
-- Edite a página de login "src/frontend/app/src/app/login/page.tsx".
-- Edite a barra lateral de navegação "src/frontend/app/src/components/layout/Sidebar.tsx".
-Chame de forma assíncrona o endpoint "GET /api/version" na API (usando fetch ou axios).
-Exiba em ambos os componentes as versões no formato:
-"Front: {NEXT_PUBLIC_APP_VERSION} • API: {api_version}"
-Se a chamada à API falhar, mostre "API: Indisponível".
+E no momento que o logger estiver disponível (logo após o build do host):
+  logger.LogInformation("Inicializando {App} — Versão: {Version}", "NomeDoServico", version);
+
+=== PASSO 5: CONFIGURAR NEXT.JS DO FRONTEND ===
+Edite "src/frontend/app/next.config.ts". Substitua o conteúdo por:
+
+import type { NextConfig } from 'next'
+import { execSync } from 'child_process'
+
+let gitVersion = '1.0.0-dev'
+try {
+  const tag = execSync('git describe --tags --always').toString().trim()
+  const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+  gitVersion = `${tag}+${branch}`
+} catch {
+  // Fallback: ambiente sem Git (Docker clean build)
+}
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL
+
+const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: gitVersion,
+  },
+  ...(apiUrl ? {
+    async rewrites() {
+      return [{ source: '/api/:path*', destination: `${apiUrl}/:path*` }]
+    },
+  } : {}),
+}
+
+export default nextConfig
+
+=== PASSO 6: EXIBIR AS VERSÕES NO FRONTEND ===
+a) Edite a página de login "src/frontend/app/src/app/login/page.tsx":
+   - No final do JSX do componente, adicione abaixo do formulário de login:
+     <p className="text-center text-xs text-default-400 mt-4">
+       Front: {process.env.NEXT_PUBLIC_APP_VERSION ?? '...'} • API: {apiVersion}
+     </p>
+   - apiVersion vem de um estado que busca GET /api/version de forma assíncrona com useEffect.
+   - Se a requisição falhar, mostrar "API: Indisponível".
+
+b) Edite a barra lateral "src/frontend/app/src/components/layout/Sidebar.tsx":
+   - No rodapé da sidebar, adicione um bloco de versões sutis:
+     <div className="text-xs text-default-400 p-2">
+       <span>Front: {process.env.NEXT_PUBLIC_APP_VERSION ?? '...'}</span>
+       <span>API: {apiVersion}</span>
+     </div>
+   - apiVersion vem de um estado com fetch para GET /api/version.
+   - Se falhar, mostrar "Indisponível".
 ```
 
 ---
 
 ## 📄 Código de Referência e Estruturas
 
+### MSBuild Target (`.csproj`)
+```xml
+<Target Name="PopulateVersionInfo" BeforeTargets="BeforeBuild">
+  <Exec Command="git describe --tags --always" ConsoleToMSBuild="true" IgnoreExitCode="true">
+    <Output TaskParameter="ConsoleOutput" PropertyName="GitVersion" />
+  </Exec>
+  <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true">
+    <Output TaskParameter="ConsoleOutput" PropertyName="GitBranch" />
+  </Exec>
+  <PropertyGroup>
+    <ActualVersion Condition="'$(GitVersion)' != ''">$(GitVersion.Trim())</ActualVersion>
+    <ActualVersion Condition="'$(GitVersion)' == ''">1.0.0-unknown</ActualVersion>
+    <GitBranchClean Condition="'$(GitBranch)' != ''">$(GitBranch.Trim())</GitBranchClean>
+    <GitBranchClean Condition="'$(GitBranch)' == ''">local</GitBranchClean>
+    <Version>$(ActualVersion)</Version>
+    <InformationalVersion>$(ActualVersion)+$(GitBranchClean) (Build: $([System.DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")) UTC)</InformationalVersion>
+  </PropertyGroup>
+</Target>
+```
+
 ### Mapeamento do C# para pegar o metadado
 ```csharp
 using System.Reflection;
 
-var informationalVersion = Assembly.GetEntryAssembly()
-    ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+var version = typeof(Program).Assembly
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
     ?.InformationalVersion ?? "1.0.0-unknown";
 ```
 
@@ -210,34 +361,37 @@ import { execSync } from 'child_process'
 
 let gitVersion = '1.0.0-dev'
 try {
-  const versionString = execSync('git describe --tags --always --dirty').toString().trim()
-  const branchString = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
-  gitVersion = `${versionString}-${branchString}`
-} catch (e) {
-  // Fallback caso falte o git no ambiente de deploy
+  const tag = execSync('git describe --tags --always').toString().trim()
+  const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+  gitVersion = `${tag}+${branch}`
+} catch {
+  // Fallback: ambiente sem Git (Docker clean build, CI sem .git)
 }
-
-const nextConfig: NextConfig = {
-  env: {
-    NEXT_PUBLIC_APP_VERSION: gitVersion,
-  },
-  // ... outras configurações existentes ...
-}
-
-export default nextConfig
 ```
 
 ---
 
 ## 🧪 Plano de Verificação (Verification Plan)
 
-### Automated Verification
-* Compilar a API localmente (`dotnet build`) e conferir o metadado do `.dll` gerado.
-* Executar o comando no terminal:
-  `dotnet run --project src/erp-adapter/Versatus.ForcaVendas.ErpAdapter -- --version`
-  Verificar se exibe a tag do Git com a branch correspondente.
+### Local
+1. Compilar a API: `dotnet build src/backend/Versatus.ForcaVendas.Api`
+   → Verificar que o log do MSBuild mostra a versão extraída do Git.
+2. Testar CLI do ERP Adapter:
+   `dotnet run --project src/erp-adapter/Versatus.ForcaVendas.ErpAdapter -- --version`
+   → Deve imprimir `v1.0.0+feature/ajuste-fuso-horario (Build: ...)` e encerrar.
+3. Acessar `http://localhost:5000/api/version`
+   → Deve retornar JSON com versão, ambiente e runtime .NET.
+4. Acessar o app em `http://localhost:3000/login`
+   → Deve exibir versão do front e versão da API na parte inferior da tela.
+5. Acessar o Dashboard e verificar rodapé da Sidebar com as duas versões exibidas.
 
-### Manual Verification
-1. Abrir a rota `http://localhost:5000/api/version` e conferir o JSON retornado.
-2. Acessar a tela de login do aplicativo e verificar a exibição da versão.
-3. Entrar no Dashboard e verificar as versões exibidas na barra lateral.
+### Ambiente ICP (Produção/Dev)
+6. Após deploy no ICP, acessar `https://app-dev.versatusapp.com.br/api/version`
+   → Confirmar que o build do pipeline do GitHub Actions injetou a versão corretamente.
+7. Verificar a tela de login e sidebar do app de produção:
+   `https://app-dev.versatusapp.com.br/login`
+
+### No cliente (ERP Adapter instalado)
+8. Abrir o prompt de comando (CMD) na pasta onde o `.exe` está instalado e executar:
+   `Versatus.ForcaVendas.ErpAdapter.exe --version`
+   → Confirmar a versão exibida corresponde ao pacote enviado ao cliente.
