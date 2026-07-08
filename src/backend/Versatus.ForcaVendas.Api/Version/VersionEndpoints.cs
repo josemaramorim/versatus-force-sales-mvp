@@ -7,7 +7,7 @@ public static class VersionEndpoints
 {
     public static IEndpointRouteBuilder MapVersionEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/version", () =>
+        var getVersionHandler = () =>
         {
             var version = typeof(VersionEndpoints).Assembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
@@ -20,7 +20,10 @@ public static class VersionEndpoints
                 environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
                 dotnetVersion = RuntimeInformation.FrameworkDescription
             });
-        }).AllowAnonymous();
+        };
+
+        app.MapGet("/version", getVersionHandler).AllowAnonymous();
+        app.MapGet("/api/version", getVersionHandler).AllowAnonymous();
 
         return app;
     }
