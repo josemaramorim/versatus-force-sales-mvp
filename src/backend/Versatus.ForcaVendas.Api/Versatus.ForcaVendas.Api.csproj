@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
   </PropertyGroup>
  
   <ItemGroup>
@@ -25,5 +26,21 @@
     <ProjectReference Include="..\Versatus.ForcaVendas.Application\Versatus.ForcaVendas.Application.csproj" />
     <ProjectReference Include="..\Versatus.ForcaVendas.Infrastructure\Versatus.ForcaVendas.Infrastructure.csproj" />
   </ItemGroup>
+
+  <Target Name="PopulateVersionInfo" BeforeTargets="BeforeBuild">
+    <Exec Command="git describe --tags --always" ConsoleToMSBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitVersion" />
+    </Exec>
+    <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitBranch" />
+    </Exec>
+    <PropertyGroup>
+      <ActualVersion Condition="'$(GitVersion)' != ''">$(GitVersion.Trim())</ActualVersion>
+      <ActualVersion Condition="'$(GitVersion)' == ''">1.0.0-unknown</ActualVersion>
+      <GitBranchClean Condition="'$(GitBranch)' != ''">$(GitBranch.Trim())</GitBranchClean>
+      <GitBranchClean Condition="'$(GitBranch)' == ''">local</GitBranchClean>
+      <InformationalVersion>$(ActualVersion)+$(GitBranchClean) (Build: $([System.DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")) UTC)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
 
 </Project>

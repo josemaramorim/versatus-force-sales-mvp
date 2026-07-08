@@ -32,12 +32,17 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [apiVersion, setApiVersion] = useState<string | null>(null)
 
   useEffect(() => {
     setMounted(true)
     clearOfflineDatabase().catch((err) => {
       console.error('[LoginPage] Erro ao limpar base local:', err)
     })
+    fetch('/api/version')
+      .then(r => r.json())
+      .then(d => setApiVersion(d.version ?? 'Indisponível'))
+      .catch(() => setApiVersion('Indisponível'))
   }, [])
 
   const {
@@ -194,8 +199,9 @@ export default function LoginPage() {
 
           </form>
 
-          <motion.p custom={6} variants={fadeUp} initial="hidden" animate="visible" className="text-center text-[11px] text-slate-600 mt-7">
-            Versatus.Net — Force Sales v2.0
+          <motion.p custom={6} variants={fadeUp} initial="hidden" animate="visible" className="text-center text-[10px] text-slate-600 mt-7 font-mono space-y-0.5">
+            <span className="block">Front: {process.env.NEXT_PUBLIC_APP_VERSION ?? '...'}</span>
+            <span className="block">API: {apiVersion ?? '...'}</span>
           </motion.p>
         </div>
       </motion.div>

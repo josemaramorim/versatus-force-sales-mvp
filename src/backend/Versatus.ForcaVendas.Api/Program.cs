@@ -4,6 +4,7 @@ using Versatus.ForcaVendas.Api;
 using Versatus.ForcaVendas.Api.Auth;
 using Versatus.ForcaVendas.Api.Middleware;
 using Versatus.ForcaVendas.Api.Pedidos;
+using Versatus.ForcaVendas.Api.Version;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,4 +61,5 @@ app.MapCatalogoEndpoints();
 app.MapPedidosEndpoints();
 
 app.MapControllers();
+app.MapVersionEndpoints();
 app.Run();
