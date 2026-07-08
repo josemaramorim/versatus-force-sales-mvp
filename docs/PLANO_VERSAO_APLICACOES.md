@@ -6,13 +6,13 @@ Este documento reúne o **Plano de Implementação**, o **Diagrama de Arquitetur
 
 ## 🗺️ Sumário
 1. [🎯 Objetivo](#-objetivo)
-2. [🏷️ Estratégia de Tags Git (Versionamento Semântico)](#-estratégia-de-tags-git-versionamento-semântico)
-3. [📐 Diagrama de Arquitetura](#-diagrama-de-arquitetura)
-4. [📋 Checklist de Tarefas (Backlog)](#-checklist-de-tarefas-backlog)
-5. [📂 Detalhes dos Arquivos a Modificar/Criar (Proposed Changes)](#-detalhes-dos-arquivos-a-modificarcriar-proposed-changes)
-6. [🤖 Prompt de Execução para Inteligências Artificiais](#-prompt-de-execução-para-inteligências-artificiais)
-7. [📄 Código de Referência e Estruturas](#-código-de-referência-e-estruturas)
-8. [🧪 Plano de Verificação (Verification Plan)](#-plano-de-verificação-verification-plan)
+2. [📐 Diagrama de Arquitetura](#-diagrama-de-arquitetura)
+3. [📋 Checklist de Tarefas (Backlog)](#-checklist-de-tarefas-backlog)
+4. [📂 Detalhes dos Arquivos a Modificar/Criar (Proposed Changes)](#-detalhes-dos-arquivos-a-modificarcriar-proposed-changes)
+5. [🤖 Prompt de Execução para Inteligências Artificiais](#-prompt-de-execução-para-inteligências-artificiais)
+6. [📄 Código de Referência e Estruturas](#-código-de-referência-e-estruturas)
+7. [🧪 Plano de Verificação (Verification Plan)](#-plano-de-verificação-verification-plan)
+8. [🚀 Guia do Desenvolvedor: Como Lançar uma Nova Versão](#-guia-do-desenvolvedor-como-lançar-uma-nova-versão)
 
 ---
 
@@ -385,6 +385,11 @@ try {
    → Deve exibir versão do front e versão da API na parte inferior da tela.
 5. Acessar o Dashboard e verificar rodapé da Sidebar com as duas versões exibidas.
 
+### Manual Verification
+1. Abrir a rota `http://localhost:5000/api/version` e conferir o JSON retornado.
+2. Acessar a tela de login do aplicativo e verificar a exibição da versão.
+3. Entrar no Dashboard e verificar as versões exibidas na barra lateral.
+
 ### Ambiente ICP (Produção/Dev)
 6. Após deploy no ICP, acessar `https://app-dev.versatusapp.com.br/api/version`
    → Confirmar que o build do pipeline do GitHub Actions injetou a versão corretamente.
@@ -395,3 +400,135 @@ try {
 8. Abrir o prompt de comando (CMD) na pasta onde o `.exe` está instalado e executar:
    `Versatus.ForcaVendas.ErpAdapter.exe --version`
    → Confirmar a versão exibida corresponde ao pacote enviado ao cliente.
+
+---
+
+## 🚀 Guia do Desenvolvedor: Como Lançar uma Nova Versão
+
+Este guia descreve o passo a passo que o desenvolvedor deve seguir **cada vez que uma nova funcionalidade ou correção estiver pronta para ser entregue ao cliente**. Seguindo este fluxo, a versão será atualizada automaticamente em todas as aplicações na próxima compilação.
+
+> [!IMPORTANT]
+> O sistema de versão é **100% automático após a tag ser criada**. O desenvolvedor **não precisa editar nenhum arquivo de código** para mudar a versão — basta criar a tag Git no lugar certo.
+
+---
+
+### Quando criar uma nova tag?
+
+| Situação | Tipo de versão | Exemplo |
+|---|---|---|
+| Entrega de nova funcionalidade para o cliente | `MINOR` (+0.1.0) | `v1.0.0` → `v1.1.0` |
+| Correção de bug em produção (hotfix) | `PATCH` (+0.0.1) | `v1.1.0` → `v1.1.1` |
+| Mudança grande que quebra compatibilidade | `MAJOR` (+1.0.0) | `v1.x.x` → `v2.0.0` |
+
+---
+
+### 📋 Passo a Passo do Fluxo de Lançamento
+
+#### Etapa 1 — Finalizar o desenvolvimento
+```bash
+# Certifique-se de que todas as alterações estão commitadas na sua branch
+git status
+# deve retornar: "nothing to commit, working tree clean"
+```
+
+#### Etapa 2 — Merge da feature na develop
+```bash
+# Mude para a branch develop
+git checkout develop
+
+# Integre as alterações da sua branch de funcionalidade
+git merge feature/nome-da-sua-feature --no-edit
+
+# Envie para o repositório remoto
+git push origin develop
+```
+
+#### Etapa 3 — Merge da develop na main
+```bash
+# Mude para a branch principal
+git checkout main
+
+# Integre o que está na develop
+git merge develop --no-edit
+
+# Envie para o repositório remoto
+git push origin main
+```
+
+#### Etapa 4 — Criar e publicar a tag de versão
+
+> [!CAUTION]
+> A tag **SEMPRE** deve ser criada na branch `main`, após o merge estar concluído. Nunca crie tags em branches de feature ou develop.
+
+```bash
+# Confirme que está na main
+git checkout main
+
+# Crie a tag anotada com a mensagem descrevendo o que foi entregue
+# Escolha o tipo correto (MINOR para novas funções, PATCH para correções):
+git tag v1.1.0 -m "feat: pré-cadastro de cliente"
+# ou
+git tag v1.1.1 -m "fix: ajuste de fuso horário para clientes de Cuiabá"
+
+# Publique a tag no GitHub remoto
+git push origin v1.1.0   # substitua pelo número correto da tag criada
+```
+
+#### Etapa 5 — Verificar a versão gerada
+```bash
+# Confirme que o git describe retorna a versão correta
+git describe --tags --always
+# Saída esperada: v1.1.0
+```
+
+#### Etapa 6 — Compilar e publicar as aplicações
+Após a tag criada, **basta compilar** normalmente. A versão será injetada automaticamente:
+
+```bash
+# ERP Adapter (publicação para o cliente)
+dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o ./publish
+
+# Verificar a versão embutida no executável gerado
+.\publish\Versatus.ForcaVendas.ErpAdapter.exe --version
+# Saída esperada: v1.1.0+main (Build: 2026-07-08 12:00:00 UTC)
+```
+
+Para o **Frontend**, basta fazer o push para o repositório e solicitar o redeploy no painel ICP. O Next.js executará `git describe` automaticamente no momento do build no servidor e exibirá a versão nova.
+
+#### Etapa 7 — Voltar para a develop e continuar o desenvolvimento
+```bash
+git checkout develop
+```
+
+---
+
+### 📊 Resumo Visual do Fluxo
+
+```mermaid
+graph LR
+    F[feature/nome] -->|merge| D[develop]
+    D -->|merge| M[main]
+    M -->|git tag vX.Y.Z| T[Tag Publicada no GitHub]
+    T -->|dotnet publish| EXE[.exe do Cliente com versão embutida]
+    T -->|deploy ICP| APP[Aplicativo Web com versão exibida]
+```
+
+---
+
+### ❓ Perguntas Frequentes
+
+**P: E se eu esquecer de criar a tag antes de compilar?**
+R: A versão exibida será o hash do commit (ex: `09a8a86+main`). Não quebrará nada, mas não terá número de versão legível. Crie a tag e recompile.
+
+**P: Posso criar a tag em qualquer branch?**
+R: Tecnicamente sim, mas por convenção do projeto **sempre crie na `main`** após o merge estar concluído.
+
+**P: O que acontece se dois desenvolvedores criarem tags ao mesmo tempo?**
+R: O Git retornará um erro ao tentar fazer o push se a tag já existir remotamente. Verifique com `git tag` antes de criar uma nova.
+
+**P: Como consulto a versão no cliente sem acesso remoto?**
+R: Peça ao cliente para abrir o CMD na pasta do ERP Adapter e executar:
+```cmd
+Versatus.ForcaVendas.ErpAdapter.exe --version
+```
+
