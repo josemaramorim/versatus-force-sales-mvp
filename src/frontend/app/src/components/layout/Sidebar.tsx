@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
@@ -30,8 +30,16 @@ const menuItems = [
 
 export function Sidebar() {
   const [isHovered, setIsHovered] = useState(false)
+  const [apiVersion, setApiVersion] = useState<string | null>(null)
   const pathname = usePathname()
   const { isMobileMenuOpen, setMobileMenuOpen } = useUIStore()
+
+  useEffect(() => {
+    fetch('/api/version')
+      .then(r => r.json())
+      .then(d => setApiVersion(d.version ?? 'Indisponível'))
+      .catch(() => setApiVersion('Indisponível'))
+  }, [])
 
   const SidebarContent = ({ mobile = false }) => (
     <div className={clsx("flex flex-col h-full py-8", mobile ? "px-2" : "")}>
@@ -101,7 +109,7 @@ export function Sidebar() {
           "p-6 rounded-[2.5rem] bg-slate-950/40 border border-slate-900 transition-all duration-500",
           (isHovered || mobile) ? "opacity-100 scale-100" : "opacity-0 scale-90"
         )}>
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none mb-3 italic">Ajuda & Suporte</p>
+          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none mb-3 italic">Ajuda &amp; Suporte</p>
           <Button 
               fullWidth 
               size="sm" 
@@ -110,6 +118,15 @@ export function Sidebar() {
           >
               Abrir Ticket
           </Button>
+          {/* Versões */}
+          <div className="mt-3 pt-3 border-t border-slate-800/50 space-y-0.5">
+            <p className="text-[8px] text-slate-600 font-mono leading-tight">
+              Front: {process.env.NEXT_PUBLIC_APP_VERSION ?? '...'}
+            </p>
+            <p className="text-[8px] text-slate-600 font-mono leading-tight">
+              API: {apiVersion ?? '...'}
+            </p>
+          </div>
         </div>
       </div>
     </div>

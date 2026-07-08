@@ -15,7 +15,9 @@ public sealed class TenantContextMiddleware(RequestDelegate next)
         "/health/live",
         "/health/ready",
         "/metrics",
-        "/.well-known"
+        "/.well-known",
+        "/version",
+        "/api/version"
     ];
 
     public async Task InvokeAsync(
