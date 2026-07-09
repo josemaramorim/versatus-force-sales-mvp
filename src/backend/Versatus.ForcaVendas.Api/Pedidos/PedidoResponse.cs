@@ -60,4 +60,6 @@ public sealed record PedidoSummaryResponse(
     int ParcelasCount,
     decimal TotalBruto,
     decimal TotalDesconto,
-    decimal TotalLiquido);
+    decimal TotalLiquido,
+    string? NomeCliente = null,
+    bool? IsNovoCliente = null);

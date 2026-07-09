@@ -206,7 +206,9 @@ public static class PedidosEndpoints
                 p.Parcelas.Count,
                 p.TotalBruto,
                 p.TotalDesconto,
-                p.TotalLiquido));
+                p.TotalLiquido,
+                NomeCliente: GetNomePreClienteComDocumento(p),
+                IsNovoCliente: p.IsNovoCliente));
 
             return Results.Ok(result);
         })
@@ -214,5 +216,34 @@ public static class PedidosEndpoints
         .WithOpenApi();
 
         return app;
+    }
+
+    private static string? GetNomePreClienteComDocumento(Versatus.ForcaVendas.Domain.Pedidos.Pedido p)
+    {
+        if (!p.IsNovoCliente || string.IsNullOrEmpty(p.NomePreCliente))
+            return null;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(p.PreClienteJson))
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(p.PreClienteJson);
+                var root = doc.RootElement;
+                string? docStr = null;
+                if (root.TryGetProperty("documento", out var prop)) docStr = prop.GetString();
+                else if (root.TryGetProperty("Documento", out prop)) docStr = prop.GetString();
+
+                if (!string.IsNullOrEmpty(docStr))
+                {
+                    return $"[Novo] {p.NomePreCliente} ({docStr})";
+                }
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        return $"[Novo] {p.NomePreCliente}";
     }
 }
