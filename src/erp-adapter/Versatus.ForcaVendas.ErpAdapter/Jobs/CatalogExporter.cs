@@ -434,6 +434,8 @@ public sealed class CatalogExporter : BackgroundService
         }
 
         // Condições Pagamento
+        // Exclui condições do tipo "Livre" (ALTERAPARCELAS = 1) — essas condições exigem
+        // parcelamento manual no ERP e não podem ser processadas automaticamente.
         var condicoesQuery = @"
             SELECT 
                 IDGLOCONDICAOPAGAMENTO,
@@ -445,7 +447,8 @@ public sealed class CatalogExporter : BackgroundService
                 COALESCE(IDGLOFORMACOBRANCA, 1) AS IDGLOFORMACOBRANCA,
                 COALESCE(USARMESCOMERCIAL, 0) AS USARMESCOMERCIAL
             FROM GLOCONDICAOPAGAMENTO
-            WHERE ATIVO = 1";
+            WHERE ATIVO = 1
+              AND COALESCE(ALTERAPARCELAS, 0) = 0";
 
         if (ultimoSync.HasValue)
         {
@@ -461,6 +464,7 @@ public sealed class CatalogExporter : BackgroundService
                     COALESCE(USARMESCOMERCIAL, 0) AS USARMESCOMERCIAL
                 FROM GLOCONDICAOPAGAMENTO
                 WHERE ATIVO = 1
+                  AND COALESCE(ALTERAPARCELAS, 0) = 0
                   AND (DATAALTERACAO > @UltimoSync OR DATAINCLUSAO > @UltimoSync)";
         }
 
