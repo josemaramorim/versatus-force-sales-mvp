@@ -15,6 +15,8 @@ export interface PedidoSummary {
   totalDesconto: number
   totalLiquido: number
   erroDetail?: string
+  nomeCliente?: string
+  isNovoCliente?: boolean
 }
 
 export interface PedidoCriado {
@@ -274,7 +276,7 @@ export async function listPedidosApi(params?: { clienteId?: string; status?: str
           toCache.push({
             id: apiPed.pedidoId,
             clienteId: apiPed.clienteId,
-            clienteNome: cliente?.nome || 'Cliente Sincronizado',
+            clienteNome: apiPed.nomeCliente || cliente?.nome || 'Cliente Sincronizado',
             itens: [], 
             condicaoPagamento: { condicaoPagamentoId: 'avista', primeiroVencimento: apiPed.criadoEm, formaPagamento: 'dinheiro' },
             status: 'sincronizado',
@@ -301,13 +303,13 @@ export async function listPedidosApi(params?: { clienteId?: string; status?: str
         erroDetail: p.erroSyncDetail
       }))
 
-      // Mapear os pedidos recebidos da API para também resolver o nome do cliente se estiver em cache local
+      // Mapear os pedidos recebidos da API para também resolver o nome do cliente se estiver em cache local ou retornado da API
       const mappedApi: PedidoSummary[] = []
       for (const apiPed of apiPedidos) {
         const cliente = await localDb.clientes.get(apiPed.clienteId)
         mappedApi.push({
           ...apiPed,
-          clienteId: cliente ? cliente.nome : apiPed.clienteId
+          clienteId: apiPed.nomeCliente || (cliente ? cliente.nome : apiPed.clienteId)
         })
       }
 
@@ -317,7 +319,10 @@ export async function listPedidosApi(params?: { clienteId?: string; status?: str
       return combined
     }
 
-    return apiPedidos
+    return apiPedidos.map(apiPed => ({
+      ...apiPed,
+      clienteId: apiPed.nomeCliente || apiPed.clienteId
+    }))
   } catch (error) {
     console.warn('[Offline Fallback] Falha ao listar pedidos da API. Retornando dados locais...', error)
     if (localDb) {

@@ -36,6 +36,7 @@ public sealed class OrderImporter : BackgroundService
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
             WriteIndented = true
         };
     }
