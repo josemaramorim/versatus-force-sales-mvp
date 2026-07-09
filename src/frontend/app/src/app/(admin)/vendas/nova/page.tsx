@@ -265,7 +265,7 @@ export default function NovaVendaPage() {
     try {
       setIsSaving(true)
       await criarPedidoApi({
-        clienteId: preCliente ? 'NEW' : selectedCliente.id,
+        clienteId: selectedCliente.id,
         isNovoCliente: preCliente ? true : undefined,
         preCliente: preCliente || undefined,
         itens: items.map(i => ({
