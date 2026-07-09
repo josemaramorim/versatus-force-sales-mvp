@@ -305,7 +305,7 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
                 
                 {/* Product Search Selection */}
                 <div className="space-y-4">
-                  <label className="premium-label tracking-[0.4em]">Produto / Pesquisa</label>
+                  <label className="premium-label tracking-[0.4em]">Produto / Pesquisa <span className="text-red-500">*</span></label>
                   <Autocomplete
                       label={null}
                       placeholder="Pesquise por nome ou SKU..."
@@ -401,7 +401,7 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
                       control={control}
                       render={({ field }) => (
                         <div className="space-y-4">
-                          <label className="premium-label tracking-[0.4em]">Quantidade</label>
+                          <label className="premium-label tracking-[0.4em]">Quantidade <span className="text-red-500">*</span></label>
                           <Input
                             {...field}
                             value={field.value?.toString()}
@@ -423,7 +423,7 @@ export function ItemModal({ isOpen, onClose, onAdd, onEdit, editingItem, tenantP
                       render={({ field }) => (
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <label className="premium-label tracking-[0.4em]">Valor Unitário</label>
+                            <label className="premium-label tracking-[0.4em]">Valor Unitário <span className="text-red-500">*</span></label>
                             {isSelectedTabelaPromocional && (
                               <span className="px-3 py-1 bg-amber-500 text-white text-xs font-black rounded-full animate-pulse">PROMOÇÃO</span>
                             )}

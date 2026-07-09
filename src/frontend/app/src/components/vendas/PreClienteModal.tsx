@@ -134,7 +134,9 @@ export function PreClienteModal({ isOpen, onClose, onSave, existingClientes }: P
                 <label className="premium-label tracking-[0.4em]">Informações Gerais</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Nome / Razão Social</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      Nome / Razão Social <span className="text-red-500">*</span>
+                    </span>
                     <Input
                       placeholder="Nome completo ou Razão Social"
                       value={nome}
@@ -146,7 +148,9 @@ export function PreClienteModal({ isOpen, onClose, onSave, existingClientes }: P
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">CPF / CNPJ</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      CPF / CNPJ <span className="text-red-500">*</span>
+                    </span>
                     <Input
                       placeholder="Somente números"
                       value={documento}

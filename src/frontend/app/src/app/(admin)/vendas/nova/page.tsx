@@ -322,7 +322,7 @@ export default function NovaVendaPage() {
               <div className="premium-card p-10">
                   <div className="flex flex-col md:flex-row md:items-end gap-10">
                       <div className="flex-1 space-y-6">
-                          <label className="premium-label tracking-[0.4em]">Busca de Cliente Solicitante</label>
+                          <label className="premium-label tracking-[0.4em]">Busca de Cliente Solicitante <span className="text-red-500">*</span></label>
                           <ClientSearch 
                             selectedId={selectedCliente?.id} 
                             onSelect={handleSelectCliente} 
@@ -394,7 +394,7 @@ export default function NovaVendaPage() {
                   <div className="absolute -right-20 -top-20 h-40 w-40 bg-blue-600/5 blur-[80px]" />
 
                    <div className="space-y-6 leading-none">
-                      <label className="premium-label tracking-[0.4em]">Forma de Pagto</label>
+                      <label className="premium-label tracking-[0.4em]">Forma de Pagto <span className="text-red-500">*</span></label>
                       <Select 
                         selectedKeys={[condicaoPagamento]}
                         onChange={(e) => setCondicaoPagamento(e.target.value)}
@@ -521,7 +521,7 @@ export default function NovaVendaPage() {
         {isSummaryExpanded && (
           <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
             <div className="space-y-4">
-              <label className="premium-label tracking-[0.4em]">Forma de Pagto</label>
+              <label className="premium-label tracking-[0.4em]">Forma de Pagto <span className="text-red-500">*</span></label>
               <Select 
                 selectedKeys={[condicaoPagamento]}
                 onChange={(e) => setCondicaoPagamento(e.target.value)}
