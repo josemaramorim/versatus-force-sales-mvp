@@ -52,6 +52,7 @@ public sealed class PedidosDbContext : DbContext
             entity.Property(x => x.IsNovoCliente).HasDefaultValue(false);
             entity.Property(x => x.NomePreCliente).HasMaxLength(150);
             entity.Property(x => x.PreClienteJson).HasMaxLength(4000);
+            entity.Property(x => x.CondicaoPagamentoId).HasMaxLength(64).IsRequired().HasDefaultValue("cond-1");
             entity.Property(x => x.CriadoEm).IsRequired();
             entity.HasOne(x => x.Status)
                 .WithMany(x => x.Pedidos)

@@ -269,7 +269,13 @@ export default function DashboardPage() {
                            </p>
                         </td>
                         <td className="px-8 py-8">
-                           <span className="text-base font-black text-slate-900 dark:text-slate-300 italic">{order.clienteId}</span>
+                           <span className="text-base font-black text-slate-900 dark:text-slate-300 italic">{order.nomeCliente || order.clienteId}</span>
+                           {(order.status === 'erro' || order.status === 'erro_sync') && order.erroDetail && (
+                             <p className="text-[10px] font-semibold text-red-500 mt-1.5 leading-tight max-w-xs flex items-center gap-1">
+                               <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                               <span>{order.status === 'erro' ? `Rejeitado ERP: ${order.erroDetail}` : order.erroDetail}</span>
+                             </p>
+                           )}
                         </td>
                         <td className="px-8 py-8 text-right">
                            <span className="text-xl font-black font-mono text-slate-900 dark:text-white tracking-tighter">
@@ -277,7 +283,16 @@ export default function DashboardPage() {
                            </span>
                         </td>
                         <td className="px-8 py-8 text-center">
-                           <Chip className="capitalize font-black text-[9px] tracking-widest px-4 h-6" color={statusColor as any} size="sm" variant="shadow">
+                           <Chip 
+                             className={clsx(
+                               "capitalize font-black text-[9px] tracking-widest px-4 h-6",
+                               (order.status === 'erro' || order.status === 'erro_sync') && "bg-red-500/20 text-red-500 border border-red-500/30"
+                             )} 
+                             color={(order.status === 'erro' || order.status === 'erro_sync') ? undefined : (statusColor as any)} 
+                             size="sm" 
+                             variant={(order.status === 'erro' || order.status === 'erro_sync') ? "bordered" : "shadow"}
+                             startContent={(order.status === 'erro' || order.status === 'erro_sync') ? <AlertTriangle className="h-3 w-3 mr-1 text-red-500" /> : null}
+                           >
                              {statusLabel}
                            </Chip>
                         </td>

@@ -91,6 +91,7 @@ public sealed class CriarPedidoCommandHandler : IRequestHandler<CriarPedidoComma
             IsNovoCliente = request.IsNovoCliente ?? false,
             NomePreCliente = request.PreCliente?.Nome,
             PreClienteJson = request.PreCliente != null ? System.Text.Json.JsonSerializer.Serialize(request.PreCliente) : null,
+            CondicaoPagamentoId = request.CondicaoPagamento.ResolveCondicaoPagamentoId(),
             Itens = itens,
             Parcelas = parcelas
         };
