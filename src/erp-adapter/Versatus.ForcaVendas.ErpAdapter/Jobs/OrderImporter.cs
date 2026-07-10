@@ -309,24 +309,34 @@ public sealed class OrderImporter : BackgroundService
                 clienteNome = order.Payload.PreCliente.Nome;
 
                 // Inserir na MOBPRECLIENTE
-                int idMobPreCliente;
-                using (var preIdCmd = new SqlCommand("SELECT COALESCE(MAX(IDMOBPRECLIENTE), 0) + 1 FROM MOBPRECLIENTE", conn, transaction))
-                {
-                    idMobPreCliente = Convert.ToInt32(await preIdCmd.ExecuteScalarAsync());
-                }
-
                 var preClienteCols = await GetTableColumnsAsync(conn, transaction, "MOBPRECLIENTE");
                 var preClienteLimits = await GetColumnMaxLengthsAsync(conn, transaction, "MOBPRECLIENTE");
 
-                var colList = new List<string> { "IDMOBPRECLIENTE", "IDGLOFILIAL", "NOME" };
-                var paramList = new List<string> { "@IDMOBPRECLIENTE", "@IDGLOFILIAL", "@NOME" };
+                // Determinar se a PK (IDMOBPRECLIENTE) deve ser fornecida manualmente
+                // ou se é IDENTITY (auto-gerada pelo banco)
+                bool pkExiste = preClienteCols.Contains("IDMOBPRECLIENTE");
+                bool pkIsIdentity = await IsIdentityColumnAsync(conn, transaction, "MOBPRECLIENTE", "IDMOBPRECLIENTE");
+
+                var colList = new List<string> { "IDGLOFILIAL", "NOME" };
+                var paramList = new List<string> { "@IDGLOFILIAL", "@NOME" };
 
                 var preParams = new List<SqlParameter>
                 {
-                    new SqlParameter("@IDMOBPRECLIENTE", idMobPreCliente),
                     new SqlParameter("@IDGLOFILIAL", filialId),
                     new SqlParameter("@NOME", SafeSubstring(order.Payload.PreCliente.Nome, "NOME", preClienteLimits, 150))
                 };
+
+                if (pkExiste && !pkIsIdentity)
+                {
+                    int idMobPreCliente;
+                    using (var preIdCmd = new SqlCommand("SELECT COALESCE(MAX(IDMOBPRECLIENTE), 0) + 1 FROM MOBPRECLIENTE", conn, transaction))
+                    {
+                        idMobPreCliente = Convert.ToInt32(await preIdCmd.ExecuteScalarAsync());
+                    }
+                    colList.Insert(0, "IDMOBPRECLIENTE");
+                    paramList.Insert(0, "@IDMOBPRECLIENTE");
+                    preParams.Insert(0, new SqlParameter("@IDMOBPRECLIENTE", idMobPreCliente));
+                }
 
                 string? docCol = null;
                 if (preClienteCols.Contains("DOCUMENTO")) docCol = "DOCUMENTO";
@@ -855,5 +865,30 @@ public sealed class OrderImporter : BackgroundService
         public int NovoCliente { get; set; }
         public int? IdMobCliente { get; set; }
         public string? NomePreCliente { get; set; }
+    }
+
+    private async Task<bool> IsIdentityColumnAsync(SqlConnection conn, SqlTransaction? transaction, string tableName, string columnName)
+    {
+        try
+        {
+            using var cmd = new SqlCommand(@"
+                SELECT COUNT(1)
+                FROM sys.columns c
+                JOIN sys.objects o ON c.object_id = o.object_id
+                WHERE o.name = @TableName
+                  AND c.name = @ColumnName
+                  AND c.is_identity = 1", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@TableName", tableName);
+            cmd.Parameters.AddWithValue("@ColumnName", columnName);
+            var result = await cmd.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Nao foi possivel verificar identity para coluna {Column} da tabela {Table}: {Message}", columnName, tableName, ex.Message);
+            // Se não conseguir verificar, assume que é identity para evitar erro de duplicidade
+            return true;
+        }
     }
 }
