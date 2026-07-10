@@ -598,3 +598,7 @@ export async function getPedidoApi(id: string): Promise<DetalhePedido> {
     throw error
   }
 }
+
+export async function reenviarPedidoApi(pedidoId: string): Promise<void> {
+  await api.post(`/pedidos/${pedidoId}/reenviar`)
+}

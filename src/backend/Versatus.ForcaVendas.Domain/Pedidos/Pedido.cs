@@ -15,6 +15,7 @@ public sealed class Pedido
     public bool IsNovoCliente { get; set; }
     public string? NomePreCliente { get; set; }
     public string? PreClienteJson { get; set; }
+    public string CondicaoPagamentoId { get; set; } = string.Empty;
 
     public PedidoStatus? Status { get; set; }
     public ICollection<PedidoItem> Itens { get; set; } = new List<PedidoItem>();

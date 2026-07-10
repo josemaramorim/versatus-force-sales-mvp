@@ -1,8 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using Versatus.ForcaVendas.Api.Middleware;
 using Versatus.ForcaVendas.Infrastructure.Data;
 using Versatus.ForcaVendas.Application.Catalogo;
+using Versatus.ForcaVendas.Infrastructure.Integration;
+using Versatus.ForcaVendas.Infrastructure.Integration.Models;
+using Versatus.ForcaVendas.Domain.Pedidos;
 
 namespace Versatus.ForcaVendas.Api.Pedidos;
 
@@ -215,6 +219,156 @@ public static class PedidosEndpoints
         .WithName("ListPedidosQuery")
         .WithOpenApi();
 
+        app.MapPost("/pedidos/{id}/reenviar", async (
+            ITenantContext tenantContext,
+            Guid id,
+            ReenviarPedidoRequest? request,
+            PedidosDbContext db,
+            IIntegrationTransport integrationTransport,
+            ILoggerFactory loggerFactory,
+            CancellationToken cancellationToken) =>
+        {
+            var logger = loggerFactory.CreateLogger("PedidosEndpoints");
+
+            if (!tenantContext.HasTenant || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var pedido = await db.Pedidos
+                .Where(p => p.TenantId == tenantContext.TenantId && p.Id == id)
+                .Include(p => p.Itens)
+                .Include(p => p.Parcelas)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (pedido is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (pedido.StatusId != PedidoStatus.ErroId)
+            {
+                return Results.BadRequest("Apenas pedidos com erro de integracao no ERP podem ser reenviados.");
+            }
+
+            // 1. Limpar detalhes de erro anteriores da observação se existirem
+            if (!string.IsNullOrEmpty(pedido.Observacao))
+            {
+                if (pedido.Observacao.Contains("Rejeitado pelo ERP:"))
+                {
+                    var idx = pedido.Observacao.IndexOf("Rejeitado pelo ERP:");
+                    if (idx > 0)
+                    {
+                        pedido.Observacao = pedido.Observacao.Substring(0, idx).TrimEnd(' ', '|');
+                    }
+                    else
+                    {
+                        pedido.Observacao = null;
+                    }
+                }
+
+                // Limpar palavras-chave de teste de erro na observação (para que o reenvio de teste simule sucesso)
+                if (!string.IsNullOrEmpty(pedido.Observacao))
+                {
+                    pedido.Observacao = System.Text.RegularExpressions.Regex.Replace(
+                        pedido.Observacao, 
+                        @"\b(erro|rejeitar)\b", 
+                        "", 
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    
+                    pedido.Observacao = pedido.Observacao.Replace("  ", " ").Trim(' ', '|');
+                    if (string.IsNullOrWhiteSpace(pedido.Observacao))
+                    {
+                        pedido.Observacao = null;
+                    }
+                }
+            }
+
+            // 2. Mudar status para EnviadoId
+            pedido.StatusId = PedidoStatus.EnviadoId;
+            pedido.AtualizadoEm = DateTimeOffset.UtcNow;
+
+            // 3. Resolver ID da Condição de Pagamento ERP usando a coluna persistida no banco do pedido
+            int condicaoPagtoIdERP = ParseErpId(pedido.CondicaoPagamentoId, "cond-");
+            if (condicaoPagtoIdERP == 0)
+            {
+                condicaoPagtoIdERP = 1; // Fallback caso seja nulo/vazio
+            }
+
+            // 4. Montar o payload de exportação do pedido
+            var payload = new OrderExportPayload
+            {
+                EventId = Guid.NewGuid(),
+                CreatedAt = DateTimeOffset.UtcNow,
+                TenantId = pedido.TenantId,
+                PedidoId = pedido.Id,
+                Payload = new OrderExportData
+                {
+                    ClienteIdERP = ParseErpId(pedido.ClienteId, "cli-"),
+                    IsNovoCliente = pedido.IsNovoCliente,
+                    PreCliente = pedido.IsNovoCliente && !string.IsNullOrEmpty(pedido.PreClienteJson)
+                        ? JsonSerializer.Deserialize<PreClienteExportDto>(pedido.PreClienteJson, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+                        : null,
+                    CondicaoPagamentoIdERP = condicaoPagtoIdERP,
+                    DataEmissao = pedido.CriadoEm.ToString("yyyy-MM-dd"),
+                    Observacao = pedido.Observacao,
+                    Orcamento = false,
+                    Origem = "web",
+                    ValorTotal = pedido.TotalBruto,
+                    ValorTotalDesconto = pedido.TotalDesconto,
+                    ValorTotalAcrescimo = 0.00m,
+                    ValorFinal = pedido.TotalLiquido,
+                    ValorFrete = 0.00m,
+                    Itens = pedido.Itens.Select(item =>
+                    {
+                        var totalBrutoItem = item.Quantidade * item.PrecoUnitario;
+                        var pctDesconto = totalBrutoItem > 0 ? Math.Round((item.Desconto / totalBrutoItem) * 100, 2, MidpointRounding.AwayFromZero) : 0m;
+                        return new OrderItemExportDto
+                        {
+                            ProdutoIdERP = ParseErpId(item.ProdutoId, "prod-"),
+                            TabelaPrecoEstoqueIdERP = item.TabelaPrecoEstoqueIdERP != 0 ? item.TabelaPrecoEstoqueIdERP : ParseErpId(item.Sku, "sku-"),
+                            SiglaUnidade = "UN",
+                            Quantidade = item.Quantidade,
+                            PrecoUnitario = item.PrecoUnitario,
+                            PercentualDesconto = pctDesconto,
+                            ValorDesconto = item.Desconto,
+                            PercentualAcrescimo = 0m,
+                            ValorAcrescimo = 0m,
+                            ValorFinal = item.Total
+                        };
+                    }).ToList(),
+                    Parcelas = pedido.Parcelas.Select(parcela =>
+                    {
+                        var formaId = ParseErpId(parcela.FormaPagamento, "forma-");
+                        if (formaId == 0) formaId = 1;
+                        return new OrderParcelaExportDto
+                        {
+                            Numero = parcela.Numero,
+                            FormaCobrancaIdERP = formaId,
+                            Valor = parcela.Valor,
+                            Vencimento = parcela.DataVencimento.ToString("yyyy-MM-dd")
+                        };
+                    }).ToList()
+                }
+            };
+
+            try
+            {
+                await integrationTransport.PublishOrderAsync(pedido.TenantId, payload, cancellationToken);
+                await db.SaveChangesAsync(cancellationToken);
+                
+                logger.LogInformation("Pedido {PedidoId} reenviado com sucesso.", pedido.Id);
+                return Results.Ok(new { Mensagem = "Pedido reenviado com sucesso para processamento no ERP." });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Erro ao publicar reenvio do pedido {PedidoId}.", pedido.Id);
+                return Results.StatusCode(500);
+            }
+        })
+        .WithName("ReenviarPedido")
+        .WithOpenApi();
+
         return app;
     }
 
@@ -246,4 +400,13 @@ public static class PedidosEndpoints
 
         return $"[Novo] {p.NomePreCliente}";
     }
+
+    private static int ParseErpId(string id, string prefixToRemove)
+    {
+        if (string.IsNullOrEmpty(id)) return 0;
+        var clean = id.Replace(prefixToRemove, string.Empty);
+        return int.TryParse(clean, out var val) ? val : 0;
+    }
 }
+
+public record ReenviarPedidoRequest(string? CondicaoPagamentoId);

@@ -172,6 +172,21 @@ export default function PedidosPage() {
         setAlertMessage('Não foi possível carregar os detalhes para exportar o PDF.')
         setIsAlertOpen(true)
       }
+    } else if (actionKey === 'reenviar') {
+      try {
+        const { reenviarPedidoApi } = await import('@/lib/vendaApi')
+        await reenviarPedidoApi(order.pedidoId)
+        setAlertTitle('Sucesso')
+        setAlertMessage('Pedido enviado novamente para processamento no ERP!')
+        setIsAlertOpen(true)
+        const list = await listPedidosApi()
+        setOrders(list.map(mapPedidoToRow))
+      } catch (err: any) {
+        console.error('Erro ao reenviar pedido:', err)
+        setAlertTitle('Erro no Reenvio')
+        setAlertMessage(err?.response?.data?.detail || err?.message || 'Não foi possível reenviar o pedido.')
+        setIsAlertOpen(true)
+      }
     }
   }, [setAlertTitle, setAlertMessage, setIsAlertOpen, setViewingOrder, setIsViewOpen, setOrders])
 
@@ -301,18 +316,32 @@ export default function PedidosPage() {
             {order.status === 'erro_sync' && order.erroDetail && (
               <p className="text-[10px] font-semibold text-red-500 mt-1.5 leading-tight max-w-xs">{order.erroDetail}</p>
             )}
+            {order.status === 'erro' && order.erroDetail && (
+              <p className="text-[10px] font-semibold text-red-500 mt-1.5 leading-tight max-w-xs flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                <span>Rejeitado pelo ERP: {order.erroDetail}</span>
+              </p>
+            )}
           </div>
         )
       case "total":
         return (
           <p className="text-sm font-black text-slate-900 dark:text-white font-mono">{cellValue}</p>
         )
-      case "status":
+      case "status": {
+        const isErro = order.status === 'erro' || order.status === 'erro_sync';
         return (
-          <Chip className="capitalize font-black text-[9px] tracking-widest px-2" color={statusColorMap[order.status]} size="sm" variant="flat">
+          <Chip 
+            className={`capitalize font-black text-[9px] tracking-widest px-2 ${isErro ? 'bg-red-500/20 text-red-500 border border-red-500/30' : ''}`}
+            color={isErro ? undefined : statusColorMap[order.status]} 
+            size="sm" 
+            variant={isErro ? "bordered" : "flat"}
+            startContent={isErro ? <AlertTriangle className="h-3 w-3 mr-0.5 text-red-500" /> : null}
+          >
             {statusLabelMap[order.status] || cellValue}
           </Chip>
         )
+      }
       case "data":
         return (
           <p className="text-xs font-bold text-slate-500">{cellValue}</p>
@@ -320,6 +349,7 @@ export default function PedidosPage() {
       case "actions": {
         const dropdownItems = [
           { key: 'visualizar', label: 'Visualizar', icon: <Eye className="h-4 w-4" />, color: 'default' },
+          ...(order.status === 'erro' ? [{ key: 'reenviar', label: 'Reenviar Pedido', icon: <RefreshCw className="h-4 w-4 text-blue-600" />, color: 'default' }] : []),
           ...(order.status === 'erro_sync' ? [{ key: 'retentar', label: 'Tentar Enviar Novamente', icon: <RefreshCw className="h-4 w-4 text-blue-500" />, color: 'default' }] : []),
           { key: 'exportar', label: 'Exportar PDF', icon: <Download className="h-4 w-4" />, color: 'default' },
           ...(order.status === 'rascunho' || order.status === 'erro_sync' || order.status === 'pendente_sync' ? [{ key: 'excluir', label: 'Excluir Rascunho', icon: <Trash2 className="h-4 w-4" />, color: 'danger' }] : [])
@@ -756,12 +786,37 @@ export default function PedidosPage() {
                               <span className="font-black text-slate-800 dark:text-slate-200 capitalize italic">{viewingOrder.condicaoPagamento.condicaoPagamentoId} ({viewingOrder.condicaoPagamento.formaPagamento})</span>
                             </div>
                           )}
-                          {viewingOrder.observacao && (
-                            <div>
-                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Observações</span>
-                              <span className="italic block text-slate-600 dark:text-slate-400">{viewingOrder.observacao}</span>
-                            </div>
-                          )}
+                          {(() => {
+                            if (!viewingOrder.observacao) return null;
+                            
+                            var obs = viewingOrder.observacao;
+                            var errorStr: string | null = null;
+                            var idx = obs.indexOf("Rejeitado pelo ERP:");
+                            if (idx >= 0) {
+                              errorStr = obs.substring(idx + 19).trim().replace(/^[:\s|]+|[:\s|]+$/g, '');
+                              obs = obs.substring(0, idx).trimEnd().replace(/[|\s]+$/g, '');
+                            }
+                            
+                            return (
+                              <div className="space-y-4 w-full">
+                                {obs && (
+                                  <div>
+                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Observações</span>
+                                    <span className="italic block text-slate-600 dark:text-slate-400 text-xs font-semibold leading-relaxed">{obs}</span>
+                                  </div>
+                                )}
+                                {errorStr && (
+                                  <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl space-y-1.5 max-h-36 overflow-y-auto print:bg-transparent print:border-red-500 print:text-red-600">
+                                    <span className="text-[8px] font-black uppercase tracking-widest block flex items-center gap-1">
+                                      <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                                      <span>Detalhes da Rejeição (ERP)</span>
+                                    </span>
+                                    <p className="text-xs font-mono font-bold leading-normal break-words">{errorStr}</p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         <div className="space-y-3 font-mono text-[10px] font-black uppercase tracking-wider text-slate-400 md:text-right flex flex-col justify-end">
