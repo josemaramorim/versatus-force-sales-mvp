@@ -162,10 +162,61 @@ public sealed class OrderImporter : BackgroundService
 
                     _logger.LogInformation("[FTP] Pedido {PedidoId} processado com sucesso.", order.PedidoId);
                 }
-            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[FTP] Erro ao processar importação do arquivo {FileName} para o tenant {TenantId}.", file.Name, tenantId);
+                
+                try
+                {
+                    Guid pedidoId = Guid.Empty;
+                    var nameWithoutExt = Path.GetFileNameWithoutExtension(file.Name);
+                    if (nameWithoutExt.StartsWith("pedido-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var guidStr = nameWithoutExt.Substring(7);
+                        Guid.TryParse(guidStr, out pedidoId);
+                    }
+
+                    // 1. Mover arquivo de processando/ para erros/
+                    var errosDir = FtpFolderStructure.GetOrdersDirectory(_ftpOptions.BasePath, tenantId, "erros");
+                    var errosPath = FtpFolderStructure.GetOrdersFilePath(_ftpOptions.BasePath, tenantId, "erros", file.Name);
+
+                    await client.CreateDirectory(errosDir, ct);
+                    if (await client.FileExists(processingPath, ct))
+                    {
+                        await client.MoveFile(processingPath, errosPath, FtpRemoteExists.Overwrite, ct);
+                    }
+
+                    // 2. Publicar o resultado de erro para notificar o vendedor
+                    if (pedidoId != Guid.Empty)
+                    {
+                        var resultPayload = new OrderResultPayload
+                        {
+                            EventId = Guid.NewGuid(),
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            TenantId = tenantId,
+                            PedidoId = pedidoId,
+                            Payload = new OrderResultData
+                            {
+                                Resultado = "erro",
+                                DocumentoVendaId = null,
+                                MotivoRejeicao = $"Erro ao processar no ERP: {ex.Message}",
+                                SourceEventId = Guid.Empty
+                            }
+                        };
+
+                        await client.CreateDirectory(resultadosDir, ct);
+                        var resultJson = JsonSerializer.Serialize(resultPayload, _jsonOptions);
+                        var resultBytes = Encoding.UTF8.GetBytes(resultJson);
+                        var resultFilePath = FtpFolderStructure.GetResultsFilePath(_ftpOptions.BasePath, tenantId, "pendentes", $"resultado-{pedidoId}.json");
+                        await client.UploadBytes(resultBytes, resultFilePath, FtpRemoteExists.Overwrite, true, token: ct);
+                        
+                        _logger.LogInformation("[FTP] Resultado de erro publicado para o Pedido {PedidoId}.", pedidoId);
+                    }
+                }
+                catch (Exception moveEx)
+                {
+                    _logger.LogError(moveEx, "[FTP] Falha crítica ao mover arquivo com erro ou publicar resultado para o arquivo {FileName}.", file.Name);
+                }
             }
         }
 
@@ -259,10 +310,69 @@ public sealed class OrderImporter : BackgroundService
 
                     _logger.LogInformation("[SFTP] Pedido {PedidoId} processado com sucesso.", order.PedidoId);
                 }
-            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SFTP] Erro ao processar importação do arquivo {FileName} para o tenant {TenantId}.", file.Name, tenantId);
+
+                try
+                {
+                    Guid pedidoId = Guid.Empty;
+                    var nameWithoutExt = Path.GetFileNameWithoutExtension(file.Name);
+                    if (nameWithoutExt.StartsWith("pedido-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var guidStr = nameWithoutExt.Substring(7);
+                        Guid.TryParse(guidStr, out pedidoId);
+                    }
+
+                    // 1. Mover arquivo de processando/ para erros/
+                    var errosDir = FtpFolderStructure.GetOrdersDirectory(_ftpOptions.BasePath, tenantId, "erros");
+                    var errosPath = FtpFolderStructure.GetOrdersFilePath(_ftpOptions.BasePath, tenantId, "erros", file.Name);
+
+                    await EnsureSftpDirExistsAsync(client, errosDir);
+                    await Task.Run(() =>
+                    {
+                        if (client.Exists(processingPath))
+                        {
+                            if (client.Exists(errosPath)) client.DeleteFile(errosPath);
+                            client.RenameFile(processingPath, errosPath);
+                        }
+                    }, ct);
+
+                    // 2. Publicar o resultado de erro para notificar o vendedor
+                    if (pedidoId != Guid.Empty)
+                    {
+                        var resultPayload = new OrderResultPayload
+                        {
+                            EventId = Guid.NewGuid(),
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            TenantId = tenantId,
+                            PedidoId = pedidoId,
+                            Payload = new OrderResultData
+                            {
+                                Resultado = "erro",
+                                DocumentoVendaId = null,
+                                MotivoRejeicao = $"Erro ao processar no ERP: {ex.Message}",
+                                SourceEventId = Guid.Empty
+                            }
+                        };
+
+                        await EnsureSftpDirExistsAsync(client, resultadosDir);
+                        var resultJson = JsonSerializer.Serialize(resultPayload, _jsonOptions);
+                        var resultBytes = Encoding.UTF8.GetBytes(resultJson);
+                        var resultFilePath = FtpFolderStructure.GetResultsFilePath(_ftpOptions.BasePath, tenantId, "pendentes", $"resultado-{pedidoId}.json");
+                        
+                        using (var resultMs = new MemoryStream(resultBytes))
+                        {
+                            await Task.Run(() => client.UploadFile(resultMs, resultFilePath, true), ct);
+                        }
+
+                        _logger.LogInformation("[SFTP] Resultado de erro publicado para o Pedido {PedidoId}.", pedidoId);
+                    }
+                }
+                catch (Exception moveEx)
+                {
+                    _logger.LogError(moveEx, "[SFTP] Falha crítica ao mover arquivo com erro ou publicar resultado para o arquivo {FileName}.", file.Name);
+                }
             }
         }
 

@@ -172,6 +172,21 @@ export default function PedidosPage() {
         setAlertMessage('Não foi possível carregar os detalhes para exportar o PDF.')
         setIsAlertOpen(true)
       }
+    } else if (actionKey === 'reenviar') {
+      try {
+        const { reenviarPedidoApi } = await import('@/lib/vendaApi')
+        await reenviarPedidoApi(order.pedidoId)
+        setAlertTitle('Sucesso')
+        setAlertMessage('Pedido enviado novamente para processamento no ERP!')
+        setIsAlertOpen(true)
+        const list = await listPedidosApi()
+        setOrders(list.map(mapPedidoToRow))
+      } catch (err: any) {
+        console.error('Erro ao reenviar pedido:', err)
+        setAlertTitle('Erro no Reenvio')
+        setAlertMessage(err?.response?.data?.detail || err?.message || 'Não foi possível reenviar o pedido.')
+        setIsAlertOpen(true)
+      }
     }
   }, [setAlertTitle, setAlertMessage, setIsAlertOpen, setViewingOrder, setIsViewOpen, setOrders])
 
@@ -320,6 +335,7 @@ export default function PedidosPage() {
       case "actions": {
         const dropdownItems = [
           { key: 'visualizar', label: 'Visualizar', icon: <Eye className="h-4 w-4" />, color: 'default' },
+          ...(order.status === 'erro' ? [{ key: 'reenviar', label: 'Reenviar Pedido', icon: <RefreshCw className="h-4 w-4 text-blue-600" />, color: 'default' }] : []),
           ...(order.status === 'erro_sync' ? [{ key: 'retentar', label: 'Tentar Enviar Novamente', icon: <RefreshCw className="h-4 w-4 text-blue-500" />, color: 'default' }] : []),
           { key: 'exportar', label: 'Exportar PDF', icon: <Download className="h-4 w-4" />, color: 'default' },
           ...(order.status === 'rascunho' || order.status === 'erro_sync' || order.status === 'pendente_sync' ? [{ key: 'excluir', label: 'Excluir Rascunho', icon: <Trash2 className="h-4 w-4" />, color: 'danger' }] : [])
