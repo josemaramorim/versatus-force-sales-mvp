@@ -481,86 +481,86 @@ public sealed class OrderImporter : BackgroundService
                 {
                     colList.Add(docCol);
                     paramList.Add("@DOCUMENTO");
-                    preParams.Add(new SqlParameter("@DOCUMENTO", SafeSubstring(order.Payload.PreCliente.Documento, docCol, preClienteLimits, 20)));
+                    preParams.Add(new SqlParameter("@DOCUMENTO", SafeSubstring(order.Payload.PreCliente.Documento ?? "", docCol, preClienteLimits, 20)));
                 }
 
                 string? telCol = null;
                 if (preClienteCols.Contains("TELEFONE")) telCol = "TELEFONE";
                 else if (preClienteCols.Contains("FONE")) telCol = "FONE";
 
-                if (telCol != null && order.Payload.PreCliente.Telefone != null)
+                if (telCol != null)
                 {
                     colList.Add(telCol);
                     paramList.Add("@TELEFONE");
-                    preParams.Add(new SqlParameter("@TELEFONE", SafeSubstring(order.Payload.PreCliente.Telefone, telCol, preClienteLimits, 20)));
+                    preParams.Add(new SqlParameter("@TELEFONE", SafeSubstring(order.Payload.PreCliente.Telefone ?? "", telCol, preClienteLimits, 20)));
                 }
 
-                if (preClienteCols.Contains("EMAIL") && order.Payload.PreCliente.Email != null)
+                if (preClienteCols.Contains("EMAIL"))
                 {
                     colList.Add("EMAIL");
                     paramList.Add("@EMAIL");
-                    preParams.Add(new SqlParameter("@EMAIL", SafeSubstring(order.Payload.PreCliente.Email, "EMAIL", preClienteLimits, 100)));
+                    preParams.Add(new SqlParameter("@EMAIL", SafeSubstring(order.Payload.PreCliente.Email ?? "", "EMAIL", preClienteLimits, 100)));
                 }
 
                 string? logCol = null;
                 if (preClienteCols.Contains("LOGRADOURO")) logCol = "LOGRADOURO";
                 else if (preClienteCols.Contains("ENDERECO")) logCol = "ENDERECO";
 
-                if (logCol != null && order.Payload.PreCliente.Logradouro != null)
+                if (logCol != null)
                 {
                     colList.Add(logCol);
                     paramList.Add("@LOGRADOURO");
-                    preParams.Add(new SqlParameter("@LOGRADOURO", SafeSubstring(order.Payload.PreCliente.Logradouro, logCol, preClienteLimits, 100)));
+                    preParams.Add(new SqlParameter("@LOGRADOURO", SafeSubstring(order.Payload.PreCliente.Logradouro ?? "", logCol, preClienteLimits, 100)));
                 }
 
-                if (preClienteCols.Contains("NUMERO") && order.Payload.PreCliente.Numero != null)
+                if (preClienteCols.Contains("NUMERO"))
                 {
                     colList.Add("NUMERO");
                     paramList.Add("@NUMERO");
-                    preParams.Add(new SqlParameter("@NUMERO", SafeSubstring(order.Payload.PreCliente.Numero, "NUMERO", preClienteLimits, 20)));
+                    preParams.Add(new SqlParameter("@NUMERO", SafeSubstring(order.Payload.PreCliente.Numero ?? "", "NUMERO", preClienteLimits, 20)));
                 }
 
-                if (preClienteCols.Contains("COMPLEMENTO") && order.Payload.PreCliente.Complemento != null)
+                if (preClienteCols.Contains("COMPLEMENTO"))
                 {
                     colList.Add("COMPLEMENTO");
                     paramList.Add("@COMPLEMENTO");
-                    preParams.Add(new SqlParameter("@COMPLEMENTO", SafeSubstring(order.Payload.PreCliente.Complemento, "COMPLEMENTO", preClienteLimits, 50)));
+                    preParams.Add(new SqlParameter("@COMPLEMENTO", SafeSubstring(order.Payload.PreCliente.Complemento ?? "", "COMPLEMENTO", preClienteLimits, 50)));
                 }
 
-                if (preClienteCols.Contains("BAIRRO") && order.Payload.PreCliente.Bairro != null)
+                if (preClienteCols.Contains("BAIRRO"))
                 {
                     colList.Add("BAIRRO");
                     paramList.Add("@BAIRRO");
-                    preParams.Add(new SqlParameter("@BAIRRO", SafeSubstring(order.Payload.PreCliente.Bairro, "BAIRRO", preClienteLimits, 50)));
+                    preParams.Add(new SqlParameter("@BAIRRO", SafeSubstring(order.Payload.PreCliente.Bairro ?? "", "BAIRRO", preClienteLimits, 50)));
                 }
 
                 string? cidCol = null;
                 if (preClienteCols.Contains("CIDADE")) cidCol = "CIDADE";
                 else if (preClienteCols.Contains("MUNICIPIO")) cidCol = "MUNICIPIO";
 
-                if (cidCol != null && order.Payload.PreCliente.Cidade != null)
+                if (cidCol != null)
                 {
                     colList.Add(cidCol);
                     paramList.Add("@CIDADE");
-                    preParams.Add(new SqlParameter("@CIDADE", SafeSubstring(order.Payload.PreCliente.Cidade, cidCol, preClienteLimits, 50)));
+                    preParams.Add(new SqlParameter("@CIDADE", SafeSubstring(order.Payload.PreCliente.Cidade ?? "", cidCol, preClienteLimits, 50)));
                 }
 
                 string? ufCol = null;
                 if (preClienteCols.Contains("UF")) ufCol = "UF";
                 else if (preClienteCols.Contains("ESTADO")) ufCol = "ESTADO";
 
-                if (ufCol != null && order.Payload.PreCliente.Uf != null)
+                if (ufCol != null)
                 {
                     colList.Add(ufCol);
                     paramList.Add("@UF");
-                    preParams.Add(new SqlParameter("@UF", SafeSubstring(order.Payload.PreCliente.Uf, ufCol, preClienteLimits, 2)));
+                    preParams.Add(new SqlParameter("@UF", SafeSubstring(order.Payload.PreCliente.Uf ?? "", ufCol, preClienteLimits, 2)));
                 }
 
-                if (preClienteCols.Contains("CEP") && order.Payload.PreCliente.Cep != null)
+                if (preClienteCols.Contains("CEP"))
                 {
                     colList.Add("CEP");
                     paramList.Add("@CEP");
-                    preParams.Add(new SqlParameter("@CEP", SafeSubstring(order.Payload.PreCliente.Cep, "CEP", preClienteLimits, 15)));
+                    preParams.Add(new SqlParameter("@CEP", SafeSubstring(order.Payload.PreCliente.Cep ?? "", "CEP", preClienteLimits, 15)));
                 }
 
                 var insertSql = $"INSERT INTO MOBPRECLIENTE ({string.Join(", ", colList)}) VALUES ({string.Join(", ", paramList)})";
