@@ -269,33 +269,11 @@ public static class PedidosEndpoints
             pedido.StatusId = PedidoStatus.EnviadoId;
             pedido.AtualizadoEm = DateTimeOffset.UtcNow;
 
-            // 3. Resolver ID da Condição de Pagamento ERP
-            int condicaoPagtoIdERP = 0;
-            if (!string.IsNullOrEmpty(request?.CondicaoPagamentoId))
-            {
-                condicaoPagtoIdERP = ParseErpId(request.CondicaoPagamentoId, "cond-");
-            }
-
+            // 3. Resolver ID da Condição de Pagamento ERP usando a coluna persistida no banco do pedido
+            int condicaoPagtoIdERP = ParseErpId(pedido.CondicaoPagamentoId, "cond-");
             if (condicaoPagtoIdERP == 0)
             {
-                if (pedido.Parcelas.Count == 1)
-                {
-                    var primParcela = pedido.Parcelas.First();
-                    var diffDays = (primParcela.DataVencimento - pedido.CriadoEm.Date).TotalDays;
-                    condicaoPagtoIdERP = diffDays > 5 ? 3 : 1;
-                }
-                else if (pedido.Parcelas.Count == 2)
-                {
-                    condicaoPagtoIdERP = 4;
-                }
-                else if (pedido.Parcelas.Count > 2)
-                {
-                    condicaoPagtoIdERP = pedido.Parcelas.Count + 2;
-                }
-                else
-                {
-                    condicaoPagtoIdERP = 1;
-                }
+                condicaoPagtoIdERP = 1; // Fallback caso seja nulo/vazio
             }
 
             // 4. Montar o payload de exportação do pedido

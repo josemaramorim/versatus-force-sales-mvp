@@ -600,19 +600,5 @@ export async function getPedidoApi(id: string): Promise<DetalhePedido> {
 }
 
 export async function reenviarPedidoApi(pedidoId: string): Promise<void> {
-  const localDb = db
-  let condicaoPagamentoId: string | undefined = undefined
-
-  if (localDb) {
-    try {
-      const local = await localDb.pedidos.get(pedidoId)
-      if (local && local.condicaoPagamento) {
-        condicaoPagamentoId = local.condicaoPagamento.condicaoPagamentoId
-      }
-    } catch (err) {
-      console.warn('Erro ao carregar pedido offline para obter condicao de pagamento:', err)
-    }
-  }
-
-  await api.post(`/pedidos/${pedidoId}/reenviar`, { condicaoPagamentoId })
+  await api.post(`/pedidos/${pedidoId}/reenviar`)
 }
