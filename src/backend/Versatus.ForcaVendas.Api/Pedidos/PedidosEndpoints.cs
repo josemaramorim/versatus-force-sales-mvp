@@ -252,16 +252,35 @@ public static class PedidosEndpoints
             }
 
             // 1. Limpar detalhes de erro anteriores da observação se existirem
-            if (!string.IsNullOrEmpty(pedido.Observacao) && pedido.Observacao.Contains("Rejeitado pelo ERP:"))
+            if (!string.IsNullOrEmpty(pedido.Observacao))
             {
-                var idx = pedido.Observacao.IndexOf("Rejeitado pelo ERP:");
-                if (idx > 0)
+                if (pedido.Observacao.Contains("Rejeitado pelo ERP:"))
                 {
-                    pedido.Observacao = pedido.Observacao.Substring(0, idx).TrimEnd(' ', '|');
+                    var idx = pedido.Observacao.IndexOf("Rejeitado pelo ERP:");
+                    if (idx > 0)
+                    {
+                        pedido.Observacao = pedido.Observacao.Substring(0, idx).TrimEnd(' ', '|');
+                    }
+                    else
+                    {
+                        pedido.Observacao = null;
+                    }
                 }
-                else
+
+                // Limpar palavras-chave de teste de erro na observação (para que o reenvio de teste simule sucesso)
+                if (!string.IsNullOrEmpty(pedido.Observacao))
                 {
-                    pedido.Observacao = null;
+                    pedido.Observacao = System.Text.RegularExpressions.Regex.Replace(
+                        pedido.Observacao, 
+                        @"\b(erro|rejeitar)\b", 
+                        "", 
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    
+                    pedido.Observacao = pedido.Observacao.Replace("  ", " ").Trim(' ', '|');
+                    if (string.IsNullOrWhiteSpace(pedido.Observacao))
+                    {
+                        pedido.Observacao = null;
+                    }
                 }
             }
 
