@@ -27,10 +27,10 @@
       <Output TaskParameter="ConsoleOutput" PropertyName="GitBranch" />
     </Exec>
     <PropertyGroup>
-      <ActualVersion Condition="'$(GitVersion)' != ''">$(GitVersion.Trim())</ActualVersion>
-      <ActualVersion Condition="'$(GitVersion)' == ''">1.0.0-unknown</ActualVersion>
-      <GitBranchClean Condition="'$(GitBranch)' != ''">$(GitBranch.Trim())</GitBranchClean>
-      <GitBranchClean Condition="'$(GitBranch)' == ''">local</GitBranchClean>
+      <ActualVersion>1.0.0-unknown</ActualVersion>
+      <ActualVersion Condition="'$(GitVersion)' != '' and !$(GitVersion.StartsWith('fatal'))">$(GitVersion.Trim())</ActualVersion>
+      <GitBranchClean>production</GitBranchClean>
+      <GitBranchClean Condition="'$(GitBranch)' != '' and !$(GitBranch.StartsWith('fatal'))">$(GitBranch.Trim())</GitBranchClean>
       <InformationalVersion>$(ActualVersion)+$(GitBranchClean) (Build: $([System.DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")) UTC)</InformationalVersion>
     </PropertyGroup>
   </Target>

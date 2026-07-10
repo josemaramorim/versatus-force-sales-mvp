@@ -42,7 +42,7 @@ export function Sidebar() {
   }, [])
 
   const SidebarContent = ({ mobile = false }) => (
-    <div className={clsx("flex flex-col h-full py-8", mobile ? "px-2" : "")}>
+    <div className={clsx("flex flex-col h-full py-8", mobile ? "px-2 overflow-y-auto" : "")}>
       {/* Logo Section */}
       <div className="px-6 mb-12 flex items-center gap-4 group">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-xl shadow-blue-500/20">
@@ -147,7 +147,7 @@ export function Sidebar() {
         }}
       >
         <DrawerContent>
-          <DrawerBody className="p-0 overflow-hidden">
+          <DrawerBody className="p-0 overflow-y-auto">
             <SidebarContent mobile />
           </DrawerBody>
         </DrawerContent>
