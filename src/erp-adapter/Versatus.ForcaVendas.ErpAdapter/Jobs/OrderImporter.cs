@@ -416,6 +416,14 @@ public sealed class OrderImporter : BackgroundService
 
     private async Task ProcessOrderInDatabaseAsync(OrderExportPayload order, int filialId)
     {
+        // Gatilho de simulação de erro controlado para testes no banco real
+        if (!string.IsNullOrEmpty(order.Payload.Observacao) &&
+            (order.Payload.Observacao.Contains("erro", StringComparison.OrdinalIgnoreCase) ||
+             order.Payload.Observacao.Contains("rejeitar", StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new Exception("Pedido rejeitado manualmente para testes do fluxo de erros (Dead Letter Queue).");
+        }
+
         var erpConnectionString = _config.GetConnectionString("ErpDatabase") ?? string.Empty;
         using var conn = new SqlConnection(erpConnectionString);
         await conn.OpenAsync();
