@@ -162,6 +162,7 @@ public sealed class OrderImporter : BackgroundService
 
                     _logger.LogInformation("[FTP] Pedido {PedidoId} processado com sucesso.", order.PedidoId);
                 }
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[FTP] Erro ao processar importação do arquivo {FileName} para o tenant {TenantId}.", file.Name, tenantId);
@@ -310,6 +311,7 @@ public sealed class OrderImporter : BackgroundService
 
                     _logger.LogInformation("[SFTP] Pedido {PedidoId} processado com sucesso.", order.PedidoId);
                 }
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SFTP] Erro ao processar importação do arquivo {FileName} para o tenant {TenantId}.", file.Name, tenantId);
