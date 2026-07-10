@@ -316,18 +316,32 @@ export default function PedidosPage() {
             {order.status === 'erro_sync' && order.erroDetail && (
               <p className="text-[10px] font-semibold text-red-500 mt-1.5 leading-tight max-w-xs">{order.erroDetail}</p>
             )}
+            {order.status === 'erro' && order.erroDetail && (
+              <p className="text-[10px] font-semibold text-red-500 mt-1.5 leading-tight max-w-xs flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                <span>Rejeitado pelo ERP: {order.erroDetail}</span>
+              </p>
+            )}
           </div>
         )
       case "total":
         return (
           <p className="text-sm font-black text-slate-900 dark:text-white font-mono">{cellValue}</p>
         )
-      case "status":
+      case "status": {
+        const isErro = order.status === 'erro' || order.status === 'erro_sync';
         return (
-          <Chip className="capitalize font-black text-[9px] tracking-widest px-2" color={statusColorMap[order.status]} size="sm" variant="flat">
+          <Chip 
+            className={`capitalize font-black text-[9px] tracking-widest px-2 ${isErro ? 'bg-red-500/20 text-red-500 border border-red-500/30' : ''}`}
+            color={isErro ? undefined : statusColorMap[order.status]} 
+            size="sm" 
+            variant={isErro ? "bordered" : "flat"}
+            startContent={isErro ? <AlertTriangle className="h-3 w-3 mr-0.5 text-red-500" /> : null}
+          >
             {statusLabelMap[order.status] || cellValue}
           </Chip>
         )
+      }
       case "data":
         return (
           <p className="text-xs font-bold text-slate-500">{cellValue}</p>
