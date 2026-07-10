@@ -30,6 +30,10 @@ app.UseMiddleware<TenantContextMiddleware>();
 // Prometheus metrics for HTTP + metrics endpoint
 app.UseHttpMetrics();
 
+// Root Liveness: used by default hosting health checks to prevent Exit Code 137
+app.MapGet("/", () => Results.Ok(new { app = "Versatus Force Sales API", status = "Alive" }))
+    .WithName("RootLiveness");
+
 // Liveness: basic ping of the process (no external deps)
 app.MapGet("/health/live", () => Results.Ok(new { status = "Alive" }))
     .WithName("Liveness");
