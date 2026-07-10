@@ -160,6 +160,21 @@ public sealed class OrderImporter : BackgroundService
                     await client.CreateDirectory(concluidosDir, ct);
                     await client.MoveFile(processingPath, completedPath, FtpRemoteExists.Overwrite, ct);
 
+                    // 5.1. Remover arquivo antigo da pasta erros/ (caso exista)
+                    var errorPath = FtpFolderStructure.GetOrdersFilePath(_ftpOptions.BasePath, tenantId, "erros", file.Name);
+                    try
+                    {
+                        if (await client.FileExists(errorPath, ct))
+                        {
+                            await client.DeleteFile(errorPath, ct);
+                            _logger.LogInformation("[FTP] Arquivo de erro anterior {FileName} removido da pasta erros.", file.Name);
+                        }
+                    }
+                    catch (Exception errDelEx)
+                    {
+                        _logger.LogWarning(errDelEx, "[FTP] Nao foi possivel remover arquivo de erro anterior {FileName} da pasta erros.", file.Name);
+                    }
+
                     _logger.LogInformation("[FTP] Pedido {PedidoId} processado com sucesso.", order.PedidoId);
                 }
             }
@@ -308,6 +323,24 @@ public sealed class OrderImporter : BackgroundService
                         if (client.Exists(completedPath)) client.DeleteFile(completedPath);
                         client.RenameFile(processingPath, completedPath);
                     }, ct);
+
+                    // 5.1. Remover arquivo antigo da pasta erros/ (caso exista)
+                    var errorPathSftp = FtpFolderStructure.GetOrdersFilePath(_ftpOptions.BasePath, tenantId, "erros", file.Name);
+                    try
+                    {
+                        await Task.Run(() =>
+                        {
+                            if (client.Exists(errorPathSftp))
+                            {
+                                client.DeleteFile(errorPathSftp);
+                                _logger.LogInformation("[SFTP] Arquivo de erro anterior {FileName} removido da pasta erros.", file.Name);
+                            }
+                        }, ct);
+                    }
+                    catch (Exception errDelEx)
+                    {
+                        _logger.LogWarning(errDelEx, "[SFTP] Nao foi possivel remover arquivo de erro anterior {FileName} da pasta erros.", file.Name);
+                    }
 
                     _logger.LogInformation("[SFTP] Pedido {PedidoId} processado com sucesso.", order.PedidoId);
                 }
