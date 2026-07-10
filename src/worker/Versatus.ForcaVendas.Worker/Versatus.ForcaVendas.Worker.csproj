@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-Versatus.ForcaVendas.Worker-c68ad33d-fce7-4914-9372-744f6e933578</UserSecretsId>
     <Version>1.0.0</Version>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
