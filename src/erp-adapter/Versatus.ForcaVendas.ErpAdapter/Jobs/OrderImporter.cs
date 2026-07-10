@@ -429,14 +429,36 @@ public sealed class OrderImporter : BackgroundService
                 bool pkExiste = preClienteCols.Contains("IDMOBPRECLIENTE");
                 bool pkIsIdentity = await IsIdentityColumnAsync(conn, transaction, "MOBPRECLIENTE", "IDMOBPRECLIENTE");
 
-                var colList = new List<string> { "IDGLOFILIAL", "NOME" };
-                var paramList = new List<string> { "@IDGLOFILIAL", "@NOME" };
+                var colList = new List<string>();
+                var paramList = new List<string>();
+                var preParams = new List<SqlParameter>();
 
-                var preParams = new List<SqlParameter>
+                string? filialCol = null;
+                if (preClienteCols.Contains("IDGLOFILIAL")) filialCol = "IDGLOFILIAL";
+                else if (preClienteCols.Contains("IDFILIAL")) filialCol = "IDFILIAL";
+                else if (preClienteCols.Contains("IDGLO_FILIAL")) filialCol = "IDGLO_FILIAL";
+
+                if (filialCol != null)
                 {
-                    new SqlParameter("@IDGLOFILIAL", filialId),
-                    new SqlParameter("@NOME", SafeSubstring(order.Payload.PreCliente.Nome, "NOME", preClienteLimits, 150))
-                };
+                    colList.Add(filialCol);
+                    paramList.Add("@IDGLOFILIAL");
+                    preParams.Add(new SqlParameter("@IDGLOFILIAL", filialId));
+                }
+
+                string? nomeCol = null;
+                if (preClienteCols.Contains("NOMEPRECLIENTE")) nomeCol = "NOMEPRECLIENTE";
+                else if (preClienteCols.Contains("NOME")) nomeCol = "NOME";
+                else if (preClienteCols.Contains("RAZAOSOCIAL")) nomeCol = "RAZAOSOCIAL";
+                else if (preClienteCols.Contains("RAZAO")) nomeCol = "RAZAO";
+                else if (preClienteCols.Contains("NOMECLIENTE")) nomeCol = "NOMECLIENTE";
+                else if (preClienteCols.Contains("CLIENTE")) nomeCol = "CLIENTE";
+
+                if (nomeCol != null)
+                {
+                    colList.Add(nomeCol);
+                    paramList.Add("@NOME");
+                    preParams.Add(new SqlParameter("@NOME", SafeSubstring(order.Payload.PreCliente.Nome, nomeCol, preClienteLimits, 150)));
+                }
 
                 if (pkExiste && !pkIsIdentity)
                 {
@@ -782,16 +804,50 @@ public sealed class OrderImporter : BackgroundService
                             await updateCmd.ExecuteNonQueryAsync(ct);
                         }
 
-                        // Se for novo cliente, deletar do MOBPRECLIENTE local
+                        // Se for novo cliente, deletar do MOBPRECLIENTE local de forma dinâmica
                         if (item.NovoCliente == 1 && !string.IsNullOrWhiteSpace(item.NomePreCliente))
                         {
-                            using (var deleteCmd = new SqlCommand("DELETE FROM MOBPRECLIENTE WHERE NOME = @NomePreCliente AND IDGLOFILIAL = @FilialId", connUpdate, transaction))
+                            try
                             {
-                                deleteCmd.Parameters.AddWithValue("@NomePreCliente", item.NomePreCliente);
-                                deleteCmd.Parameters.AddWithValue("@FilialId", item.FilialId);
-                                await deleteCmd.ExecuteNonQueryAsync(ct);
+                                var preClienteCols = await GetTableColumnsAsync(connUpdate, transaction, "MOBPRECLIENTE");
+                                
+                                string? filialCol = null;
+                                if (preClienteCols.Contains("IDGLOFILIAL")) filialCol = "IDGLOFILIAL";
+                                else if (preClienteCols.Contains("IDFILIAL")) filialCol = "IDFILIAL";
+                                else if (preClienteCols.Contains("IDGLO_FILIAL")) filialCol = "IDGLO_FILIAL";
+
+                                string? nomeCol = null;
+                                if (preClienteCols.Contains("NOMEPRECLIENTE")) nomeCol = "NOMEPRECLIENTE";
+                                else if (preClienteCols.Contains("NOME")) nomeCol = "NOME";
+                                else if (preClienteCols.Contains("RAZAOSOCIAL")) nomeCol = "RAZAOSOCIAL";
+                                else if (preClienteCols.Contains("RAZAO")) nomeCol = "RAZAO";
+                                else if (preClienteCols.Contains("NOMECLIENTE")) nomeCol = "NOMECLIENTE";
+                                else if (preClienteCols.Contains("CLIENTE")) nomeCol = "CLIENTE";
+
+                                if (nomeCol != null)
+                                {
+                                    var whereList = new List<string> { $"{nomeCol} = @NomePreCliente" };
+                                    var deleteParams = new List<SqlParameter> { new SqlParameter("@NomePreCliente", item.NomePreCliente) };
+                                    
+                                    if (filialCol != null)
+                                    {
+                                        whereList.Add($"{filialCol} = @FilialId");
+                                        deleteParams.Add(new SqlParameter("@FilialId", item.FilialId));
+                                    }
+                                    
+                                    var deleteSql = $"DELETE FROM MOBPRECLIENTE WHERE {string.Join(" AND ", whereList)}";
+                                    using (var deleteCmd = new SqlCommand(deleteSql, connUpdate, transaction))
+                                    {
+                                        deleteCmd.Parameters.AddRange(deleteParams.ToArray());
+                                        await deleteCmd.ExecuteNonQueryAsync(ct);
+                                    }
+                                    _logger.LogInformation("Pré-cliente '{NomePreCliente}' deletado da tabela MOBPRECLIENTE com sucesso após exportação do faturamento.", item.NomePreCliente);
+                                }
                             }
-                            _logger.LogInformation("Pré-cliente '{NomePreCliente}' deletado da tabela MOBPRECLIENTE com sucesso após exportação do faturamento.", item.NomePreCliente);
+                            catch (Exception delEx)
+                            {
+                                _logger.LogWarning(delEx, "Nao foi possivel deletar pre-cliente '{NomePreCliente}' apos faturamento.", item.NomePreCliente);
+                            }
                         }
 
                         await transaction.CommitAsync(ct);
