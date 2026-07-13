@@ -1,7 +1,7 @@
 {
-  "name": "Versatus Force Sales",
-  "short_name": "Force Sales",
-  "description": "Sistema SaaS de Força de Vendas Versatus",
+  "name": "Versatus Go",
+  "short_name": "Versatus Go",
+  "description": "Plataforma de Força de Vendas Versatus Go",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0c0a09",

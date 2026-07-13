@@ -31,7 +31,7 @@ app.UseMiddleware<TenantContextMiddleware>();
 app.UseHttpMetrics();
 
 // Root Liveness: used by default hosting health checks to prevent Exit Code 137
-app.MapGet("/", () => Results.Ok(new { app = "Versatus Force Sales API", status = "Alive" }))
+app.MapGet("/", () => Results.Ok(new { app = "Versatus Go API", status = "Alive" }))
     .WithName("RootLiveness");
 
 // Liveness: basic ping of the process (no external deps)
