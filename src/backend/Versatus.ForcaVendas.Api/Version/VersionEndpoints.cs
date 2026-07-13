@@ -15,7 +15,7 @@ public static class VersionEndpoints
 
             return Results.Ok(new
             {
-                appName = "Versatus Force Sales API",
+                appName = "Versatus Go API",
                 version,
                 environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
                 dotnetVersion = RuntimeInformation.FrameworkDescription

@@ -113,7 +113,7 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-blue-600 shadow-lg shadow-violet-500/30 mb-5">
               <Zap className="h-8 w-8 text-white" strokeWidth={2.5} />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Versatus Force Sales</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Versatus Go</h1>
             <p className="text-sm text-slate-400 mt-1.5">Bem-vindo de volta! Acesse sua conta.</p>
           </motion.div>
 

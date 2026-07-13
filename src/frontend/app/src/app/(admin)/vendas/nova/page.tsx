@@ -304,7 +304,7 @@ export default function NovaVendaPage() {
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl lg:text-4xl premium-title leading-none truncate pr-2">Novo Pedido</h1>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] lg:tracking-[0.4em] text-slate-500 mt-2 italic">Versatus Force Sales v2.0</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] lg:tracking-[0.4em] text-slate-500 mt-2 italic">Versatus Go v2.0</p>
               </div>
           </div>
           <div className="flex items-center space-x-4 shrink-0">

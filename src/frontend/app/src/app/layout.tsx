@@ -6,8 +6,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Versatus.Net - Login',
-  description: 'Plataforma de força de vendas integrada ao ERP Versatus',
+  title: 'Versatus Go',
+  description: 'Plataforma de força de vendas mobile integrada ao ERP Versatus',
   manifest: '/manifest.json',
 }
 

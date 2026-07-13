@@ -399,7 +399,7 @@ export default function PedidosPage() {
           </div>
           <div>
             <h1 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">Histórico de Pedidos</h1>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Versatus Force Sales v2.0</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Versatus Go v2.0</p>
           </div>
         </div>
         <Button 
@@ -723,7 +723,7 @@ export default function PedidosPage() {
                       {/* Invoice/Order Header */}
                       <div className="flex justify-between items-start border-b-2 border-slate-200 dark:border-slate-800 pb-6">
                         <div>
-                          <h3 className="text-xl font-black italic tracking-tighter text-blue-500">Versatus Force Sales</h3>
+                          <h3 className="text-xl font-black italic tracking-tighter text-blue-500">Versatus Go</h3>
                           <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Comprovante de Pedido</p>
                         </div>
                         <div className="text-right">
