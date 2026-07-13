@@ -53,7 +53,7 @@ export function Sidebar() {
           (isHovered || mobile) ? "opacity-100" : "opacity-0"
         )}>
           <p className="text-xl font-black italic tracking-tighter premium-title">Versatus</p>
-          <p className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-500 leading-none mt-1">Force Sales</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 leading-none mt-1">Go</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export function Sidebar() {
           "p-6 rounded-[2.5rem] bg-slate-950/40 border border-slate-900 transition-all duration-500",
           (isHovered || mobile) ? "opacity-100 scale-100" : "opacity-0 scale-90"
         )}>
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none mb-3 italic">Ajuda &amp; Suporte</p>
+          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none mb-3 italic">Versatus Go Suporte</p>
           <Button 
               fullWidth 
               size="sm" 
